@@ -18,11 +18,23 @@ class BookingsCrossTableTriggerInfrastructureTest < ActiveSupport::TestCase
       SELECT EXISTS (
         SELECT 1
         FROM pg_constraint
-        WHERE conname = 'bookings_confirmed_no_overlapping_intervals_per_enseigne'
+        WHERE conname = 'bookings_confirmed_no_overlapping_intervals_per_staff'
       )
     SQL
 
     assert constraint_exists, "Expected exclusion constraint for overlapping confirmed bookings to exist"
+  end
+
+  test "bootstraped database contains confirmed booking requires staff check constraint" do
+    constraint_exists = ActiveRecord::Base.connection.select_value(<<~SQL.squish)
+      SELECT EXISTS (
+        SELECT 1
+        FROM pg_constraint
+        WHERE conname = 'bookings_confirmed_requires_staff_id'
+      )
+    SQL
+
+    assert constraint_exists, "Expected check constraint requiring staff for confirmed bookings to exist"
   end
 
   test "bootstraped database contains bookings cross-table consistency function" do

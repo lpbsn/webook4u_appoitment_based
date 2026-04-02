@@ -23,6 +23,7 @@ class BookingTest < ActiveSupport::TestCase
       duration_minutes: 30,
       price_cents: 2500
     )
+    @staff = @enseigne.staffs.create!(name: "Staff booking model", active: true)
   end
 
   # =========================================================
@@ -242,6 +243,7 @@ class BookingTest < ActiveSupport::TestCase
       client: @client,
       enseigne: @enseigne,
       service: @service,
+      staff: @staff,
       booking_start_time: Time.zone.local(2026, 3, 16, 11, 0, 0),
       booking_end_time: Time.zone.local(2026, 3, 16, 11, 30, 0),
       booking_status: :confirmed,
@@ -258,6 +260,7 @@ class BookingTest < ActiveSupport::TestCase
       client: @client,
       enseigne: @enseigne,
       service: @service,
+      staff: @staff,
       booking_start_time: Time.zone.local(2026, 3, 16, 11, 0, 0),
       booking_end_time: Time.zone.local(2026, 3, 16, 11, 30, 0),
       booking_status: :confirmed,
@@ -274,6 +277,7 @@ class BookingTest < ActiveSupport::TestCase
       client: @client,
       enseigne: @enseigne,
       service: @service,
+      staff: @staff,
       booking_start_time: Time.zone.local(2026, 3, 16, 11, 0, 0),
       booking_end_time: Time.zone.local(2026, 3, 16, 11, 30, 0),
       booking_status: :confirmed,
@@ -290,6 +294,7 @@ class BookingTest < ActiveSupport::TestCase
       client: @client,
       enseigne: @enseigne,
       service: @service,
+      staff: @staff,
       booking_start_time: Time.zone.local(2026, 3, 16, 11, 0, 0),
       booking_end_time: Time.zone.local(2026, 3, 16, 11, 30, 0),
       booking_status: :confirmed,
@@ -302,11 +307,30 @@ class BookingTest < ActiveSupport::TestCase
     assert booking.errors[:customer_email].any?
   end
 
+  test "confirmed booking requires staff" do
+    booking = Booking.new(
+      client: @client,
+      enseigne: @enseigne,
+      service: @service,
+      staff: nil,
+      booking_start_time: Time.zone.local(2026, 3, 16, 11, 0, 0),
+      booking_end_time: Time.zone.local(2026, 3, 16, 11, 30, 0),
+      booking_status: :confirmed,
+      customer_first_name: "Léonard",
+      customer_last_name: "Boisson",
+      customer_email: "leo@example.com"
+    )
+
+    assert_not booking.valid?
+    assert booking.errors[:staff].any?
+  end
+
   test "confirmed booking is valid with complete customer information" do
     booking = Booking.new(
       client: @client,
       enseigne: @enseigne,
       service: @service,
+      staff: @staff,
       booking_start_time: Time.zone.local(2026, 3, 16, 11, 0, 0),
       booking_end_time: Time.zone.local(2026, 3, 16, 11, 30, 0),
       booking_status: :confirmed,
@@ -496,7 +520,7 @@ class BookingTest < ActiveSupport::TestCase
   end
 
   test "terminal? is true for confirmed bookings" do
-    booking = Booking.new(booking_status: :confirmed)
+    booking = Booking.new(booking_status: :confirmed, staff: @staff)
 
     assert booking.terminal?
   end
@@ -540,6 +564,7 @@ class BookingTest < ActiveSupport::TestCase
       confirmed = @client.bookings.create!(
         enseigne: @enseigne,
         service: @service,
+        staff: @staff,
         booking_start_time: Time.zone.local(2026, 3, 16, 10, 0, 0),
         booking_end_time: Time.zone.local(2026, 3, 16, 10, 30, 0),
         booking_status: :confirmed,
@@ -579,6 +604,7 @@ class BookingTest < ActiveSupport::TestCase
       confirmed = @client.bookings.create!(
         enseigne: @enseigne,
         service: @service,
+        staff: @staff,
         booking_start_time: Time.zone.local(2026, 3, 16, 12, 0, 0),
         booking_end_time: Time.zone.local(2026, 3, 16, 12, 30, 0),
         booking_status: :confirmed,
@@ -685,6 +711,7 @@ class BookingTest < ActiveSupport::TestCase
           booking_start_time: nil,
           booking_end_time: now + 30.minutes,
           booking_status: "confirmed",
+          staff_id: @staff.id,
           created_at: now,
           updated_at: now
         }
@@ -704,6 +731,7 @@ class BookingTest < ActiveSupport::TestCase
           booking_start_time: now,
           booking_end_time: nil,
           booking_status: "confirmed",
+          staff_id: @staff.id,
           created_at: now,
           updated_at: now
         }
@@ -761,6 +789,7 @@ class BookingTest < ActiveSupport::TestCase
           booking_start_time: now,
           booking_end_time: now,
           booking_status: "confirmed",
+          staff_id: @staff.id,
           created_at: now,
           updated_at: now
         }
@@ -775,6 +804,7 @@ class BookingTest < ActiveSupport::TestCase
           booking_start_time: now,
           booking_end_time: now - 30.minutes,
           booking_status: "confirmed",
+          staff_id: @staff.id,
           created_at: now,
           updated_at: now
         }
@@ -789,10 +819,12 @@ class BookingTest < ActiveSupport::TestCase
       duration_minutes: 30,
       price_cents: 3500
     )
+    other_staff = @other_enseigne.staffs.create!(name: "Other enseigne staff", active: true)
 
     @client.bookings.create!(
       enseigne: @enseigne,
       service: @service,
+      staff: @staff,
       booking_start_time: slot,
       booking_end_time: slot + 30.minutes,
       booking_status: :confirmed,
@@ -805,6 +837,7 @@ class BookingTest < ActiveSupport::TestCase
       @client.bookings.create!(
         enseigne: @other_enseigne,
         service: other_service,
+        staff: other_staff,
         booking_start_time: slot,
         booking_end_time: slot + 30.minutes,
         booking_status: :confirmed,
@@ -980,6 +1013,7 @@ class BookingTest < ActiveSupport::TestCase
           booking_start_time: now,
           booking_end_time: now + 30.minutes,
           booking_status: "confirmed",
+          staff_id: @staff.id,
           customer_last_name: "Dupont",
           customer_email: "dupont@example.com",
           confirmation_token: SecureRandom.uuid,
@@ -990,6 +1024,31 @@ class BookingTest < ActiveSupport::TestCase
     end
 
     assert_includes error.message, "bookings_confirmed_requires_customer_first_name"
+  end
+
+  test "database rejects confirmed booking without staff_id" do
+    now = Time.current
+
+    error = assert_raises ActiveRecord::StatementInvalid do
+      Booking.insert_all!([
+        {
+          client_id: @client.id,
+          enseigne_id: @enseigne.id,
+          service_id: @service.id,
+          booking_start_time: now,
+          booking_end_time: now + 30.minutes,
+          booking_status: "confirmed",
+          customer_first_name: "Jean",
+          customer_last_name: "Dupont",
+          customer_email: "dupont@example.com",
+          confirmation_token: SecureRandom.uuid,
+          created_at: now,
+          updated_at: now
+        }
+      ])
+    end
+
+    assert_includes error.message, "bookings_confirmed_requires_staff_id"
   end
 
   test "database rejects confirmed booking with empty customer_first_name" do
@@ -1004,6 +1063,7 @@ class BookingTest < ActiveSupport::TestCase
           booking_start_time: now,
           booking_end_time: now + 30.minutes,
           booking_status: "confirmed",
+          staff_id: @staff.id,
           customer_first_name: "",
           customer_last_name: "Dupont",
           customer_email: "dupont@example.com",
@@ -1029,6 +1089,7 @@ class BookingTest < ActiveSupport::TestCase
           booking_start_time: now,
           booking_end_time: now + 30.minutes,
           booking_status: "confirmed",
+          staff_id: @staff.id,
           customer_first_name: "   ",
           customer_last_name: "Dupont",
           customer_email: "dupont@example.com",
@@ -1054,6 +1115,7 @@ class BookingTest < ActiveSupport::TestCase
           booking_start_time: now,
           booking_end_time: now + 30.minutes,
           booking_status: "confirmed",
+          staff_id: @staff.id,
           customer_first_name: "Jean",
           customer_email: "dupont@example.com",
           confirmation_token: SecureRandom.uuid,
@@ -1078,6 +1140,7 @@ class BookingTest < ActiveSupport::TestCase
           booking_start_time: now,
           booking_end_time: now + 30.minutes,
           booking_status: "confirmed",
+          staff_id: @staff.id,
           customer_first_name: "Jean",
           customer_last_name: "",
           customer_email: "dupont@example.com",
@@ -1103,6 +1166,7 @@ class BookingTest < ActiveSupport::TestCase
           booking_start_time: now,
           booking_end_time: now + 30.minutes,
           booking_status: "confirmed",
+          staff_id: @staff.id,
           customer_first_name: "Jean",
           customer_last_name: "   ",
           customer_email: "dupont@example.com",
@@ -1128,6 +1192,7 @@ class BookingTest < ActiveSupport::TestCase
           booking_start_time: now,
           booking_end_time: now + 30.minutes,
           booking_status: "confirmed",
+          staff_id: @staff.id,
           customer_first_name: "Jean",
           customer_last_name: "Dupont",
           confirmation_token: SecureRandom.uuid,
@@ -1152,6 +1217,7 @@ class BookingTest < ActiveSupport::TestCase
           booking_start_time: now,
           booking_end_time: now + 30.minutes,
           booking_status: "confirmed",
+          staff_id: @staff.id,
           customer_first_name: "Jean",
           customer_last_name: "Dupont",
           customer_email: "",
@@ -1177,6 +1243,7 @@ class BookingTest < ActiveSupport::TestCase
           booking_start_time: now,
           booking_end_time: now + 30.minutes,
           booking_status: "confirmed",
+          staff_id: @staff.id,
           customer_first_name: "Jean",
           customer_last_name: "Dupont",
           customer_email: "   ",
@@ -1202,6 +1269,7 @@ class BookingTest < ActiveSupport::TestCase
           booking_start_time: now,
           booking_end_time: now + 30.minutes,
           booking_status: "confirmed",
+          staff_id: @staff.id,
           customer_first_name: "Jean",
           customer_last_name: "Dupont",
           customer_email: "dupont@example.com",
@@ -1226,6 +1294,7 @@ class BookingTest < ActiveSupport::TestCase
           booking_start_time: now,
           booking_end_time: now + 30.minutes,
           booking_status: "confirmed",
+          staff_id: @staff.id,
           customer_first_name: "Jean",
           customer_last_name: "Dupont",
           customer_email: "dupont@example.com",
@@ -1251,6 +1320,7 @@ class BookingTest < ActiveSupport::TestCase
           booking_start_time: now,
           booking_end_time: now + 30.minutes,
           booking_status: "confirmed",
+          staff_id: @staff.id,
           customer_first_name: "Jean",
           customer_last_name: "Dupont",
           customer_email: "dupont@example.com",

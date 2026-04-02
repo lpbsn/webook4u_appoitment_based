@@ -133,9 +133,11 @@ class ClientTest < ActiveSupport::TestCase
     client = Client.create!(name: "Salon F", slug: "salon-f")
     enseigne = client.enseignes.create!(name: "Enseigne F")
     service = enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 1500)
+    staff = enseigne.staffs.create!(name: "Staff client destroy", active: true)
     client.bookings.create!(
       enseigne: enseigne,
       service: service,
+      staff: staff,
       booking_start_time: 2.days.from_now.change(hour: 10, min: 0, sec: 0),
       booking_end_time: 2.days.from_now.change(hour: 10, min: 30, sec: 0),
       booking_status: :confirmed,

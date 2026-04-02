@@ -813,7 +813,7 @@ class Bookings::ConfirmTest < ActiveSupport::TestCase
         booking_expires_at: BookingRules.pending_expires_at
       )
 
-      constraint_name = "bookings_confirmed_no_overlapping_intervals_per_enseigne"
+      constraint_name = "bookings_confirmed_no_overlapping_intervals_per_staff"
       fake_pg_result = Object.new
       fake_pg_result.define_singleton_method(:error_field) do |_field|
         constraint_name

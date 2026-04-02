@@ -7,6 +7,7 @@ class Bookings::ErrorsTest < ActiveSupport::TestCase
     client = Client.create!(name: "Salon Error Known", slug: "salon-error-known")
     enseigne = client.enseignes.create!(name: "Enseigne Known")
     service = enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2000)
+    staff = enseigne.staffs.create!(name: "Staff Known", active: true)
 
     start_time = Time.current.change(sec: 0)
 
@@ -14,6 +15,7 @@ class Bookings::ErrorsTest < ActiveSupport::TestCase
       client: client,
       enseigne: enseigne,
       service: service,
+      staff: staff,
       booking_start_time: start_time,
       booking_end_time: start_time + 30.minutes,
       booking_status: :confirmed,
@@ -29,6 +31,7 @@ class Bookings::ErrorsTest < ActiveSupport::TestCase
           client_id: client.id,
           enseigne_id: enseigne.id,
           service_id: service.id,
+          staff_id: staff.id,
           booking_start_time: start_time + 15.minutes,
           booking_end_time: start_time + 45.minutes,
           booking_status: "confirmed",

@@ -139,6 +139,7 @@ class BookingDuplicatesFlowTest < ActionDispatch::IntegrationTest
       @client.bookings.create!(
         enseigne: @enseigne,
         service: @service,
+        staff: @staff,
         booking_start_time: slot,
         booking_end_time: slot + 30.minutes,
         booking_status: :confirmed,
@@ -172,15 +173,16 @@ class BookingDuplicatesFlowTest < ActionDispatch::IntegrationTest
   # =========================================================
   # Vérifie la protection finale côté base de données :
   # impossible d'avoir 2 confirmed sur le même créneau
-  # dans la même enseigne
+  # pour un même staff
   # =========================================================
-  test "database overlap protection prevents duplicate confirmed bookings on overlapping intervals" do
+  test "database overlap protection prevents duplicate confirmed bookings on overlapping intervals for same staff" do
     travel_to Time.zone.local(2026, 3, 15, 8, 0, 0) do
       slot = Time.zone.local(2026, 3, 16, 14, 0, 0)
 
       @client.bookings.create!(
         enseigne: @enseigne,
         service: @service,
+        staff: @staff,
         booking_start_time: slot,
         booking_end_time: slot + 30.minutes,
         booking_status: :confirmed,
@@ -193,6 +195,7 @@ class BookingDuplicatesFlowTest < ActionDispatch::IntegrationTest
         @client.bookings.create!(
           enseigne: @enseigne,
           service: @service,
+          staff: @staff,
           booking_start_time: slot + 15.minutes,
           booking_end_time: slot + 45.minutes,
           booking_status: :confirmed,
@@ -206,19 +209,15 @@ class BookingDuplicatesFlowTest < ActionDispatch::IntegrationTest
     end
   end
 
-  test "same confirmed slot is allowed in another enseigne of the same client" do
+  test "same confirmed slot is allowed for two distinct staffs in the same enseigne" do
     travel_to Time.zone.local(2026, 3, 15, 8, 0, 0) do
       slot = Time.zone.local(2026, 3, 16, 14, 30, 0)
-      other_enseigne = @client.enseignes.create!(name: "Enseigne secondaire")
-      other_service = other_enseigne.services.create!(
-        name: "Coupe femme",
-        duration_minutes: 30,
-        price_cents: 3500
-      )
+      other_staff = @enseigne.staffs.create!(name: "Staff secondaire", active: true)
 
       @client.bookings.create!(
         enseigne: @enseigne,
         service: @service,
+        staff: @staff,
         booking_start_time: slot,
         booking_end_time: slot + 30.minutes,
         booking_status: :confirmed,
@@ -229,8 +228,9 @@ class BookingDuplicatesFlowTest < ActionDispatch::IntegrationTest
 
       assert_nothing_raised do
         @client.bookings.create!(
-          enseigne: other_enseigne,
-          service: other_service,
+          enseigne: @enseigne,
+          service: @service,
+          staff: other_staff,
           booking_start_time: slot,
           booking_end_time: slot + 30.minutes,
           booking_status: :confirmed,
@@ -259,12 +259,14 @@ class BookingDuplicatesFlowTest < ActionDispatch::IntegrationTest
         duration_minutes: 30,
         price_cents: 4000
       )
+      other_staff = other_enseigne.staffs.create!(name: "Staff MG", active: true)
 
       slot = Time.zone.local(2026, 3, 16, 15, 0, 0)
 
       @client.bookings.create!(
         enseigne: @enseigne,
         service: @service,
+        staff: @staff,
         booking_start_time: slot,
         booking_end_time: slot + 30.minutes,
         booking_status: :confirmed,
@@ -277,6 +279,7 @@ class BookingDuplicatesFlowTest < ActionDispatch::IntegrationTest
         other_client.bookings.create!(
           enseigne: other_enseigne,
           service: other_service,
+          staff: other_staff,
           booking_start_time: slot,
           booking_end_time: slot + 30.minutes,
           booking_status: :confirmed,

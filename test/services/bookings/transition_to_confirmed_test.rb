@@ -7,6 +7,7 @@ class Bookings::TransitionToConfirmedTest < ActiveSupport::TestCase
     @client = Client.create!(name: "Client transitions", slug: "client-transitions")
     @enseigne = @client.enseignes.create!(name: "Enseigne transitions")
     @service = @enseigne.services.create!(name: "Service transitions", duration_minutes: 30, price_cents: 1500)
+    @staff = @enseigne.staffs.create!(name: "Staff transitions", active: true)
   end
 
   test "allows transition to confirmed for non-expired pending booking" do
@@ -46,6 +47,7 @@ class Bookings::TransitionToConfirmedTest < ActiveSupport::TestCase
     booking = @client.bookings.create!(
       enseigne: @enseigne,
       service: @service,
+      staff: @staff,
       booking_start_time: Time.zone.local(2026, 3, 16, 12, 0, 0),
       booking_end_time: Time.zone.local(2026, 3, 16, 12, 30, 0),
       booking_status: :confirmed,

@@ -8,6 +8,7 @@ class AddStatusBasedRequiredFieldChecksToBookingsMigrationTest < SchemaMutationM
     client = Client.create!(name: "Client migration", slug: "client-migration")
     enseigne = client.enseignes.create!(name: "Enseigne migration", full_address: "1 rue migration")
     service = enseigne.services.create!(name: "Service migration", duration_minutes: 30, price_cents: 1000)
+    staff = enseigne.staffs.create!(name: "Staff migration required checks", active: true)
 
     now = Time.current
     Booking.insert_all!([
@@ -15,6 +16,7 @@ class AddStatusBasedRequiredFieldChecksToBookingsMigrationTest < SchemaMutationM
         client_id: client.id,
         enseigne_id: enseigne.id,
         service_id: service.id,
+        staff_id: staff.id,
         booking_start_time: now,
         booking_end_time: now + 30.minutes,
         booking_status: "confirmed",

@@ -116,9 +116,11 @@ class ServiceTest < ActiveSupport::TestCase
 
   test "destroying service destroys associated bookings" do
     service = @enseigne.services.create!(name: "Coupe homme", duration_minutes: 30, price_cents: 2500)
+    staff = @enseigne.staffs.create!(name: "Staff service destroy", active: true)
     @client.bookings.create!(
       enseigne: @enseigne,
       service: service,
+      staff: staff,
       booking_start_time: 2.days.from_now.change(hour: 11, min: 0, sec: 0),
       booking_end_time: 2.days.from_now.change(hour: 11, min: 30, sec: 0),
       booking_status: :confirmed,

@@ -10,6 +10,7 @@ class Bookings::SlotDecisionTest < ActiveSupport::TestCase
     @enseigne = @client.enseignes.create!(name: "Enseigne A", full_address: "1 rue A")
     @other_enseigne = @client.enseignes.create!(name: "Enseigne B", full_address: "2 rue B")
     @service = @enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2500)
+    @staff = @enseigne.staffs.create!(name: "Staff slot decision", active: true)
     create_weekday_opening_hours_for_enseigne(@enseigne)
   end
 
@@ -40,6 +41,7 @@ class Bookings::SlotDecisionTest < ActiveSupport::TestCase
       @client.bookings.create!(
         enseigne: @enseigne,
         service: @service,
+        staff: @staff,
         booking_start_time: Time.zone.local(2026, 3, 16, 10, 0, 0),
         booking_end_time: Time.zone.local(2026, 3, 16, 10, 30, 0),
         booking_status: :confirmed,
@@ -88,6 +90,7 @@ class Bookings::SlotDecisionTest < ActiveSupport::TestCase
       @client.bookings.create!(
         enseigne: @enseigne,
         service: @service,
+        staff: @staff,
         booking_start_time: blocked_start,
         booking_end_time: blocked_start + 30.minutes,
         booking_status: :confirmed,
@@ -125,6 +128,7 @@ class Bookings::SlotDecisionTest < ActiveSupport::TestCase
       @client.bookings.create!(
         enseigne: @enseigne,
         service: @service,
+        staff: @staff,
         booking_start_time: first_start,
         booking_end_time: first_end,
         booking_status: :confirmed,
@@ -144,10 +148,12 @@ class Bookings::SlotDecisionTest < ActiveSupport::TestCase
     travel_to Time.zone.local(2026, 3, 15, 8, 0, 0) do
       slot = Time.zone.local(2026, 3, 16, 12, 0, 0)
       other_service = @other_enseigne.services.create!(name: "Coloration", duration_minutes: 30, price_cents: 3000)
+      other_staff = @other_enseigne.staffs.create!(name: "Staff slot decision other", active: true)
 
       @client.bookings.create!(
         enseigne: @other_enseigne,
         service: other_service,
+        staff: other_staff,
         booking_start_time: slot,
         booking_end_time: slot + 30.minutes,
         booking_status: :confirmed,

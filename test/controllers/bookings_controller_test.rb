@@ -412,6 +412,7 @@ class BookingsControllerTest < ActionDispatch::IntegrationTest
       booking = @client.bookings.create!(
         enseigne: @enseigne,
         service: @service,
+        staff: @staff,
         booking_start_time: Time.zone.local(2026, 3, 16, 13, 0, 0),
         booking_end_time: Time.zone.local(2026, 3, 16, 13, 30, 0),
         booking_status: :confirmed,
@@ -578,6 +579,7 @@ class BookingsControllerTest < ActionDispatch::IntegrationTest
       booking = @client.bookings.create!(
         enseigne: @enseigne,
         service: @service,
+        staff: @staff,
         booking_start_time: Time.zone.local(2026, 3, 16, 11, 0, 0),
         booking_end_time: Time.zone.local(2026, 3, 16, 11, 30, 0),
         booking_status: :confirmed,
@@ -688,6 +690,7 @@ class BookingsControllerTest < ActionDispatch::IntegrationTest
       booking = @client.bookings.create!(
         enseigne: @enseigne,
         service: @service,
+        staff: @staff,
         booking_start_time: Time.zone.local(2026, 3, 16, 15, 0, 0),
         booking_end_time: Time.zone.local(2026, 3, 16, 15, 30, 0),
         booking_status: :confirmed,
@@ -715,6 +718,7 @@ class BookingsControllerTest < ActionDispatch::IntegrationTest
     booking = @client.bookings.create!(
       enseigne: @enseigne,
       service: @service,
+      staff: @staff,
       booking_start_time: Time.zone.local(2026, 3, 16, 16, 0, 0),
       booking_end_time: Time.zone.local(2026, 3, 16, 16, 30, 0),
       booking_status: :confirmed,
@@ -733,6 +737,7 @@ class BookingsControllerTest < ActionDispatch::IntegrationTest
     booking = @client.bookings.create!(
       enseigne: @enseigne,
       service: @service,
+      staff: @staff,
       booking_start_time: Time.zone.local(2026, 3, 16, 17, 0, 0),
       booking_end_time: Time.zone.local(2026, 3, 16, 17, 30, 0),
       booking_status: :confirmed,

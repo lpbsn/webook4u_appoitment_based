@@ -8,6 +8,7 @@ class Bookings::BlockingBookingsTest < ActiveSupport::TestCase
     @enseigne = @client.enseignes.create!(name: "Enseigne salon")
     @other_enseigne = @client.enseignes.create!(name: "Enseigne annexe")
     @service = @enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2500)
+    @staff = @enseigne.staffs.create!(name: "Staff blocking", active: true)
   end
 
   test "blocking_overlaps returns blocking bookings overlapping given interval" do
@@ -16,6 +17,7 @@ class Bookings::BlockingBookingsTest < ActiveSupport::TestCase
       blocking = @client.bookings.create!(
         enseigne: @enseigne,
         service: @service,
+        staff: @staff,
         booking_start_time: Time.zone.local(2026, 3, 16, 10, 0, 0),
         booking_end_time:   Time.zone.local(2026, 3, 16, 10, 30, 0),
         booking_status: :confirmed,
@@ -45,6 +47,7 @@ class Bookings::BlockingBookingsTest < ActiveSupport::TestCase
       inside = @client.bookings.create!(
         enseigne: @enseigne,
         service: @service,
+        staff: @staff,
         booking_start_time: Time.zone.local(2026, 3, 16, 10, 0, 0),
         booking_end_time:   Time.zone.local(2026, 3, 16, 10, 30, 0),
         booking_status: :confirmed,
@@ -57,6 +60,7 @@ class Bookings::BlockingBookingsTest < ActiveSupport::TestCase
       cross = @client.bookings.create!(
         enseigne: @enseigne,
         service: @service,
+        staff: @staff,
         booking_start_time: Time.zone.local(2026, 3, 16, 8, 30, 0),
         booking_end_time:   Time.zone.local(2026, 3, 16, 9, 30, 0),
         booking_status: :confirmed,
@@ -69,6 +73,7 @@ class Bookings::BlockingBookingsTest < ActiveSupport::TestCase
       @client.bookings.create!(
         enseigne: @enseigne,
         service: @service,
+        staff: @staff,
         booking_start_time: Time.zone.local(2026, 3, 16, 7, 0, 0),
         booking_end_time:   Time.zone.local(2026, 3, 16, 8, 0, 0),
         booking_status: :confirmed,
@@ -96,6 +101,7 @@ class Bookings::BlockingBookingsTest < ActiveSupport::TestCase
       booking = @client.bookings.create!(
         enseigne: @enseigne,
         service: @service,
+        staff: @staff,
         booking_start_time: Time.zone.local(2026, 3, 16, 10, 0, 0),
         booking_end_time: Time.zone.local(2026, 3, 16, 10, 30, 0),
         booking_status: :confirmed,

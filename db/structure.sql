@@ -150,6 +150,7 @@ CREATE TABLE public.bookings (
     CONSTRAINT bookings_confirmed_requires_customer_email CHECK ((((booking_status)::text <> 'confirmed'::text) OR (NULLIF(btrim((customer_email)::text), ''::text) IS NOT NULL))),
     CONSTRAINT bookings_confirmed_requires_customer_first_name CHECK ((((booking_status)::text <> 'confirmed'::text) OR (NULLIF(btrim((customer_first_name)::text), ''::text) IS NOT NULL))),
     CONSTRAINT bookings_confirmed_requires_customer_last_name CHECK ((((booking_status)::text <> 'confirmed'::text) OR (NULLIF(btrim((customer_last_name)::text), ''::text) IS NOT NULL))),
+    CONSTRAINT bookings_confirmed_requires_staff_id CHECK ((((booking_status)::text <> 'confirmed'::text) OR (staff_id IS NOT NULL))),
     CONSTRAINT bookings_end_time_after_start_time CHECK ((booking_end_time > booking_start_time)),
     CONSTRAINT bookings_pending_requires_booking_expires_at CHECK ((((booking_status)::text <> 'pending'::text) OR (booking_expires_at IS NOT NULL))),
     CONSTRAINT bookings_pending_requires_pending_access_token CHECK ((((booking_status)::text <> 'pending'::text) OR (NULLIF(btrim((pending_access_token)::text), ''::text) IS NOT NULL))),
@@ -652,11 +653,11 @@ ALTER TABLE ONLY public.ar_internal_metadata
 
 
 --
--- Name: bookings bookings_confirmed_no_overlapping_intervals_per_enseigne; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: bookings bookings_confirmed_no_overlapping_intervals_per_staff; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.bookings
-    ADD CONSTRAINT bookings_confirmed_no_overlapping_intervals_per_enseigne EXCLUDE USING gist (enseigne_id WITH =, tsrange(booking_start_time, booking_end_time, '[)'::text) WITH &&) WHERE (((booking_status)::text = 'confirmed'::text));
+    ADD CONSTRAINT bookings_confirmed_no_overlapping_intervals_per_staff EXCLUDE USING gist (staff_id WITH =, tsrange(booking_start_time, booking_end_time, '[)'::text) WITH &&) WHERE ((((booking_status)::text = 'confirmed'::text) AND (staff_id IS NOT NULL)));
 
 
 --
@@ -1146,6 +1147,8 @@ ALTER TABLE ONLY public.bookings
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260402160000'),
+('20260402153000'),
 ('20260402143000'),
 ('20260402133000'),
 ('20260402123000'),

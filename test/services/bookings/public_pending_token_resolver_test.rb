@@ -7,6 +7,7 @@ class Bookings::PublicPendingTokenResolverTest < ActiveSupport::TestCase
     @client = Client.create!(name: "Client resolver", slug: "client-resolver")
     @enseigne = @client.enseignes.create!(name: "Enseigne resolver")
     @service = @enseigne.services.create!(name: "Service resolver", duration_minutes: 30, price_cents: 2000)
+    @staff = @enseigne.staffs.create!(name: "Staff resolver", active: true)
   end
 
   test "returns active_pending for a non-expired pending booking" do
@@ -100,6 +101,7 @@ class Bookings::PublicPendingTokenResolverTest < ActiveSupport::TestCase
     booking = @client.bookings.create!(
       enseigne: @enseigne,
       service: @service,
+      staff: @staff,
       booking_start_time: Time.zone.local(2026, 4, 2, 13, 0, 0),
       booking_end_time: Time.zone.local(2026, 4, 2, 13, 30, 0),
       booking_status: :confirmed,

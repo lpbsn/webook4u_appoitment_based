@@ -15,9 +15,8 @@ class Booking < ApplicationRecord
   belongs_to :client
   belongs_to :enseigne
   belongs_to :service
-  # Transitional contract (E1-US3):
-  # staff is now explicit on Booking, but remains nullable until
-  # staff-based assignment is wired in later stories.
+  # Staff stays optional at association level for transitional pending/failed
+  # states, but confirmed bookings must carry an explicit staff.
   belongs_to :staff, optional: true
 
   # =========================================================
@@ -51,6 +50,7 @@ class Booking < ApplicationRecord
   validates :customer_last_name, presence: true, if: :confirmed?
   validates :customer_email, presence: true, if: :confirmed?
   validates :confirmation_token, presence: true, uniqueness: true, if: :confirmed?
+  validates :staff, presence: true, if: :confirmed?
 
   validates :customer_email,
             format: { with: URI::MailTo::EMAIL_REGEXP },
