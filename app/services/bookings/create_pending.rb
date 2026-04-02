@@ -4,11 +4,12 @@ module Bookings
   class CreatePending
     Result = Struct.new(:success?, :booking, :error_code, :error_message, keyword_init: true)
 
-    def initialize(client:, service:, booking_start_time:, enseigne:)
+    def initialize(client:, service:, booking_start_time:, enseigne:, user: nil)
       @client = client
       @enseigne = enseigne
       @service = service
       @booking_start_time = booking_start_time
+      @user = user
     end
 
     def call
@@ -34,6 +35,7 @@ module Bookings
                 client: client,
                 enseigne: enseigne,
                 service: service,
+                user: user,
                 staff: candidate_staff,
                 booking_start_time: decision.booking_start_time,
                 booking_end_time: decision.booking_end_time,
@@ -58,7 +60,7 @@ module Bookings
 
     private
 
-    attr_reader :client, :enseigne, :service, :booking_start_time
+    attr_reader :client, :enseigne, :service, :booking_start_time, :user
 
     def valid_enseigne_context?
       enseigne.present? && enseigne.active? && enseigne.client_id == client.id

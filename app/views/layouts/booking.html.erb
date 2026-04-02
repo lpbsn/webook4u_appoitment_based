@@ -6,6 +6,16 @@
 
   <body class="booking-body">
     <div class="booking-page">
+      <div style="max-width: 640px; width: 100%; margin: 0 auto 12px auto; display: flex; justify-content: flex-end; gap: 8px;">
+        <% if user_signed_in? %>
+          <span><%= current_user.email %></span>
+          <%= button_to "Se déconnecter", destroy_user_session_path, method: :delete %>
+        <% else %>
+          <%= link_to "Créer un compte", new_user_registration_path %>
+          <%= link_to "Se connecter", new_user_session_path %>
+        <% end %>
+      </div>
+
       <div class="booking-card <%= content_for?(:booking_card_modifier) ? yield(:booking_card_modifier) : '' %>">
         <%= yield %>
       </div>

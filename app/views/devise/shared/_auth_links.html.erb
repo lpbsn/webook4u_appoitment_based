@@ -1,0 +1,9 @@
+<div style="display: flex; gap: 8px; align-items: center; margin-top: 12px;">
+  <% if controller_name != "sessions" %>
+    <%= link_to "Se connecter", new_session_path(resource_name) %>
+  <% end %>
+
+  <% if devise_mapping.registerable? && controller_name != "registrations" %>
+    <%= link_to "Créer un compte", new_registration_path(resource_name) %>
+  <% end %>
+</div>

@@ -1,7 +1,6 @@
 SET statement_timeout = 0;
 SET lock_timeout = 0;
 SET idle_in_transaction_session_timeout = 0;
-SET transaction_timeout = 0;
 SET client_encoding = 'UTF8';
 SET standard_conforming_strings = on;
 SELECT pg_catalog.set_config('search_path', '', false);
@@ -146,6 +145,7 @@ CREATE TABLE public.bookings (
     enseigne_id bigint NOT NULL,
     pending_access_token character varying,
     staff_id bigint,
+    user_id bigint,
     CONSTRAINT bookings_confirmed_requires_confirmation_token CHECK ((((booking_status)::text <> 'confirmed'::text) OR (NULLIF(btrim((confirmation_token)::text), ''::text) IS NOT NULL))),
     CONSTRAINT bookings_confirmed_requires_customer_email CHECK ((((booking_status)::text <> 'confirmed'::text) OR (NULLIF(btrim((customer_email)::text), ''::text) IS NOT NULL))),
     CONSTRAINT bookings_confirmed_requires_customer_first_name CHECK ((((booking_status)::text <> 'confirmed'::text) OR (NULLIF(btrim((customer_first_name)::text), ''::text) IS NOT NULL))),
@@ -154,7 +154,7 @@ CREATE TABLE public.bookings (
     CONSTRAINT bookings_end_time_after_start_time CHECK ((booking_end_time > booking_start_time)),
     CONSTRAINT bookings_pending_requires_booking_expires_at CHECK ((((booking_status)::text <> 'pending'::text) OR (booking_expires_at IS NOT NULL))),
     CONSTRAINT bookings_pending_requires_pending_access_token CHECK ((((booking_status)::text <> 'pending'::text) OR (NULLIF(btrim((pending_access_token)::text), ''::text) IS NOT NULL))),
-    CONSTRAINT bookings_status_allowed_values CHECK (((booking_status)::text = ANY (ARRAY[('pending'::character varying)::text, ('confirmed'::character varying)::text, ('failed'::character varying)::text])))
+    CONSTRAINT bookings_status_allowed_values CHECK (((booking_status)::text = ANY ((ARRAY['pending'::character varying, 'confirmed'::character varying, 'failed'::character varying])::text[])))
 );
 
 
@@ -561,6 +561,41 @@ ALTER SEQUENCE public.staffs_id_seq OWNED BY public.staffs.id;
 
 
 --
+-- Name: users; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.users (
+    id bigint NOT NULL,
+    email character varying DEFAULT ''::character varying NOT NULL,
+    encrypted_password character varying DEFAULT ''::character varying NOT NULL,
+    reset_password_token character varying,
+    reset_password_sent_at timestamp(6) without time zone,
+    remember_created_at timestamp(6) without time zone,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: users_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.users_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: users_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.users_id_seq OWNED BY public.users.id;
+
+
+--
 -- Name: bookings id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -642,6 +677,13 @@ ALTER TABLE ONLY public.staff_unavailabilities ALTER COLUMN id SET DEFAULT nextv
 --
 
 ALTER TABLE ONLY public.staffs ALTER COLUMN id SET DEFAULT nextval('public.staffs_id_seq'::regclass);
+
+
+--
+-- Name: users id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.users ALTER COLUMN id SET DEFAULT nextval('public.users_id_seq'::regclass);
 
 
 --
@@ -781,6 +823,14 @@ ALTER TABLE ONLY public.staffs
 
 
 --
+-- Name: users users_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.users
+    ADD CONSTRAINT users_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: index_bookings_on_client_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -820,6 +870,13 @@ CREATE INDEX index_bookings_on_service_id ON public.bookings USING btree (servic
 --
 
 CREATE INDEX index_bookings_on_staff_id ON public.bookings USING btree (staff_id);
+
+
+--
+-- Name: index_bookings_on_user_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_bookings_on_user_id ON public.bookings USING btree (user_id);
 
 
 --
@@ -984,6 +1041,20 @@ CREATE INDEX index_staffs_on_enseigne_id ON public.staffs USING btree (enseigne_
 
 
 --
+-- Name: index_users_on_email; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_users_on_email ON public.users USING btree (email);
+
+
+--
+-- Name: index_users_on_reset_password_token; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_users_on_reset_password_token ON public.users USING btree (reset_password_token);
+
+
+--
 -- Name: bookings bookings_client_consistency_trigger; Type: TRIGGER; Schema: public; Owner: -
 --
 
@@ -1133,6 +1204,14 @@ ALTER TABLE ONLY public.staff_service_capabilities
 
 
 --
+-- Name: bookings fk_rails_ef0571f117; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.bookings
+    ADD CONSTRAINT fk_rails_ef0571f117 FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
 -- Name: bookings fk_rails_f96da13d28; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1147,6 +1226,8 @@ ALTER TABLE ONLY public.bookings
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260402164004'),
+('20260402163938'),
 ('20260402160000'),
 ('20260402153000'),
 ('20260402143000'),
@@ -1159,7 +1240,6 @@ INSERT INTO "schema_migrations" (version) VALUES
 ('20260402060100'),
 ('20260402050000'),
 ('20260402030000'),
-('20260401170000'),
 ('20260401150000'),
 ('20260401120000'),
 ('20260325130000'),
@@ -1187,4 +1267,3 @@ INSERT INTO "schema_migrations" (version) VALUES
 ('20260314081835'),
 ('20260314080003'),
 ('20260314075954');
-
