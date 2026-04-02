@@ -213,6 +213,66 @@ class Bookings::CreatePendingTest < ActiveSupport::TestCase
     end
   end
 
+  test "acquires service lock then staff locks in rotation order during transactional candidate attempts" do
+    second_staff = @enseigne.staffs.create!(name: "Staff lock order", active: true)
+    create_weekday_staff_availabilities_for(second_staff)
+    StaffServiceCapability.create!(staff: second_staff, service: @service)
+
+    cursor = ServiceAssignmentCursor.find_by!(service: @service)
+    cursor.update!(last_confirmed_staff: @staff)
+
+    travel_to Time.zone.local(2026, 3, 15, 8, 0, 0) do
+      slot = Time.zone.local(2026, 3, 16, 9, 30, 0)
+
+      @client.bookings.create!(
+        enseigne: @enseigne,
+        service: @service,
+        staff: second_staff,
+        booking_start_time: slot,
+        booking_end_time: slot + 30.minutes,
+        booking_status: :confirmed,
+        customer_first_name: "Blocked",
+        customer_last_name: "First",
+        customer_email: "blocked.first@example.com"
+      )
+
+      calls = []
+      slot_lock_singleton = class << Bookings::SlotLock; self; end
+      slot_lock_singleton.alias_method :with_service_rotation_lock_without_create_pending_lock_order_test, :with_service_rotation_lock
+      slot_lock_singleton.alias_method :with_staff_lock_without_create_pending_lock_order_test, :with_staff_lock
+      slot_lock_singleton.define_method(:with_service_rotation_lock) do |service:, &block|
+        calls << [ :service, service.id ]
+        block.call
+      end
+      slot_lock_singleton.define_method(:with_staff_lock) do |staff:, &block|
+        calls << [ :staff, staff.id ]
+        block.call
+      end
+
+      begin
+        result = Bookings::CreatePending.new(
+          client: @client,
+          enseigne: @enseigne,
+          service: @service,
+          booking_start_time: slot
+        ).call
+
+        assert result.success?
+        assert_equal @staff.id, result.booking.staff_id
+        assert_equal [
+          [ :service, @service.id ],
+          [ :staff, second_staff.id ],
+          [ :staff, @staff.id ]
+        ], calls
+      ensure
+        slot_lock_singleton.alias_method :with_service_rotation_lock, :with_service_rotation_lock_without_create_pending_lock_order_test
+        slot_lock_singleton.alias_method :with_staff_lock, :with_staff_lock_without_create_pending_lock_order_test
+        slot_lock_singleton.remove_method :with_service_rotation_lock_without_create_pending_lock_order_test
+        slot_lock_singleton.remove_method :with_staff_lock_without_create_pending_lock_order_test
+      end
+    end
+  end
+
   test "does not advance cursor on pending creation" do
     second_staff = @enseigne.staffs.create!(name: "Staff secondaire", active: true)
     create_weekday_staff_availabilities_for(second_staff)
@@ -312,6 +372,41 @@ class Bookings::CreatePendingTest < ActiveSupport::TestCase
       assert_nil result.booking
       assert_equal Bookings::Errors::SLOT_UNAVAILABLE, result.error_code
       assert_equal "Le créneau sélectionné n'est plus disponible.", result.error_message
+    end
+  end
+
+  test "fails when overlapping confirmed bookings block every eligible staff candidate" do
+    second_staff = @enseigne.staffs.create!(name: "Staff fully blocked", active: true)
+    create_weekday_staff_availabilities_for(second_staff)
+    StaffServiceCapability.create!(staff: second_staff, service: @service)
+
+    travel_to Time.zone.local(2026, 3, 15, 8, 0, 0) do
+      slot = Time.zone.local(2026, 3, 16, 15, 0, 0)
+
+      [ @staff, second_staff ].each do |staff|
+        @client.bookings.create!(
+          enseigne: @enseigne,
+          service: @service,
+          staff: staff,
+          booking_start_time: slot,
+          booking_end_time: slot + 30.minutes,
+          booking_status: :confirmed,
+          customer_first_name: "Blocked",
+          customer_last_name: staff.id.to_s,
+          customer_email: "blocked-#{staff.id}@example.com"
+        )
+      end
+
+      result = Bookings::CreatePending.new(
+        client: @client,
+        enseigne: @enseigne,
+        service: @service,
+        booking_start_time: slot
+      ).call
+
+      assert_not result.success?
+      assert_nil result.booking
+      assert_equal Bookings::Errors::SLOT_UNAVAILABLE, result.error_code
     end
   end
 

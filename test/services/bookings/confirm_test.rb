@@ -54,6 +54,7 @@ class Bookings::ConfirmTest < ActiveSupport::TestCase
 
       booking.reload
       assert_equal "confirmed", booking.booking_status
+      assert_equal @staff.id, booking.staff_id
       assert_equal "Léonard", booking.customer_first_name
       assert_equal "Boisson", booking.customer_last_name
       assert_equal "leo@example.com", booking.customer_email
@@ -328,6 +329,48 @@ class Bookings::ConfirmTest < ActiveSupport::TestCase
       assert_equal Bookings::Errors::SLOT_UNAVAILABLE, result.error_code
       booking.reload
       assert_equal "pending", booking.booking_status
+      assert_equal @staff.id, booking.staff_id
+    end
+  end
+
+  test "confirms booking when overlapping confirmed exists on another staff in same enseigne" do
+    travel_to Time.zone.local(2026, 3, 15, 8, 0, 0) do
+      slot = Time.zone.local(2026, 3, 16, 13, 45, 0)
+
+      booking = @client.bookings.create!(
+        enseigne: @enseigne,
+        service: @service,
+        staff: @staff,
+        booking_start_time: slot,
+        booking_end_time: slot + 30.minutes,
+        booking_status: :pending,
+        booking_expires_at: BookingRules.pending_expires_at
+      )
+
+      @client.bookings.create!(
+        enseigne: @enseigne,
+        service: @service,
+        staff: @backup_staff,
+        booking_start_time: slot,
+        booking_end_time: slot + 30.minutes,
+        booking_status: :confirmed,
+        customer_first_name: "Other",
+        customer_last_name: "Staff",
+        customer_email: "other.staff@example.com"
+      )
+
+      result = Bookings::Confirm.new(
+        booking: booking,
+        booking_params: {
+          customer_first_name: "Léonard",
+          customer_last_name: "Boisson",
+          customer_email: "leo@example.com"
+        }
+      ).call
+
+      assert result.success?
+      booking.reload
+      assert_equal "confirmed", booking.booking_status
       assert_equal @staff.id, booking.staff_id
     end
   end

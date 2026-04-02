@@ -8,15 +8,6 @@ class Bookings::SlotLockTest < ActiveSupport::TestCase
     @staff = @enseigne.staffs.create!(name: "Staff lock", active: true)
   end
 
-  test "locks provided resource lock key for transitional main lock" do
-    resource = Bookings::Resource.for_enseigne(client: @client, enseigne: @enseigne)
-    calls = capture_acquire_lock_calls do
-      Bookings::SlotLock.with_resource_lock(resource: resource) { :ok }
-    end
-
-    assert_equal [ resource.lock_key ], calls
-  end
-
   test "locks service rotation namespace with service id" do
     calls = capture_acquire_lock_calls do
       Bookings::SlotLock.with_service_rotation_lock(service: @service) { :ok }
@@ -45,10 +36,6 @@ class Bookings::SlotLockTest < ActiveSupport::TestCase
   end
 
   test "raises when required arguments are missing" do
-    assert_raises(ArgumentError) do
-      Bookings::SlotLock.with_resource_lock(resource: nil) { :ok }
-    end
-
     assert_raises(ArgumentError) do
       Bookings::SlotLock.with_service_rotation_lock(service: nil) { :ok }
     end
