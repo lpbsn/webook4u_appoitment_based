@@ -1,30 +1,282 @@
-<h1>Créer un compte</h1>
+<% content_for :title, "Inscription | Webook4u" %>
+<% content_for :body_class, "sign-up-page" %>
+<% content_for :head do %>
+  <style>
+    .sign-up-page {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 18% 18%, rgba(255, 255, 255, 0.18), transparent 30%),
+        radial-gradient(circle at 82% 22%, rgba(89, 164, 255, 0.28), transparent 30%),
+        radial-gradient(circle at 48% 82%, rgba(96, 224, 198, 0.24), transparent 30%),
+        linear-gradient(145deg, #08101d 0%, #14253c 48%, #0a1322 100%);
+      font-family: "Inter", "Segoe UI", sans-serif;
+      color: #f5f7fb;
+      position: relative;
+    }
 
-<%= form_for(resource, as: resource_name, url: registration_path(resource_name)) do |f| %>
-  <%= render "devise/shared/error_messages", resource: resource %>
+    .sign-up-page::before,
+    .sign-up-page::after {
+      content: "";
+      position: fixed;
+      width: 36rem;
+      height: 36rem;
+      border-radius: 999px;
+      filter: blur(30px);
+      opacity: 0.48;
+      pointer-events: none;
+      animation: sign-up-float 18s ease-in-out infinite;
+    }
 
-  <div style="margin-bottom: 10px;">
-    <%= f.label :email, "Email" %><br>
-    <%= f.email_field :email, autofocus: true, autocomplete: "email" %>
-  </div>
+    .sign-up-page::before {
+      top: -9rem;
+      left: -7rem;
+      background: rgba(106, 175, 255, 0.26);
+    }
 
-  <div style="margin-bottom: 10px;">
-    <%= f.label :password, "Mot de passe" %>
-    <% if @minimum_password_length %>
-      <small>(<%= @minimum_password_length %> caractères minimum)</small>
-    <% end %>
-    <br>
-    <%= f.password_field :password, autocomplete: "new-password" %>
-  </div>
+    .sign-up-page::after {
+      right: -9rem;
+      bottom: -10rem;
+      background: rgba(82, 225, 192, 0.2);
+      animation-delay: -9s;
+    }
 
-  <div style="margin-bottom: 10px;">
-    <%= f.label :password_confirmation, "Confirmer le mot de passe" %><br>
-    <%= f.password_field :password_confirmation, autocomplete: "new-password" %>
-  </div>
+    .sign-up-shell {
+      position: relative;
+      z-index: 1;
+      width: min(100% - 2rem, 31rem);
+      padding: 1.5rem;
+    }
 
-  <div>
-    <%= f.submit "Créer mon compte" %>
-  </div>
+    .sign-up-card {
+      position: relative;
+      padding: 2rem;
+      border-radius: 28px;
+      background: rgba(12, 18, 32, 0.54);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      box-shadow: 0 24px 80px rgba(4, 10, 20, 0.48);
+      backdrop-filter: blur(22px);
+      -webkit-backdrop-filter: blur(22px);
+    }
+
+    .sign-up-card::before {
+      content: "";
+      position: absolute;
+      inset: 1px;
+      border-radius: 27px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02));
+      pointer-events: none;
+      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      mask-composite: exclude;
+      padding: 1px;
+    }
+
+    .sign-up-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.45rem 0.8rem;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      font-size: 0.78rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #c5d4f3;
+    }
+
+    .sign-up-title {
+      margin: 1rem 0 0.65rem;
+      font-size: clamp(2rem, 5vw, 2.6rem);
+      line-height: 1.02;
+      letter-spacing: -0.04em;
+    }
+
+    .sign-up-subtitle {
+      margin: 0 0 1.6rem;
+      color: #b8c4dc;
+      font-size: 0.98rem;
+      line-height: 1.6;
+    }
+
+    .sign-up-form {
+      display: grid;
+      gap: 1rem;
+    }
+
+    .sign-up-errors {
+      margin-bottom: 0.25rem;
+      padding: 0.9rem 1rem;
+      border-radius: 16px;
+      background: rgba(255, 112, 112, 0.12);
+      border: 1px solid rgba(255, 145, 145, 0.2);
+    }
+
+    .sign-up-errors h2 {
+      margin: 0 0 0.5rem;
+      font-size: 0.96rem;
+    }
+
+    .sign-up-errors ul {
+      margin: 0;
+      padding-left: 1.1rem;
+      color: #ffd6d6;
+    }
+
+    .sign-up-field {
+      display: grid;
+      gap: 0.45rem;
+    }
+
+    .sign-up-field label {
+      font-size: 0.92rem;
+      color: #e8eefb;
+      font-weight: 600;
+    }
+
+    .sign-up-hint {
+      color: #99aacd;
+      font-size: 0.84rem;
+    }
+
+    .sign-up-input {
+      width: 100%;
+      box-sizing: border-box;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      background: rgba(255, 255, 255, 0.08);
+      color: #f6f8fc;
+      border-radius: 16px;
+      padding: 0.95rem 1rem;
+      font-size: 1rem;
+      outline: none;
+      transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease, transform 160ms ease;
+    }
+
+    .sign-up-input::placeholder {
+      color: #9fafcc;
+    }
+
+    .sign-up-input:focus {
+      border-color: rgba(111, 187, 255, 0.95);
+      box-shadow: 0 0 0 4px rgba(111, 187, 255, 0.18);
+      background: rgba(255, 255, 255, 0.11);
+      transform: translateY(-1px);
+    }
+
+    .sign-up-submit {
+      width: 100%;
+      margin-top: 0.35rem;
+      border: 0;
+      border-radius: 16px;
+      padding: 0.98rem 1rem;
+      font-size: 1rem;
+      font-weight: 700;
+      color: #09111f;
+      background: linear-gradient(135deg, #f8fbff 0%, #8fe6d1 45%, #67b8ff 100%);
+      box-shadow: 0 18px 40px rgba(103, 184, 255, 0.24);
+      cursor: pointer;
+      transition: transform 180ms ease, box-shadow 180ms ease, filter 180ms ease;
+    }
+
+    .sign-up-submit:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 22px 44px rgba(103, 184, 255, 0.3);
+      filter: saturate(1.05);
+    }
+
+    .sign-up-submit:active {
+      transform: translateY(0);
+    }
+
+    .sign-up-links {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      margin-top: 1.4rem;
+      flex-wrap: wrap;
+    }
+
+    .sign-up-links a {
+      color: #d9e5fb;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .sign-up-links a:hover {
+      color: #ffffff;
+      text-decoration: underline;
+      text-underline-offset: 0.18rem;
+    }
+
+    @keyframes sign-up-float {
+      0%, 100% {
+        transform: translate3d(0, 0, 0) scale(1);
+      }
+
+      50% {
+        transform: translate3d(-1.25rem, 1.8rem, 0) scale(1.08);
+      }
+    }
+
+    @media (max-width: 640px) {
+      .sign-up-shell {
+        padding: 1rem;
+      }
+
+      .sign-up-card {
+        padding: 1.35rem;
+        border-radius: 24px;
+      }
+    }
+  </style>
 <% end %>
 
-<%= render "devise/shared/auth_links" %>
+<div class="sign-up-shell">
+  <section class="sign-up-card">
+    <div class="sign-up-eyebrow">Webook4u Admin</div>
+    <h1 class="sign-up-title">Creer un compte</h1>
+    <p class="sign-up-subtitle">
+      Rejoignez votre espace professionnel pour piloter vos rendez-vous et lancer votre activite avec une interface claire et moderne.
+    </p>
+
+    <%= form_for(resource, as: resource_name, url: registration_path(resource_name), html: { class: "sign-up-form" }) do |f| %>
+      <% if resource.errors.any? %>
+        <div class="sign-up-errors">
+          <h2>Le formulaire contient des erreurs.</h2>
+          <ul>
+            <% resource.errors.full_messages.each do |message| %>
+              <li><%= message %></li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
+
+      <div class="sign-up-field">
+        <%= f.label :email, "Email" %>
+        <%= f.email_field :email, autofocus: true, autocomplete: "email", class: "sign-up-input", placeholder: "vous@exemple.com" %>
+      </div>
+
+      <div class="sign-up-field">
+        <%= f.label :password, "Mot de passe" %>
+        <% if @minimum_password_length %>
+          <div class="sign-up-hint"><%= @minimum_password_length %> caracteres minimum</div>
+        <% end %>
+        <%= f.password_field :password, autocomplete: "new-password", class: "sign-up-input", placeholder: "Choisissez un mot de passe" %>
+      </div>
+
+      <div class="sign-up-field">
+        <%= f.label :password_confirmation, "Confirmer le mot de passe" %>
+        <%= f.password_field :password_confirmation, autocomplete: "new-password", class: "sign-up-input", placeholder: "Retapez votre mot de passe" %>
+      </div>
+
+      <%= f.submit "Creer mon compte", class: "sign-up-submit" %>
+    <% end %>
+
+    <div class="sign-up-links">
+      <%= render "devise/shared/auth_links" %>
+    </div>
+  </section>
+</div>
