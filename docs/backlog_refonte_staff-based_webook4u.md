@@ -719,7 +719,7 @@ Objectif:
 
 Risque principal:
 
-- mélanger visibilité publique et assignation staff dans le même calcul
+- mélanger visibilité publique et assignation staff dans le même calcul, ou continuer à s'appuyer sur une ressource implicite enseigne malgré le socle staff-based déjà livré
 
 Dépendances:
 
@@ -729,6 +729,10 @@ Signal de fin:
 
 - les slots visibles reflètent les staffs réellement éligibles
 - aucune étape de visibilité publique n'assigne un staff
+- le calcul visible n'utilise plus `Resource.for_enseigne` comme ressource métier de disponibilité
+- le moteur visible ne dépend plus d'un blocage par enseigne
+- `ScheduleResolver` reste limité au cadre d'ouverture enseigne
+- le moteur visible staff-based repose explicitement sur les staffs, pas sur une abstraction de ressource globale enseigne
 
 ### E2-US1 - Résoudre les staffs éligibles d'un service
 
@@ -756,9 +760,10 @@ Changements attendus:
 
 Zones du repo concernées:
 
-- services métier de disponibilité
+- services métier de disponibilité visibles
 - `app/models/staff.rb`
 - `app/models/staff_service_capability.rb`
+- `app/models/service.rb`
 
 Critères d'acceptation:
 
@@ -770,6 +775,8 @@ Non-objectifs:
 
 - calcul des créneaux visibles
 - assignation transactionnelle
+- round robin
+- modification de `create_pending` ou `confirm`
 
 Blocages / décisions déjà verrouillées:
 
@@ -804,7 +811,7 @@ Changements attendus:
 
 Zones du repo concernées:
 
-- services métier de disponibilité
+- services métier de disponibilité visibles
 - `app/models/staff_availability.rb`
 
 Critères d'acceptation:
@@ -816,10 +823,13 @@ Non-objectifs:
 
 - application des indisponibilités ponctuelles
 - agrégation publique des slots
+- prise en compte des bookings
+- extension de `ScheduleResolver` au calcul staff-based
 
 Blocages / décisions déjà verrouillées:
 
 - la disponibilité hebdomadaire staff n'est pas déduite de l'enseigne
+- `ScheduleResolver` ne devient pas le service central de disponibilité staff-based
 
 Questions interdites au dev:
 
@@ -849,7 +859,7 @@ Changements attendus:
 
 Zones du repo concernées:
 
-- services métier de disponibilité
+- services métier de disponibilité visibles
 - `app/models/staff_unavailability.rb`
 
 Critères d'acceptation:
@@ -860,6 +870,7 @@ Critères d'acceptation:
 Non-objectifs:
 
 - prise en compte des bookings bloquants
+- agrégation publique des slots
 
 Blocages / décisions déjà verrouillées:
 
@@ -895,8 +906,10 @@ Changements attendus:
 
 Zones du repo concernées:
 
-- services métier de disponibilité
-- `app/services/bookings/schedule_resolver.rb` ou son remplaçant
+- services métier de disponibilité visibles
+- `app/services/bookings/schedule_resolver.rb`
+- nouveau service dédié aux fenêtres staff visibles
+- `app/models/service.rb`
 
 Critères d'acceptation:
 
@@ -907,16 +920,21 @@ Non-objectifs:
 
 - prise en compte des bookings bloquants
 - agrégation publique des slots
+- retour au fallback `client_opening_hours`
+- transformation de `ScheduleResolver` en moteur complet de disponibilité staff-based
 
 Blocages / décisions déjà verrouillées:
 
 - `enseigne_opening_hours` est la seule source opérationnelle d'ouverture
+- `ScheduleResolver` reste limité aux horaires d'ouverture enseigne
+- un service dédié porte les fenêtres visibles staff-based
 
 Questions interdites au dev:
 
 - "Peut-on fallback sur `client_opening_hours` ?" Non
+- "Peut-on étendre `ScheduleResolver` pour gérer toute la disponibilité staff-based ?" Non
 
-### E2-US5 - Intégrer les bookings bloquants dans la disponibilité staff
+### E2-US5 - Intégrer les bookings bloquants dans la disponibilité visible par staff
 
 Statut:
 
@@ -928,7 +946,7 @@ But:
 
 Pourquoi:
 
-- un staff ne peut pas être proposé sur un créneau déjà réservé ou temporairement verrouillé
+- un staff ne peut pas être proposé sur un créneau déjà réservé ou temporairement verrouillé; aujourd'hui le code visible bloque encore au niveau enseigne
 
 Entrées / dépendances:
 
@@ -936,32 +954,41 @@ Entrées / dépendances:
 
 Changements attendus:
 
+- introduire un filtrage des bookings bloquants par staff
 - intégrer `confirmed` et `pending` actifs comme bookings bloquants
 - ignorer les `pending` expirés
 
 Zones du repo concernées:
 
-- services métier de disponibilité
+- `app/services/bookings/available_slots.rb`
+- `app/services/bookings/blocking_bookings.rb`
+- services de lecture des bookings par staff
 - `app/models/booking.rb`
-- services de blocking bookings
 
 Critères d'acceptation:
 
-- un `confirmed` bloque le staff sur son intervalle
-- un `pending` actif bloque le staff sur son intervalle
+- un `confirmed` bloque le bon staff sur son intervalle
+- un `pending` actif bloque le bon staff sur son intervalle
 - un `pending` expiré ne bloque plus
+- le blocage visible ne repose plus sur le périmètre global de l'enseigne
 
 Non-objectifs:
 
 - assignation de staff
+- changement de l'orchestration transactionnelle de `create_pending`
+- prolongation de `Resource.for_enseigne` comme abstraction de disponibilité visible
 
 Blocages / décisions déjà verrouillées:
 
 - le blocage temporaire reste porté par les `pending` actifs
+- le visible staff-based ne doit pas réécrire à lui seul la logique de verrou transactionnel
+- le moteur visible ne repose plus sur `Resource.for_enseigne`
 
 Questions interdites au dev:
 
 - "Peut-on ignorer les pending actifs dans la visibilité ?" Non
+- "Peut-on conserver un blocage visible au niveau enseigne ?" Non
+- "Peut-on continuer à utiliser `Resource.for_enseigne` pour le visible ?" Non
 
 ### E2-US6 - Agréger les slots visibles sans assignation
 
@@ -990,6 +1017,7 @@ Zones du repo concernées:
 
 - `app/services/bookings/available_slots.rb` ou son remplaçant
 - `app/services/bookings/public_page.rb`
+- tests de visibilité publique
 
 Critères d'acceptation:
 
@@ -1001,14 +1029,76 @@ Non-objectifs:
 
 - création du pending
 - orchestration round robin
+- modification de `SlotDecision`
 
 Blocages / décisions déjà verrouillées:
 
 - la visibilité publique n'assigne jamais un staff
+- l'agrégation visible ne doit pas dépendre d'un ordre de rotation
+- l'agrégation visible repose sur les staffs éligibles et leurs fenêtres, pas sur une ressource enseigne implicite
 
 Questions interdites au dev:
 
 - "Peut-on choisir un staff dès l'affichage des slots ?" Non
+- "Peut-on utiliser le round robin pour filtrer les slots visibles ?" Non
+
+### E2-US7 - Réaligner les tests visibles sur le moteur staff-based
+
+Statut:
+
+- Ready
+
+But:
+
+- faire évoluer les tests de disponibilité visibles pour documenter le comportement staff-based réellement attendu
+
+Pourquoi:
+
+- les tests actuels de `AvailableSlots` et une partie des tests de `ScheduleResolver` documentent encore un moteur centré sur l'enseigne
+
+Entrées / dépendances:
+
+- E2-US1
+- E2-US2
+- E2-US3
+- E2-US4
+- E2-US5
+- E2-US6
+
+Changements attendus:
+
+- réécrire les tests de visibilité pour exprimer:
+  - exclusion des staffs inactifs
+  - exclusion des staffs sans capability
+  - prise en compte des disponibilités staff
+  - prise en compte des indisponibilités staff
+  - visibilité d'un slot si un seul staff compatible reste disponible
+- supprimer les assertions de test qui supposent encore un blocage ou un calcul purement par enseigne
+
+Zones du repo concernées:
+
+- `test/services/bookings/available_slots_test.rb`
+- `test/services/bookings/schedule_resolver_test.rb`
+- tests de page publique liés aux slots si nécessaire
+
+Critères d'acceptation:
+
+- les tests de visibilité décrivent le moteur staff-based
+- aucun test de visibilité active ne suppose encore `une enseigne = une ressource`
+
+Non-objectifs:
+
+- tests transactionnels de `create_pending`
+- tests de round robin
+- tests de `confirm`
+
+Blocages / décisions déjà verrouillées:
+
+- les tests visibles doivent documenter le moteur staff-based, pas un état transitoire
+
+Questions interdites au dev:
+
+- "Peut-on conserver les anciens tests enseigne-based parce qu'ils passent encore ?" Non
 
 ### Definition of Done Epic 2
 
@@ -1016,6 +1106,8 @@ Questions interdites au dev:
 - la visibilité publique repose sur l'union des staffs éligibles
 - aucune visibilité publique n'utilise une ressource implicite enseigne
 - aucune visibilité publique n'assigne un staff
+- le filtrage des bookings visibles est porté par le staff
+- les tests de visibilité documentent explicitement le moteur staff-based
 
 ## Epic 3 - Assignation transactionnelle et round robin
 
