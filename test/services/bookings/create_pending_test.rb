@@ -213,6 +213,30 @@ class Bookings::CreatePendingTest < ActiveSupport::TestCase
     end
   end
 
+  test "does not advance cursor on pending creation" do
+    second_staff = @enseigne.staffs.create!(name: "Staff secondaire", active: true)
+    create_weekday_staff_availabilities_for(second_staff)
+    StaffServiceCapability.create!(staff: second_staff, service: @service)
+
+    cursor = ServiceAssignmentCursor.find_by!(service: @service)
+    cursor.update!(last_confirmed_staff: second_staff)
+
+    travel_to Time.zone.local(2026, 3, 15, 8, 0, 0) do
+      slot = Time.zone.local(2026, 3, 16, 10, 30, 0)
+
+      result = Bookings::CreatePending.new(
+        client: @client,
+        enseigne: @enseigne,
+        service: @service,
+        booking_start_time: slot
+      ).call
+
+      assert result.success?
+      assert_equal @staff.id, result.booking.staff_id
+      assert_equal second_staff.id, cursor.reload.last_confirmed_staff_id
+    end
+  end
+
   test "fails when booking_start_time is nil" do
     result = Bookings::CreatePending.new(
       client: @client,

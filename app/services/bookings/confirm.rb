@@ -10,27 +10,18 @@ module Bookings
     end
 
     def call
-      transition = TransitionToConfirmed.evaluate(booking: booking)
-      return failure(transition.error_code) unless transition.allowed?
+      assigned_staff = booking.staff
+      return failure(Errors::SLOT_UNAVAILABLE) if assigned_staff.blank?
 
-      resource = Resource.for_enseigne(client: booking.client, enseigne: booking.enseigne)
+      result = nil
 
-      # Tant que la revalidation transactionnelle reste resource-based (enseigne),
-      # le verrou principal doit rester aligné sur cette même ressource.
-      SlotLock.with_resource_lock(resource: resource) do
-        decision = slot_decision(resource: resource)
-        return failure(decision.error_code) unless decision.bookable?
-
-        booking.update!(
-          confirmation_token: SecureRandom.uuid,
-          customer_first_name: booking_params[:customer_first_name],
-          customer_last_name: booking_params[:customer_last_name],
-          customer_email: booking_params[:customer_email],
-          booking_status: :confirmed
-        )
+      SlotLock.with_service_rotation_lock(service: booking.service) do
+        SlotLock.with_staff_lock(staff: assigned_staff) do
+          result = confirm_under_lock
+        end
       end
 
-      success(booking)
+      result
     rescue ActiveRecord::RecordInvalid
       failure(Errors::FORM_INVALID)
     rescue ActiveRecord::RecordNotUnique, ActiveRecord::StatementInvalid => error
@@ -43,15 +34,29 @@ module Bookings
 
     attr_reader :booking, :booking_params
 
-    def slot_decision(resource:)
-      Bookings::SlotDecision.new(
-        client: booking.client,
-        enseigne: booking.enseigne,
-        service: booking.service,
-        booking_start_time: booking.booking_start_time,
-        exclude_booking_id: booking.id,
-        resource: resource
-      ).call
+    def confirm_under_lock
+      decision = revalidation_decision
+      return failure(decision.error_code) unless decision.confirmable?
+
+      booking.update!(
+        confirmation_token: SecureRandom.uuid,
+        customer_first_name: booking_params[:customer_first_name],
+        customer_last_name: booking_params[:customer_last_name],
+        customer_email: booking_params[:customer_email],
+        booking_status: :confirmed
+      )
+      advance_assignment_cursor!(staff: booking.staff)
+
+      success(booking)
+    end
+
+    def revalidation_decision
+      Bookings::ConfirmStaffRevalidation.new(booking: booking).call
+    end
+
+    def advance_assignment_cursor!(staff:)
+      cursor = ServiceAssignmentCursor.find_or_create_by!(service: booking.service)
+      cursor.update!(last_confirmed_staff: staff)
     end
 
     def success(booking)

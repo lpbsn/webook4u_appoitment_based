@@ -289,6 +289,7 @@ class BookingsControllerTest < ActionDispatch::IntegrationTest
       booking = @client.bookings.create!(
         enseigne: @enseigne,
         service: @service,
+        staff: @staff,
         booking_start_time: Time.zone.local(2026, 3, 16, 11, 0, 0),
         booking_end_time: Time.zone.local(2026, 3, 16, 11, 30, 0),
         booking_status: :pending,
@@ -317,6 +318,7 @@ class BookingsControllerTest < ActionDispatch::IntegrationTest
       booking = @client.bookings.create!(
         enseigne: @enseigne,
         service: @service,
+        staff: @staff,
         booking_start_time: Time.zone.local(2026, 3, 16, 14, 0, 0),
         booking_end_time: Time.zone.local(2026, 3, 16, 14, 30, 0),
         booking_status: :pending,
@@ -623,6 +625,7 @@ class BookingsControllerTest < ActionDispatch::IntegrationTest
       new_booking = @client.bookings.create!(
         enseigne: @enseigne,
         service: @service,
+        staff: @staff,
         booking_start_time: Time.zone.local(2026, 3, 16, 17, 0, 0),
         booking_end_time: Time.zone.local(2026, 3, 16, 17, 30, 0),
         booking_status: :pending,
