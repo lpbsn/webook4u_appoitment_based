@@ -42,6 +42,8 @@ La cible opérationnelle est la suivante:
 - `Booking` appartient à `Staff`, `Service`, `Enseigne`, `Client`
 - l'utilisateur final ne choisit jamais le staff
 - le round robin est porté par `service`, avec un curseur dédié et un verrou dédié
+- la protection DB finale des overlaps `confirmed` cible `staff_id + interval` (et non `enseigne_id + interval`)
+- dans l'Epic 1, cette protection finale est une cible verrouillée mais n'est pas encore implémentée
 - la base actuelle peut être supprimée et reconstruite
 - aucun historique métier n'est à préserver
 - le repository peut abandonner l'ancien historique DB au profit d'un socle propre
@@ -113,7 +115,7 @@ Contrats métier obligatoires:
 - rendre `bookings.staff_id` obligatoire
 - retirer la dépendance métier à `services.client_id`
 - retirer la dépendance métier à `client_opening_hours`
-- remplacer l'anti-overlap `confirmed` par `staff_id + interval`
+- verrouiller la cible finale anti-overlap `confirmed` sur `staff_id + interval`, sans implémenter la contrainte finale à ce stade
 - ajouter les contraintes de cohérence inter-table nécessaires
 
 Règles de cette phase:

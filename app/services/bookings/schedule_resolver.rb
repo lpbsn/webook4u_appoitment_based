@@ -22,10 +22,7 @@ module Bookings
     attr_reader :client, :enseigne, :date
 
     def source_hours
-      enseigne_hours = hours_for(enseigne&.enseigne_opening_hours)
-      return enseigne_hours if enseigne_hours.any?
-
-      hours_for(client.client_opening_hours)
+      hours_for(enseigne&.enseigne_opening_hours)
     end
 
     def hours_for(scope)

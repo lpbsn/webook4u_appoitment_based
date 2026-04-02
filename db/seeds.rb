@@ -18,6 +18,15 @@ if Rails.env.development?
     end
   end
 
+  upsert_staff_capabilities = lambda do |staff, services|
+    service_ids = services.map(&:id)
+    staff.staff_service_capabilities.where.not(service_id: service_ids).delete_all
+
+    service_ids.each do |service_id|
+      staff.staff_service_capabilities.find_or_create_by!(service_id: service_id)
+    end
+  end
+
   salon = Client.find_or_create_by!(
     slug: "salon-des-gate"
   ) do |client|
@@ -66,14 +75,12 @@ if Rails.env.development?
     end
   end
 
-  upsert_weekday_hours.call(salon.client_opening_hours, opens_at: "09:00", closes_at: "18:00")
-  upsert_weekday_hours.call(coach.client_opening_hours, opens_at: "09:00", closes_at: "18:00")
-
   paris_16 = salon.enseignes.find_by!(name: "PARIS 16 Salon")
   lyon_06 = coach.enseignes.find_by!(name: "LYON 06 Coach")
   valence_sud = coach.enseignes.find_by!(name: "VALENCE SUD Coach")
   lyon_08 = coach.enseignes.find_by!(name: "LYON 08 Coach")
 
+  upsert_weekday_hours.call(paris_16.enseigne_opening_hours, opens_at: "09:00", closes_at: "18:00")
   upsert_weekday_hours.call(lyon_06.enseigne_opening_hours, opens_at: "10:00", closes_at: "16:00")
   valence_sud.enseigne_opening_hours.delete_all
   lyon_08.enseigne_opening_hours.delete_all
@@ -106,6 +113,33 @@ if Rails.env.development?
     end
   end
 
+  [ paris_16, lyon_06, valence_sud, lyon_08 ].each do |enseigne|
+    enseigne.services.find_each do |service|
+      ServiceAssignmentCursor.find_or_create_by!(service: service)
+    end
+  end
+
+  [
+    { enseigne: paris_16, name: "Emma", active: true, opens_at: "09:00", closes_at: "18:00" },
+    { enseigne: paris_16, name: "Nora", active: true, opens_at: "09:00", closes_at: "18:00" },
+    { enseigne: lyon_06, name: "Lucas", active: true, opens_at: "10:00", closes_at: "16:00" },
+    { enseigne: valence_sud, name: "Maya", active: true, opens_at: "10:00", closes_at: "16:00" },
+    { enseigne: lyon_08, name: "Coach Inactif", active: false, opens_at: "10:00", closes_at: "16:00" }
+  ].each do |attrs|
+    enseigne = attrs[:enseigne]
+    staff = enseigne.staffs.find_or_initialize_by(name: attrs[:name])
+    staff.active = attrs[:active]
+    staff.save! if staff.new_record? || staff.changed?
+
+    if staff.active?
+      upsert_weekday_hours.call(staff.staff_availabilities, opens_at: attrs[:opens_at], closes_at: attrs[:closes_at])
+    else
+      staff.staff_availabilities.delete_all
+    end
+
+    upsert_staff_capabilities.call(staff, enseigne.services.to_a)
+  end
+
   coach_service_name = "Séance individuelle"
 
   days_until_next_monday = (1 - BookingRules.business_today.wday) % 7
@@ -115,6 +149,7 @@ if Rails.env.development?
   [
     {
       enseigne: lyon_06,
+      staff_name: "Lucas",
       booking_start_time: demo_date.in_time_zone.change(hour: 10, min: 0, sec: 0),
       booking_end_time: demo_date.in_time_zone.change(hour: 10, min: 30, sec: 0),
       customer_first_name: "Demo",
@@ -123,6 +158,7 @@ if Rails.env.development?
     },
     {
       enseigne: valence_sud,
+      staff_name: "Maya",
       booking_start_time: demo_date.in_time_zone.change(hour: 10, min: 0, sec: 0),
       booking_end_time: demo_date.in_time_zone.change(hour: 10, min: 30, sec: 0),
       customer_first_name: "Demo",
@@ -131,6 +167,7 @@ if Rails.env.development?
     },
     {
       enseigne: lyon_08,
+      staff_name: "Coach Inactif",
       booking_start_time: demo_date.in_time_zone.change(hour: 11, min: 0, sec: 0),
       booking_end_time: demo_date.in_time_zone.change(hour: 11, min: 30, sec: 0),
       customer_first_name: "Demo",
@@ -139,6 +176,7 @@ if Rails.env.development?
     }
   ].each do |attrs|
     service = attrs[:enseigne].services.find_by!(name: coach_service_name)
+    staff = attrs[:enseigne].staffs.find_by!(name: attrs[:staff_name])
 
     booking = coach.bookings.find_or_initialize_by(
       enseigne: attrs[:enseigne],
@@ -146,6 +184,7 @@ if Rails.env.development?
       booking_start_time: attrs[:booking_start_time]
     )
     booking.assign_attributes(
+      staff: staff,
       booking_end_time: attrs[:booking_end_time],
       booking_status: :confirmed,
       customer_first_name: attrs[:customer_first_name],

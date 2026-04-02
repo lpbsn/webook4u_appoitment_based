@@ -8,7 +8,6 @@ class Bookings::CreatePendingTest < ActiveSupport::TestCase
       name: "Le Salon Des gâté",
       slug: "salon-des-gate"
     )
-    create_weekday_opening_hours_for(@client)
 
     @enseigne = @client.enseignes.create!(
       name: "Enseigne principale"
@@ -19,6 +18,8 @@ class Bookings::CreatePendingTest < ActiveSupport::TestCase
       duration_minutes: 30,
       price_cents: 2500
     )
+
+    create_weekday_opening_hours_for_enseigne(@enseigne)
   end
 
   test "creates a pending booking for a valid slot" do
@@ -393,7 +394,8 @@ class Bookings::CreatePendingTest < ActiveSupport::TestCase
     end
   end
 
-  test "uses enseigne opening hours when the client has a single enseigne" do
+  test "uses enseigne opening hours for slot validation" do
+    @enseigne.enseigne_opening_hours.delete_all
     create_weekday_opening_hours_for_enseigne(@enseigne, opens_at: "10:00", closes_at: "16:00")
 
     travel_to Time.zone.local(2026, 3, 15, 8, 0, 0) do

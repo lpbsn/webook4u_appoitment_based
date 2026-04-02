@@ -17,8 +17,8 @@ class PublicClientsControllerTest < ActionDispatch::IntegrationTest
 
   test "date input has min set to today to prevent past date selection" do
     client = Client.create!(name: "Salon Min", slug: "salon-min")
-    create_weekday_opening_hours_for(client)
     enseigne = client.enseignes.create!(name: "Enseigne Min", full_address: "1 rue min", active: true)
+    create_weekday_opening_hours_for_enseigne(enseigne)
     service = enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2500)
 
     travel_to Time.zone.local(2026, 3, 15, 8, 0, 0) do
@@ -33,8 +33,8 @@ class PublicClientsControllerTest < ActionDispatch::IntegrationTest
   # When date is beyond max_future_days, safe_date is nil so the slots step is not rendered.
   test "rejects date beyond max_future_days and does not show slots" do
     client = Client.create!(name: "Salon", slug: "salon")
-    create_weekday_opening_hours_for(client)
     enseigne = client.enseignes.create!(name: "Enseigne active", full_address: "1 rue de Paris", active: true)
+    create_weekday_opening_hours_for_enseigne(enseigne)
     service = enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2500)
 
     travel_to Time.zone.local(2026, 3, 15, 8, 0, 0) do
@@ -83,8 +83,8 @@ class PublicClientsControllerTest < ActionDispatch::IntegrationTest
 
   test "show auto-selects the single active enseigne and keeps the flow usable" do
     client = Client.create!(name: "Salon Single", slug: "salon-single")
-    create_weekday_opening_hours_for(client)
     enseigne = client.enseignes.create!(name: "Enseigne unique", full_address: "1 rue unique", active: true)
+    create_weekday_opening_hours_for_enseigne(enseigne)
     service = enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2500)
 
     get public_client_url(client.slug), params: { service_id: service.id }

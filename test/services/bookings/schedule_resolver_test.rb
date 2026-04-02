@@ -7,7 +7,6 @@ class Bookings::ScheduleResolverTest < ActiveSupport::TestCase
   end
 
   test "returns enseigne opening hours when they exist for the day" do
-    create_weekday_opening_hours_for(@client, opens_at: "09:00", closes_at: "18:00")
     create_weekday_opening_hours_for_enseigne(@enseigne, opens_at: "10:00", closes_at: "16:00")
 
     intervals = Bookings::ScheduleResolver.new(
@@ -19,8 +18,8 @@ class Bookings::ScheduleResolverTest < ActiveSupport::TestCase
     assert_equal [ [ Time.zone.local(2026, 3, 16, 10, 0, 0), Time.zone.local(2026, 3, 16, 16, 0, 0) ] ], intervals
   end
 
-  test "falls back to client opening hours when enseigne has none for the day" do
-    create_weekday_opening_hours_for(@client, opens_at: "09:00", closes_at: "18:00")
+  test "returns empty when enseigne has opening hours on another day only" do
+    @enseigne.enseigne_opening_hours.create!(day_of_week: 2, opens_at: "09:00", closes_at: "18:00")
 
     intervals = Bookings::ScheduleResolver.new(
       client: @client,
@@ -28,7 +27,7 @@ class Bookings::ScheduleResolverTest < ActiveSupport::TestCase
       date: Date.new(2026, 3, 16)
     ).call
 
-    assert_equal [ [ Time.zone.local(2026, 3, 16, 9, 0, 0), Time.zone.local(2026, 3, 16, 18, 0, 0) ] ], intervals
+    assert_equal [], intervals
   end
 
   test "returns empty when neither client nor enseigne have opening hours for the day" do
@@ -41,9 +40,10 @@ class Bookings::ScheduleResolverTest < ActiveSupport::TestCase
     assert_equal [], intervals
   end
 
-  test "enseigne hours mask all client hours for the same day" do
-    @client.client_opening_hours.create!(day_of_week: 1, opens_at: "09:00", closes_at: "12:00")
-    @client.client_opening_hours.create!(day_of_week: 1, opens_at: "14:00", closes_at: "18:00")
+  test "uses opening hours from the selected enseigne only" do
+    other_enseigne = @client.enseignes.create!(name: "Other enseigne")
+    other_enseigne.enseigne_opening_hours.create!(day_of_week: 1, opens_at: "08:00", closes_at: "12:00")
+    other_enseigne.enseigne_opening_hours.create!(day_of_week: 1, opens_at: "13:00", closes_at: "20:00")
     @enseigne.enseigne_opening_hours.create!(day_of_week: 1, opens_at: "10:00", closes_at: "16:00")
 
     intervals = Bookings::ScheduleResolver.new(
@@ -55,9 +55,9 @@ class Bookings::ScheduleResolverTest < ActiveSupport::TestCase
     assert_equal [ [ Time.zone.local(2026, 3, 16, 10, 0, 0), Time.zone.local(2026, 3, 16, 16, 0, 0) ] ], intervals
   end
 
-  test "returns multiple disjoint intervals ordered for the selected source" do
-    @client.client_opening_hours.create!(day_of_week: 1, opens_at: "09:00", closes_at: "12:00")
-    @client.client_opening_hours.create!(day_of_week: 1, opens_at: "14:00", closes_at: "18:00")
+  test "returns multiple disjoint intervals ordered for enseigne opening hours" do
+    @enseigne.enseigne_opening_hours.create!(day_of_week: 1, opens_at: "09:00", closes_at: "12:00")
+    @enseigne.enseigne_opening_hours.create!(day_of_week: 1, opens_at: "14:00", closes_at: "18:00")
 
     intervals = Bookings::ScheduleResolver.new(
       client: @client,

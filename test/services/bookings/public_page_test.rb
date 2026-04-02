@@ -7,9 +7,9 @@ class Bookings::PublicPageTest < ActiveSupport::TestCase
 
   setup do
     @client = Client.create!(name: "Salon Page", slug: "salon-page")
-    create_weekday_opening_hours_for(@client)
     @enseigne = @client.enseignes.create!(name: "Enseigne A", full_address: "1 rue de Paris", active: true)
     @service = @enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2500)
+    create_weekday_opening_hours_for_enseigne(@enseigne)
   end
 
   test "raises RecordNotFound for unknown slug" do
@@ -134,5 +134,21 @@ class Bookings::PublicPageTest < ActiveSupport::TestCase
     assert_equal [], result.enseignes.to_a
     assert_nil result.selected_enseigne
     assert_equal [], result.slots
+  end
+
+  test "ignores service_id that does not belong to selected enseigne" do
+    other_enseigne = @client.enseignes.create!(name: "Enseigne B", full_address: "2 rue de Paris", active: true)
+    other_service = other_enseigne.services.create!(name: "Coloration", duration_minutes: 45, price_cents: 5000)
+
+    result = Bookings::PublicPage.new(
+      slug: @client.slug,
+      enseigne_id: @enseigne.id.to_s,
+      service_id: other_service.id.to_s,
+      date_param: "2026-03-16"
+    ).call
+
+    assert_equal @enseigne, result.selected_enseigne
+    assert_nil result.selected_service
+    assert_equal [ @service ], result.services.to_a
   end
 end

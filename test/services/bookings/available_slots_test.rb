@@ -8,7 +8,6 @@ class Bookings::AvailableSlotsTest < ActiveSupport::TestCase
       name: "Le Salon Des gâté",
       slug: "salon-des-gate"
     )
-    create_weekday_opening_hours_for(@client)
 
     @enseigne = @client.enseignes.create!(
       name: "Enseigne principale"
@@ -22,6 +21,9 @@ class Bookings::AvailableSlotsTest < ActiveSupport::TestCase
       duration_minutes: 30,
       price_cents: 2500
     )
+
+    create_weekday_opening_hours_for_enseigne(@enseigne)
+    create_weekday_opening_hours_for_enseigne(@other_enseigne)
   end
 
   test "returns no slots on weekend" do
@@ -72,7 +74,8 @@ class Bookings::AvailableSlotsTest < ActiveSupport::TestCase
     end
   end
 
-  test "uses enseigne opening hours instead of client hours when they exist" do
+  test "uses selected enseigne opening hours for slot generation" do
+    @enseigne.enseigne_opening_hours.delete_all
     create_weekday_opening_hours_for_enseigne(@enseigne, opens_at: "10:00", closes_at: "16:00")
 
     travel_to Time.zone.local(2026, 3, 15, 8, 0, 0) do
@@ -271,9 +274,9 @@ class Bookings::AvailableSlotsTest < ActiveSupport::TestCase
   end
 
   test "does not duplicate slots when day has multiple disjoint opening intervals" do
-    @client.client_opening_hours.where(day_of_week: 1).delete_all
-    @client.client_opening_hours.create!(day_of_week: 1, opens_at: "09:00", closes_at: "12:00")
-    @client.client_opening_hours.create!(day_of_week: 1, opens_at: "14:00", closes_at: "18:00")
+    @enseigne.enseigne_opening_hours.where(day_of_week: 1).delete_all
+    @enseigne.enseigne_opening_hours.create!(day_of_week: 1, opens_at: "09:00", closes_at: "12:00")
+    @enseigne.enseigne_opening_hours.create!(day_of_week: 1, opens_at: "14:00", closes_at: "18:00")
 
     travel_to Time.zone.local(2026, 3, 15, 8, 0, 0) do
       monday = Date.new(2026, 3, 16)

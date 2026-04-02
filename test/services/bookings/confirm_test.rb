@@ -292,6 +292,11 @@ class Bookings::ConfirmTest < ActiveSupport::TestCase
   test "confirmation ignores bookings from another enseigne of the same client" do
     travel_to Time.zone.local(2026, 3, 15, 8, 0, 0) do
       slot = Time.zone.local(2026, 3, 16, 13, 30, 0)
+      other_service = @other_enseigne.services.create!(
+        name: "Coupe femme",
+        duration_minutes: 30,
+        price_cents: 3500
+      )
 
       booking = @client.bookings.create!(
         enseigne: @enseigne,
@@ -304,7 +309,7 @@ class Bookings::ConfirmTest < ActiveSupport::TestCase
 
       @client.bookings.create!(
         enseigne: @other_enseigne,
-        service: @service,
+        service: other_service,
         booking_start_time: slot,
         booking_end_time: slot + 30.minutes,
         booking_status: :confirmed,

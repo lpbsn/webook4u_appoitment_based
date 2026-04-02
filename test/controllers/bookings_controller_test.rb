@@ -10,7 +10,6 @@ class BookingsControllerTest < ActionDispatch::IntegrationTest
       name: "Le Salon Des gâté",
       slug: "salon-des-gate"
     )
-    create_weekday_opening_hours_for(@client)
 
     @enseigne = @client.enseignes.create!(
       name: "Enseigne principale",
@@ -22,6 +21,8 @@ class BookingsControllerTest < ActionDispatch::IntegrationTest
       duration_minutes: 30,
       price_cents: 2500
     )
+
+    create_weekday_opening_hours_for_enseigne(@enseigne)
   end
 
   # =========================================================
@@ -746,6 +747,18 @@ class BookingsControllerTest < ActionDispatch::IntegrationTest
       slot = Time.zone.local(2026, 3, 16, 10, 0, 0)
       post service_bookings_path(@client.slug, @service),
            params: { start_time: slot, enseigne_id: inactive_enseigne.id }
+      assert_response :not_found
+    end
+  end
+
+  test "POST #create_pending returns 404 when service does not belong to selected enseigne" do
+    other_enseigne = @client.enseignes.create!(name: "Enseigne secondaire", full_address: "3 rue de Paris", active: true)
+    other_service = other_enseigne.services.create!(name: "Coloration", duration_minutes: 45, price_cents: 5000)
+
+    travel_to Time.zone.local(2026, 3, 15, 8, 0, 0) do
+      slot = Time.zone.local(2026, 3, 16, 10, 0, 0)
+      post service_bookings_path(@client.slug, other_service),
+           params: { start_time: slot, enseigne_id: @enseigne.id }
       assert_response :not_found
     end
   end

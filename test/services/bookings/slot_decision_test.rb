@@ -7,10 +7,10 @@ class Bookings::SlotDecisionTest < ActiveSupport::TestCase
 
   setup do
     @client = Client.create!(name: "Salon Slot Decision", slug: "salon-slot-decision")
-    create_weekday_opening_hours_for(@client)
     @enseigne = @client.enseignes.create!(name: "Enseigne A", full_address: "1 rue A")
     @other_enseigne = @client.enseignes.create!(name: "Enseigne B", full_address: "2 rue B")
     @service = @enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2500)
+    create_weekday_opening_hours_for_enseigne(@enseigne)
   end
 
   test "returns invalid slot when booking_start_time is nil" do
@@ -143,10 +143,11 @@ class Bookings::SlotDecisionTest < ActiveSupport::TestCase
   test "returns bookable when blocking booking belongs to another enseigne" do
     travel_to Time.zone.local(2026, 3, 15, 8, 0, 0) do
       slot = Time.zone.local(2026, 3, 16, 12, 0, 0)
+      other_service = @other_enseigne.services.create!(name: "Coloration", duration_minutes: 30, price_cents: 3000)
 
       @client.bookings.create!(
         enseigne: @other_enseigne,
-        service: @service,
+        service: other_service,
         booking_start_time: slot,
         booking_end_time: slot + 30.minutes,
         booking_status: :confirmed,

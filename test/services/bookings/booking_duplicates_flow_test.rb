@@ -8,7 +8,6 @@ class BookingDuplicatesFlowTest < ActionDispatch::IntegrationTest
       name: "Le Salon Des gâté",
       slug: "salon-des-gate"
     )
-    create_weekday_opening_hours_for(@client)
 
     @enseigne = @client.enseignes.create!(
       name: "Enseigne principale"
@@ -19,6 +18,8 @@ class BookingDuplicatesFlowTest < ActionDispatch::IntegrationTest
       duration_minutes: 30,
       price_cents: 2500
     )
+
+    create_weekday_opening_hours_for_enseigne(@enseigne)
   end
 
   # =========================================================
@@ -202,6 +203,11 @@ class BookingDuplicatesFlowTest < ActionDispatch::IntegrationTest
     travel_to Time.zone.local(2026, 3, 15, 8, 0, 0) do
       slot = Time.zone.local(2026, 3, 16, 14, 30, 0)
       other_enseigne = @client.enseignes.create!(name: "Enseigne secondaire")
+      other_service = other_enseigne.services.create!(
+        name: "Coupe femme",
+        duration_minutes: 30,
+        price_cents: 3500
+      )
 
       @client.bookings.create!(
         enseigne: @enseigne,
@@ -217,7 +223,7 @@ class BookingDuplicatesFlowTest < ActionDispatch::IntegrationTest
       assert_nothing_raised do
         @client.bookings.create!(
           enseigne: other_enseigne,
-          service: @service,
+          service: other_service,
           booking_start_time: slot,
           booking_end_time: slot + 30.minutes,
           booking_status: :confirmed,
@@ -239,7 +245,6 @@ class BookingDuplicatesFlowTest < ActionDispatch::IntegrationTest
         name: "Maigris Mon Gros",
         slug: "maigris-mon-gros"
       )
-      create_weekday_opening_hours_for(other_client)
       other_enseigne = other_client.enseignes.create!(name: "Enseigne MG")
 
       other_service = other_enseigne.services.create!(

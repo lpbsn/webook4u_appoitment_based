@@ -10,7 +10,6 @@ class BookingFlowTest < ActionDispatch::IntegrationTest
       name: "Le Salon Des gâté",
       slug: "salon-des-gate"
     )
-    create_weekday_opening_hours_for(@client)
     @enseigne = @client.enseignes.create!(name: "Enseigne principale", full_address: "1 rue de Paris")
 
     @service = @enseigne.services.create!(
@@ -18,6 +17,8 @@ class BookingFlowTest < ActionDispatch::IntegrationTest
       duration_minutes: 30,
       price_cents: 2500
     )
+
+    create_weekday_opening_hours_for_enseigne(@enseigne)
   end
 
   test "complete booking flow from public page to confirmation and success" do
@@ -84,6 +85,8 @@ class BookingFlowTest < ActionDispatch::IntegrationTest
 
   test "complete booking flow keeps the selected enseigne when several active enseignes exist" do
     other_enseigne = @client.enseignes.create!(name: "Enseigne secondaire", full_address: "2 rue de Paris")
+    other_service = other_enseigne.services.create!(name: "Coupe femme", duration_minutes: 30, price_cents: 3500)
+    create_weekday_opening_hours_for_enseigne(other_enseigne)
 
     travel_to Time.zone.local(2026, 3, 15, 8, 0, 0) do
       get public_client_path(@client.slug)
@@ -94,13 +97,13 @@ class BookingFlowTest < ActionDispatch::IntegrationTest
       assert_response :success
       assert_includes response.body, other_enseigne.name
 
-      get public_client_path(@client.slug, enseigne_id: other_enseigne.id, service_id: @service.id, date: "2026-03-16")
+      get public_client_path(@client.slug, enseigne_id: other_enseigne.id, service_id: other_service.id, date: "2026-03-16")
       assert_response :success
 
       slot = Time.zone.local(2026, 3, 16, 10, 0, 0)
 
       assert_difference "Booking.count", 1 do
-        post service_bookings_path(@client.slug, @service),
+        post service_bookings_path(@client.slug, other_service),
              params: { start_time: slot, enseigne_id: other_enseigne.id, date: "2026-03-16" }
       end
 

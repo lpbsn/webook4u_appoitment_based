@@ -106,6 +106,10 @@ class ClientTest < ActiveSupport::TestCase
     end
   end
 
+  test "client does not expose a direct services association" do
+    assert_nil Client.reflect_on_association(:services)
+  end
+
   test "destroying client destroys associated services" do
     client = Client.create!(name: "Salon E", slug: "salon-e")
     enseigne = client.enseignes.create!(name: "Enseigne E")

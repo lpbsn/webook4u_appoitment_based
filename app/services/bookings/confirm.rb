@@ -52,7 +52,7 @@ module Bookings
         booking_start_time: booking.booking_start_time,
         exclude_booking_id: booking.id,
         resource: resource
-      ).without_generated_slot_requirement.call
+      ).call
     end
 
     def success(booking)
