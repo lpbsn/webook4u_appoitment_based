@@ -75,6 +75,15 @@ module ActiveSupport
   end
 end
 
+class ActionDispatch::IntegrationTest
+  include Devise::Test::IntegrationHelpers
+
+  def create_test_user(email: nil, password: "password123")
+    generated_email = email || "user-#{SecureRandom.hex(6)}@example.com"
+    User.create!(email: generated_email, password: password, password_confirmation: password)
+  end
+end
+
 # Migration tests that call migration.up/down mutate the shared schema and must
 # not run inside the normal parallel test workers.
 class SchemaMutationMigrationTestCase < ActiveSupport::TestCase

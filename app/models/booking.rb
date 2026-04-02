@@ -15,6 +15,7 @@ class Booking < ApplicationRecord
   belongs_to :client
   belongs_to :enseigne
   belongs_to :service
+  belongs_to :user, optional: true
   # Staff stays optional at association level for transitional pending/failed
   # states, but confirmed bookings must carry an explicit staff.
   belongs_to :staff, optional: true

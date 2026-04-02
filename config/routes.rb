@@ -1,4 +1,5 @@
 Rails.application.routes.draw do
+  devise_for :users
   get "/up", to: "rails/health#show", as: :rails_health_check
 
   get "/:slug", to: "public_clients#show", as: :public_client

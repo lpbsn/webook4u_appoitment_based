@@ -1,5 +1,6 @@
 class BookingsController < ApplicationController
   layout "booking"
+  before_action :authenticate_user!
   before_action :load_client
   before_action :load_creation_context, only: %i[create_pending]
   before_action :load_public_pending_booking, only: %i[show create]
@@ -10,7 +11,8 @@ class BookingsController < ApplicationController
       client: @client,
       enseigne: @enseigne,
       service: @service,
-      booking_start_time: @booking_start_time
+      booking_start_time: @booking_start_time,
+      user: current_user
     ).call
 
     unless result.success?
@@ -101,7 +103,7 @@ class BookingsController < ApplicationController
   end
 
   def load_booking_by_confirmation_token
-    @booking = @client.bookings.find_by!(confirmation_token: params[:token])
+    @booking = @client.bookings.find_by!(confirmation_token: params[:token], user_id: [ current_user.id, nil ])
     hydrate_booking_relations
   end
 
