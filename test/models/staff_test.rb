@@ -36,4 +36,23 @@ class StaffTest < ActiveSupport::TestCase
       end
     end
   end
+
+  test "destroying staff nullifies associated bookings staff_id" do
+    staff = @enseigne.staffs.create!(name: "Staff booked")
+    service = @enseigne.services.create!(name: "Service booked", duration_minutes: 30, price_cents: 2500)
+    booking = @client.bookings.create!(
+      enseigne: @enseigne,
+      service: service,
+      staff: staff,
+      booking_start_time: 2.days.from_now.change(hour: 10, min: 0, sec: 0),
+      booking_end_time: 2.days.from_now.change(hour: 10, min: 30, sec: 0),
+      booking_status: :pending,
+      booking_expires_at: 2.days.from_now.change(hour: 10, min: 10, sec: 0)
+    )
+
+    staff.destroy
+    booking.reload
+
+    assert_nil booking.staff_id
+  end
 end

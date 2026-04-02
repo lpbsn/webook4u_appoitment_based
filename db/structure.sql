@@ -133,6 +133,7 @@ CREATE TABLE public.bookings (
     confirmation_token character varying,
     enseigne_id bigint NOT NULL,
     pending_access_token character varying,
+    staff_id bigint,
     CONSTRAINT bookings_confirmed_requires_confirmation_token CHECK ((((booking_status)::text <> 'confirmed'::text) OR (NULLIF(btrim((confirmation_token)::text), ''::text) IS NOT NULL))),
     CONSTRAINT bookings_confirmed_requires_customer_email CHECK ((((booking_status)::text <> 'confirmed'::text) OR (NULLIF(btrim((customer_email)::text), ''::text) IS NOT NULL))),
     CONSTRAINT bookings_confirmed_requires_customer_first_name CHECK ((((booking_status)::text <> 'confirmed'::text) OR (NULLIF(btrim((customer_first_name)::text), ''::text) IS NOT NULL))),
@@ -801,6 +802,13 @@ CREATE INDEX index_bookings_on_service_id ON public.bookings USING btree (servic
 
 
 --
+-- Name: index_bookings_on_staff_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_bookings_on_staff_id ON public.bookings USING btree (staff_id);
+
+
+--
 -- Name: index_client_opening_hours_on_client_and_day; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1096,12 +1104,21 @@ ALTER TABLE ONLY public.staff_service_capabilities
 
 
 --
+-- Name: bookings fk_rails_f96da13d28; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.bookings
+    ADD CONSTRAINT fk_rails_f96da13d28 FOREIGN KEY (staff_id) REFERENCES public.staffs(id);
+
+
+--
 -- PostgreSQL database dump complete
 --
 
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260402123000'),
 ('20260402114000'),
 ('20260402113000'),
 ('20260402103000'),

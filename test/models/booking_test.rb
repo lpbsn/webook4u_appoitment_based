@@ -43,6 +43,39 @@ class BookingTest < ActiveSupport::TestCase
     assert booking.valid?
   end
 
+  test "staff association is optional in transitional contract" do
+    booking = Booking.new(
+      client: @client,
+      enseigne: @enseigne,
+      service: @service,
+      staff: nil,
+      booking_start_time: Time.zone.local(2026, 3, 16, 10, 0, 0),
+      booking_end_time: Time.zone.local(2026, 3, 16, 10, 30, 0),
+      booking_status: :pending,
+      booking_expires_at: Time.zone.local(2026, 3, 15, 10, 5, 0)
+    )
+
+    assert booking.valid?
+  end
+
+  test "booking can reference a staff when provided" do
+    staff = @enseigne.staffs.create!(name: "Staff booking link")
+
+    booking = Booking.new(
+      client: @client,
+      enseigne: @enseigne,
+      service: @service,
+      staff: staff,
+      booking_start_time: Time.zone.local(2026, 3, 16, 10, 0, 0),
+      booking_end_time: Time.zone.local(2026, 3, 16, 10, 30, 0),
+      booking_status: :pending,
+      booking_expires_at: Time.zone.local(2026, 3, 15, 10, 5, 0)
+    )
+
+    assert booking.valid?
+    assert_equal staff, booking.staff
+  end
+
   test "requires booking_start_time" do
     booking = Booking.new(
       client: @client,

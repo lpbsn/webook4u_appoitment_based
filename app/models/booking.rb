@@ -15,6 +15,10 @@ class Booking < ApplicationRecord
   belongs_to :client
   belongs_to :enseigne
   belongs_to :service
+  # Transitional contract (E1-US3):
+  # staff is now explicit on Booking, but remains nullable until
+  # staff-based assignment is wired in later stories.
+  belongs_to :staff, optional: true
 
   # =========================================================
   # ENUM MÉTIER
