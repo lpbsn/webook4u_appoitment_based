@@ -1,26 +1,275 @@
-<h1>Se connecter</h1>
+<% content_for :title, "Connexion | Webook4u" %>
+<% content_for :body_class, "sign-in-page" %>
+<% content_for :head do %>
+  <style>
+    .sign-in-page {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.18), transparent 32%),
+        radial-gradient(circle at 80% 30%, rgba(88, 161, 255, 0.30), transparent 30%),
+        radial-gradient(circle at 50% 80%, rgba(76, 214, 184, 0.24), transparent 28%),
+        linear-gradient(135deg, #09111f 0%, #132238 45%, #0d1728 100%);
+      font-family: "Inter", "Segoe UI", sans-serif;
+      color: #f5f7fb;
+      position: relative;
+    }
 
-<%= form_for(resource, as: resource_name, url: session_path(resource_name)) do |f| %>
-  <div style="margin-bottom: 10px;">
-    <%= f.label :email, "Email" %><br>
-    <%= f.email_field :email, autofocus: true, autocomplete: "email" %>
-  </div>
+    .sign-in-page::before,
+    .sign-in-page::after {
+      content: "";
+      position: fixed;
+      inset: auto;
+      width: 34rem;
+      height: 34rem;
+      border-radius: 999px;
+      filter: blur(28px);
+      opacity: 0.5;
+      pointer-events: none;
+      animation: sign-in-float 16s ease-in-out infinite;
+    }
 
-  <div style="margin-bottom: 10px;">
-    <%= f.label :password, "Mot de passe" %><br>
-    <%= f.password_field :password, autocomplete: "current-password" %>
-  </div>
+    .sign-in-page::before {
+      top: -8rem;
+      left: -7rem;
+      background: rgba(90, 164, 255, 0.28);
+    }
 
-  <% if devise_mapping.rememberable? %>
-    <div style="margin-bottom: 10px;">
-      <%= f.check_box :remember_me %>
-      <%= f.label :remember_me, "Rester connecté" %>
-    </div>
-  <% end %>
+    .sign-in-page::after {
+      right: -8rem;
+      bottom: -9rem;
+      background: rgba(77, 226, 193, 0.22);
+      animation-delay: -8s;
+    }
 
-  <div>
-    <%= f.submit "Connexion" %>
-  </div>
+    .sign-in-shell {
+      position: relative;
+      z-index: 1;
+      width: min(100% - 2rem, 28rem);
+      padding: 1.5rem;
+    }
+
+    .sign-in-card {
+      position: relative;
+      padding: 2rem;
+      border-radius: 28px;
+      background: rgba(12, 18, 32, 0.52);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      box-shadow: 0 24px 80px rgba(4, 10, 20, 0.48);
+      backdrop-filter: blur(22px);
+      -webkit-backdrop-filter: blur(22px);
+    }
+
+    .sign-in-card::before {
+      content: "";
+      position: absolute;
+      inset: 1px;
+      border-radius: 27px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02));
+      pointer-events: none;
+      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      mask-composite: exclude;
+      padding: 1px;
+    }
+
+    .sign-in-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.45rem 0.8rem;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      font-size: 0.78rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #c5d4f3;
+    }
+
+    .sign-in-title {
+      margin: 1rem 0 0.65rem;
+      font-size: clamp(2rem, 5vw, 2.6rem);
+      line-height: 1.02;
+      letter-spacing: -0.04em;
+    }
+
+    .sign-in-subtitle {
+      margin: 0 0 1.75rem;
+      color: #b8c4dc;
+      font-size: 0.98rem;
+      line-height: 1.6;
+    }
+
+    .sign-in-form {
+      display: grid;
+      gap: 1rem;
+    }
+
+    .sign-in-field {
+      display: grid;
+      gap: 0.45rem;
+    }
+
+    .sign-in-field label {
+      font-size: 0.92rem;
+      color: #e8eefb;
+      font-weight: 600;
+    }
+
+    .sign-in-input {
+      width: 100%;
+      box-sizing: border-box;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      background: rgba(255, 255, 255, 0.08);
+      color: #f6f8fc;
+      border-radius: 16px;
+      padding: 0.95rem 1rem;
+      font-size: 1rem;
+      outline: none;
+      transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease, transform 160ms ease;
+    }
+
+    .sign-in-input::placeholder {
+      color: #9fafcc;
+    }
+
+    .sign-in-input:focus {
+      border-color: rgba(111, 187, 255, 0.95);
+      box-shadow: 0 0 0 4px rgba(111, 187, 255, 0.18);
+      background: rgba(255, 255, 255, 0.11);
+      transform: translateY(-1px);
+    }
+
+    .sign-in-options {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-top: 0.15rem;
+      color: #c7d2e9;
+      font-size: 0.92rem;
+    }
+
+    .sign-in-remember {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.55rem;
+    }
+
+    .sign-in-remember input {
+      width: 1rem;
+      height: 1rem;
+      accent-color: #73c5ff;
+    }
+
+    .sign-in-submit {
+      width: 100%;
+      border: 0;
+      border-radius: 16px;
+      padding: 0.98rem 1rem;
+      font-size: 1rem;
+      font-weight: 700;
+      color: #09111f;
+      background: linear-gradient(135deg, #f8fbff 0%, #8fe6d1 45%, #67b8ff 100%);
+      box-shadow: 0 18px 40px rgba(103, 184, 255, 0.24);
+      cursor: pointer;
+      transition: transform 180ms ease, box-shadow 180ms ease, filter 180ms ease;
+    }
+
+    .sign-in-submit:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 22px 44px rgba(103, 184, 255, 0.3);
+      filter: saturate(1.05);
+    }
+
+    .sign-in-submit:active {
+      transform: translateY(0);
+    }
+
+    .sign-in-links {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      margin-top: 1.4rem;
+      flex-wrap: wrap;
+    }
+
+    .sign-in-links a {
+      color: #d9e5fb;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .sign-in-links a:hover {
+      color: #ffffff;
+      text-decoration: underline;
+      text-underline-offset: 0.18rem;
+    }
+
+    @keyframes sign-in-float {
+      0%, 100% {
+        transform: translate3d(0, 0, 0) scale(1);
+      }
+
+      50% {
+        transform: translate3d(1.5rem, 2rem, 0) scale(1.08);
+      }
+    }
+
+    @media (max-width: 640px) {
+      .sign-in-shell {
+        padding: 1rem;
+      }
+
+      .sign-in-card {
+        padding: 1.35rem;
+        border-radius: 24px;
+      }
+
+      .sign-in-options {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+    }
+  </style>
 <% end %>
 
-<%= render "devise/shared/auth_links" %>
+<div class="sign-in-shell">
+  <section class="sign-in-card">
+    <div class="sign-in-eyebrow">Bookme.com</div>
+    <h1 class="sign-in-title">Se connecter</h1>
+    <p class="sign-in-subtitle">
+      Accedez a votre espace pour gerer vos rendez-vous, vos services et votre activite en toute simplicite.
+    </p>
+
+    <%= form_for(resource, as: resource_name, url: session_path(resource_name), html: { class: "sign-in-form" }) do |f| %>
+      <div class="sign-in-field">
+        <%= f.label :email, "Email" %>
+        <%= f.email_field :email, autofocus: true, autocomplete: "email", class: "sign-in-input", placeholder: "vous@exemple.com" %>
+      </div>
+
+      <div class="sign-in-field">
+        <%= f.label :password, "Mot de passe" %>
+        <%= f.password_field :password, autocomplete: "current-password", class: "sign-in-input", placeholder: "Votre mot de passe" %>
+      </div>
+
+      <% if devise_mapping.rememberable? %>
+        <div class="sign-in-options">
+          <label class="sign-in-remember">
+            <%= f.check_box :remember_me %>
+            <span>Rester connecté</span>
+          </label>
+        </div>
+      <% end %>
+
+      <%= f.submit "Connexion", class: "sign-in-submit" %>
+    <% end %>
+
+    <div class="sign-in-links">
+      <%= render "devise/shared/auth_links" %>
+    </div>
+  </section>
+</div>
