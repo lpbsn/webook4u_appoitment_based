@@ -1,5 +1,6 @@
 require "test_helper"
 require Rails.root.join("db/migrate/20260402114000_update_bookings_service_consistency_to_enseigne")
+require Rails.root.join("db/migrate/20260402133000_enforce_bookings_cross_table_consistency")
 
 class UpdateBookingsServiceConsistencyToEnseigneMigrationTest < SchemaMutationMigrationTestCase
   def setup
@@ -14,7 +15,7 @@ class UpdateBookingsServiceConsistencyToEnseigneMigrationTest < SchemaMutationMi
     assert_includes function_sql, "bookings.client_id must match enseignes.client_id"
     assert_not_includes function_sql, "bookings.client_id must match services.client_id"
   ensure
-    @migration.up
+    restore_latest_bookings_consistency_function!
   end
 
   test "down restores legacy trigger function enforcing service client consistency" do
@@ -25,10 +26,15 @@ class UpdateBookingsServiceConsistencyToEnseigneMigrationTest < SchemaMutationMi
     assert_includes function_sql, "bookings.client_id must match enseignes.client_id"
     assert_not_includes function_sql, "bookings.enseigne_id must match services.enseigne_id"
   ensure
-    @migration.up
+    restore_latest_bookings_consistency_function!
   end
 
   private
+
+  def restore_latest_bookings_consistency_function!
+    @migration.up
+    EnforceBookingsCrossTableConsistency.new.up
+  end
 
   def trigger_function_sql
     result = ActiveRecord::Base.connection.execute(<<~SQL.squish).to_a

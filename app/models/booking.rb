@@ -62,6 +62,7 @@ class Booking < ApplicationRecord
   validate :booking_end_time_after_booking_start_time
   validate :enseigne_belongs_to_client
   validate :service_belongs_to_enseigne
+  validate :staff_belongs_to_enseigne
 
   # =========================================================
   # SCOPES
@@ -105,6 +106,13 @@ class Booking < ApplicationRecord
     return if service.enseigne_id == enseigne_id
 
     errors.add(:service, "must belong to the same enseigne")
+  end
+
+  def staff_belongs_to_enseigne
+    return if staff.blank? || enseigne.blank?
+    return if staff.enseigne_id == enseigne_id
+
+    errors.add(:staff, "must belong to the same enseigne")
   end
 
   def ensure_pending_access_token

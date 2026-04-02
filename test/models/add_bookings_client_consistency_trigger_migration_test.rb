@@ -1,5 +1,7 @@
 require "test_helper"
 require Rails.root.join("db/migrate/20260325130000_add_bookings_client_consistency_trigger")
+require Rails.root.join("db/migrate/20260402114000_update_bookings_service_consistency_to_enseigne")
+require Rails.root.join("db/migrate/20260402133000_enforce_bookings_cross_table_consistency")
 
 class AddBookingsClientConsistencyTriggerMigrationTest < SchemaMutationMigrationTestCase
   test "migration fails explicitly when inconsistent bookings already exist" do
@@ -43,5 +45,7 @@ class AddBookingsClientConsistencyTriggerMigrationTest < SchemaMutationMigration
   ensure
     Booking.where(id: inconsistent_booking&.id).delete_all
     migration.up
+    UpdateBookingsServiceConsistencyToEnseigne.new.up
+    EnforceBookingsCrossTableConsistency.new.up
   end
 end

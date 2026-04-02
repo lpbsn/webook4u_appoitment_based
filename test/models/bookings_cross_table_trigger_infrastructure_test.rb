@@ -51,4 +51,12 @@ class BookingsCrossTableTriggerInfrastructureTest < ActiveSupport::TestCase
 
     assert trigger_exists, "Expected trigger bookings_client_consistency_trigger on bookings to exist in prepared database"
   end
+
+  test "bootstraped consistency function includes staff to enseigne check" do
+    function_sql = ActiveRecord::Base.connection.select_value(<<~SQL.squish)
+      SELECT pg_get_functiondef('enforce_bookings_client_consistency'::regproc)
+    SQL
+
+    assert_includes function_sql, "bookings.enseigne_id must match staffs.enseigne_id"
+  end
 end

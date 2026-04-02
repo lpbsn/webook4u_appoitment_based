@@ -367,6 +367,28 @@ class BookingTest < ActiveSupport::TestCase
     assert_includes booking.errors[:service], "must belong to the same enseigne"
   end
 
+  test "staff must belong to the same enseigne when present" do
+    other_enseigne = @client.enseignes.create!(
+      name: "Enseigne staff externe",
+      full_address: "4 rue de Paris"
+    )
+    other_staff = other_enseigne.staffs.create!(name: "Staff externe")
+
+    booking = Booking.new(
+      client: @client,
+      enseigne: @enseigne,
+      service: @service,
+      staff: other_staff,
+      booking_start_time: Time.zone.local(2026, 3, 16, 12, 0, 0),
+      booking_end_time: Time.zone.local(2026, 3, 16, 12, 30, 0),
+      booking_status: :pending,
+      booking_expires_at: Time.zone.local(2026, 3, 15, 10, 5, 0)
+    )
+
+    assert_not booking.valid?
+    assert_includes booking.errors[:staff], "must belong to the same enseigne"
+  end
+
   test "booking without enseigne is invalid" do
     booking = Booking.new(
       client: @client,
@@ -791,6 +813,35 @@ class BookingTest < ActiveSupport::TestCase
         customer_email: "marie@example.com"
       )
     end
+  end
+
+  test "database rejects booking with staff from another enseigne" do
+    now = Time.current
+    other_enseigne = @client.enseignes.create!(
+      name: "Enseigne staff DB mismatch",
+      full_address: "5 rue de Paris"
+    )
+    other_staff = other_enseigne.staffs.create!(name: "Staff DB mismatch")
+
+    error = assert_raises ActiveRecord::StatementInvalid do
+      Booking.insert_all!([
+        {
+          client_id: @client.id,
+          enseigne_id: @enseigne.id,
+          service_id: @service.id,
+          staff_id: other_staff.id,
+          booking_start_time: now,
+          booking_end_time: now + 30.minutes,
+          booking_status: "pending",
+          booking_expires_at: now + 5.minutes,
+          pending_access_token: SecureRandom.urlsafe_base64(24),
+          created_at: now,
+          updated_at: now
+        }
+      ])
+    end
+
+    assert_includes error.message, "bookings.enseigne_id must match staffs.enseigne_id"
   end
 
   test "database rejects pending booking without booking_expires_at" do

@@ -33,6 +33,7 @@ CREATE FUNCTION public.enforce_bookings_client_consistency() RETURNS trigger
     AS $$
 DECLARE
   service_enseigne_id bigint;
+  staff_enseigne_id bigint;
   enseigne_client_id bigint;
 BEGIN
   SELECT enseigne_id INTO service_enseigne_id
@@ -42,6 +43,17 @@ BEGIN
   IF service_enseigne_id IS NOT NULL AND service_enseigne_id <> NEW.enseigne_id THEN
     RAISE EXCEPTION 'bookings.enseigne_id must match services.enseigne_id'
       USING ERRCODE = '23514';
+  END IF;
+
+  IF NEW.staff_id IS NOT NULL THEN
+    SELECT enseigne_id INTO staff_enseigne_id
+    FROM staffs
+    WHERE id = NEW.staff_id;
+
+    IF staff_enseigne_id IS NOT NULL AND staff_enseigne_id <> NEW.enseigne_id THEN
+      RAISE EXCEPTION 'bookings.enseigne_id must match staffs.enseigne_id'
+        USING ERRCODE = '23514';
+    END IF;
   END IF;
 
   SELECT client_id INTO enseigne_client_id
@@ -1118,6 +1130,7 @@ ALTER TABLE ONLY public.bookings
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260402133000'),
 ('20260402123000'),
 ('20260402114000'),
 ('20260402113000'),
