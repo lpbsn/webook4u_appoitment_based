@@ -12,37 +12,42 @@ module Bookings
     end
 
     def call
+      return failure(Errors::INVALID_SLOT) if booking_start_time.nil?
       return failure(Errors::PENDING_CREATION_FAILED) unless valid_enseigne_context?
       return failure(Errors::PENDING_CREATION_FAILED) unless valid_service_context?
+      failure_code = Errors::SLOT_UNAVAILABLE
 
-      resource = Resource.for_enseigne(client: client, enseigne: enseigne)
-      decision = slot_decision(resource: resource)
-      decision_failure_code = failure_code_for(decision)
-      return failure(decision_failure_code) if decision_failure_code.present?
+      SlotLock.with_service_rotation_lock(service: service) do
+        candidates = service_assignment_cursor.eligible_staffs_in_rotation_order
+        return failure(Errors::SLOT_UNAVAILABLE) if candidates.empty?
 
-      booking = nil
+        candidates.each do |candidate_staff|
+          created_booking = nil
 
-      # Etape 1: on sérialise au niveau de l'enseigne entière.
-      # Cela évite les conflits concurrents pendant la fenêtre critique,
-      # au prix d'une concurrence plus faible entre créneaux indépendants
-      # d'une même enseigne.
-      SlotLock.with_lock(resource: resource) do
-        locked_decision = slot_decision(resource: resource)
-        locked_decision_failure_code = failure_code_for(locked_decision)
-        return failure(locked_decision_failure_code) if locked_decision_failure_code.present?
+          SlotLock.with_staff_lock(staff: candidate_staff) do
+            decision = revalidation_decision(staff: candidate_staff)
+            candidate_failure_code = failure_code_for(decision)
+            failure_code = candidate_failure_code if candidate_failure_code.present? && candidate_failure_code != Errors::SLOT_UNAVAILABLE
 
-        booking = Booking.create!(
-          client: client,
-          enseigne: enseigne,
-          service: service,
-          booking_start_time: locked_decision.booking_start_time,
-          booking_end_time: locked_decision.booking_end_time,
-          booking_status: :pending,
-          booking_expires_at: BookingRules.pending_expires_at
-        )
+            if decision.creatable?
+              created_booking = Booking.create!(
+                client: client,
+                enseigne: enseigne,
+                service: service,
+                staff: candidate_staff,
+                booking_start_time: decision.booking_start_time,
+                booking_end_time: decision.booking_end_time,
+                booking_status: :pending,
+                booking_expires_at: BookingRules.pending_expires_at
+              )
+            end
+          end
+
+          return success(created_booking) if created_booking.present?
+        end
       end
 
-      success(booking)
+      failure(failure_code)
     rescue ActiveRecord::RecordInvalid
       failure(Errors::PENDING_CREATION_FAILED)
     rescue ActiveRecord::StatementInvalid => error
@@ -63,13 +68,17 @@ module Bookings
       service.present? && service.enseigne_id == enseigne.id
     end
 
-    def slot_decision(resource:)
-      Bookings::SlotDecision.new(
+    def service_assignment_cursor
+      @service_assignment_cursor ||= ServiceAssignmentCursor.find_or_create_by!(service: service)
+    end
+
+    def revalidation_decision(staff:)
+      Bookings::CreatePendingStaffRevalidation.new(
         client: client,
         enseigne: enseigne,
         service: service,
         booking_start_time: booking_start_time,
-        resource: resource
+        staff: staff
       ).call
     end
 

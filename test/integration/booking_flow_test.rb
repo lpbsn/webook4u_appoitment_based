@@ -17,8 +17,12 @@ class BookingFlowTest < ActionDispatch::IntegrationTest
       duration_minutes: 30,
       price_cents: 2500
     )
+    @staff = @enseigne.staffs.create!(name: "Staff flow", active: true)
 
     create_weekday_opening_hours_for_enseigne(@enseigne)
+    create_weekday_staff_availabilities_for(@staff)
+    StaffServiceCapability.create!(staff: @staff, service: @service)
+    ServiceAssignmentCursor.find_or_create_by!(service: @service)
   end
 
   test "complete booking flow from public page to confirmation and success" do
@@ -51,6 +55,7 @@ class BookingFlowTest < ActionDispatch::IntegrationTest
       assert_equal @client.id, booking.client_id
       assert_equal @enseigne.id, booking.enseigne_id
       assert_equal @service.id, booking.service_id
+      assert_equal @staff.id, booking.staff_id
       assert_equal "pending", booking.booking_status, "After POST create_pending, booking should be pending"
       assert_equal slot, booking.booking_start_time
 
@@ -86,7 +91,11 @@ class BookingFlowTest < ActionDispatch::IntegrationTest
   test "complete booking flow keeps the selected enseigne when several active enseignes exist" do
     other_enseigne = @client.enseignes.create!(name: "Enseigne secondaire", full_address: "2 rue de Paris")
     other_service = other_enseigne.services.create!(name: "Coupe femme", duration_minutes: 30, price_cents: 3500)
+    other_staff = other_enseigne.staffs.create!(name: "Other staff flow", active: true)
     create_weekday_opening_hours_for_enseigne(other_enseigne)
+    create_weekday_staff_availabilities_for(other_staff)
+    StaffServiceCapability.create!(staff: other_staff, service: other_service)
+    ServiceAssignmentCursor.find_or_create_by!(service: other_service)
 
     travel_to Time.zone.local(2026, 3, 15, 8, 0, 0) do
       get public_client_path(@client.slug)
@@ -112,6 +121,7 @@ class BookingFlowTest < ActionDispatch::IntegrationTest
       follow_redirect!
       assert_response :success
       assert_equal other_enseigne.id, booking.enseigne_id
+      assert_equal other_staff.id, booking.staff_id
 
       post confirm_booking_path(@client.slug, booking.pending_access_token), params: {
         booking: {
@@ -168,6 +178,7 @@ class BookingFlowTest < ActionDispatch::IntegrationTest
       @client.bookings.create!(
         enseigne: @enseigne,
         service: @service,
+        staff: @staff,
         booking_start_time: slot,
         booking_end_time: slot + 30.minutes,
         booking_status: :confirmed,

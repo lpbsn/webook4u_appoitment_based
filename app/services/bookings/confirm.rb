@@ -15,10 +15,9 @@ module Bookings
 
       resource = Resource.for_enseigne(client: booking.client, enseigne: booking.enseigne)
 
-      # Etape 1: la confirmation est sérialisée au niveau de l'enseigne entière.
-      # Ce n'est pas la granularité métier cible long terme; c'est un compromis
-      # temporaire avant l'introduction d'une ressource (staff) plus fine à réserver.
-      SlotLock.with_lock(resource: resource) do
+      # Tant que la revalidation transactionnelle reste resource-based (enseigne),
+      # le verrou principal doit rester aligné sur cette même ressource.
+      SlotLock.with_resource_lock(resource: resource) do
         decision = slot_decision(resource: resource)
         return failure(decision.error_code) unless decision.bookable?
 

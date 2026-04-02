@@ -2,30 +2,59 @@
 
 module Bookings
   class SlotLock
-    # Verrou PostgreSQL transactionnel au niveau de la ressource réservable.
-    #
-    # Etape 1: la ressource logique est mappée à l'enseigne entière.
-    # Ce choix est volontairement plus grossier que l'invariant métier
-    # d'overlap par intervalle: il sérialise toutes les créations et
-    # confirmations d'une même enseigne, même sur des créneaux indépendants.
-    #
-    # Ce compromis limite la concurrence intra-enseigne sous charge, mais
-    # garde une clé de verrou stable tant que le produit n'a pas encore une
-    # ressource plus fine (staff / resource) à verrouiller.
-    #
-    # Ce verrou ne doit donc pas être lu comme une granularité définitive
-    # du domaine. Si le throughput d'une même enseigne devient un sujet,
-    # l'évolution attendue est un verrou au niveau d'une ressource plus fine.
-    def self.with_lock(resource:)
+    SERVICE_ROTATION_NAMESPACE = 3_001
+    STAFF_NAMESPACE = 3_002
+
+    # Transitional main lock:
+    # keep locking on the currently effective transactional resource
+    # until create_pending/confirm fully migrate away from Resource.for_enseigne.
+    def self.with_resource_lock(resource:)
+      raise ArgumentError, "resource is required" if resource.blank?
+
       lock_key_1, lock_key_2 = resource.lock_key
 
       ActiveRecord::Base.transaction do
-        ActiveRecord::Base.connection.execute(
-          "SELECT pg_advisory_xact_lock(#{lock_key_1}, #{lock_key_2})"
-        )
-
+        acquire_lock(lock_key_1, lock_key_2)
         yield
       end
     end
+
+    def self.with_service_rotation_lock(service:)
+      raise ArgumentError, "service is required" if service.blank?
+
+      ActiveRecord::Base.transaction do
+        acquire_lock(SERVICE_ROTATION_NAMESPACE, service.id)
+        yield
+      end
+    end
+
+    def self.with_staff_lock(staff:)
+      raise ArgumentError, "staff is required" if staff.blank?
+
+      ActiveRecord::Base.transaction do
+        acquire_lock(STAFF_NAMESPACE, staff.id)
+        yield
+      end
+    end
+
+    # Expected lock ordering for transaction flows:
+    # 1) lock service rotation, 2) lock staff candidate.
+    def self.with_service_rotation_then_staff_lock(service:, staff:)
+      raise ArgumentError, "service is required" if service.blank?
+      raise ArgumentError, "staff is required" if staff.blank?
+
+      ActiveRecord::Base.transaction do
+        acquire_lock(SERVICE_ROTATION_NAMESPACE, service.id)
+        acquire_lock(STAFF_NAMESPACE, staff.id)
+        yield
+      end
+    end
+
+    def self.acquire_lock(namespace, identifier)
+      ActiveRecord::Base.connection.execute(
+        "SELECT pg_advisory_xact_lock(#{namespace.to_i}, #{identifier.to_i})"
+      )
+    end
+    private_class_method :acquire_lock
   end
 end

@@ -18,8 +18,12 @@ class Bookings::CreatePendingTest < ActiveSupport::TestCase
       duration_minutes: 30,
       price_cents: 2500
     )
+    @staff = @enseigne.staffs.create!(name: "Staff principal", active: true)
 
     create_weekday_opening_hours_for_enseigne(@enseigne)
+    create_weekday_staff_availabilities_for(@staff)
+    StaffServiceCapability.create!(staff: @staff, service: @service)
+    ServiceAssignmentCursor.find_or_create_by!(service: @service)
   end
 
   test "creates a pending booking for a valid slot" do
@@ -40,6 +44,7 @@ class Bookings::CreatePendingTest < ActiveSupport::TestCase
       booking = result.booking
       assert_equal "pending", booking.booking_status, "Booking should be pending after CreatePending success"
       assert_equal @enseigne.id, booking.enseigne_id
+      assert_equal @staff.id, booking.staff_id
       assert_equal slot, booking.booking_start_time
       assert_equal slot + 30.minutes, booking.booking_end_time
       assert_not_nil booking.booking_expires_at
@@ -59,18 +64,19 @@ class Bookings::CreatePendingTest < ActiveSupport::TestCase
 
       assert result.success?
       assert_equal @enseigne.id, result.booking.enseigne_id
+      assert_equal @staff.id, result.booking.staff_id
     end
   end
 
-  test "reuses SlotDecision before and after lock with the same booking context" do
+  test "uses CreatePendingStaffRevalidation with the same booking context under lock" do
     travel_to Time.zone.local(2026, 3, 15, 8, 0, 0) do
       slot = Time.zone.local(2026, 3, 16, 11, 30, 0)
       calls = []
 
-      slot_decision_singleton = class << Bookings::SlotDecision; self; end
-      slot_decision_singleton.alias_method :new_without_create_pending_orchestration_test, :new
-      slot_decision_singleton.define_method(:new) do |**kwargs|
-        calls << kwargs.slice(:client, :enseigne, :service, :booking_start_time, :resource)
+      revalidation_singleton = class << Bookings::CreatePendingStaffRevalidation; self; end
+      revalidation_singleton.alias_method :new_without_create_pending_orchestration_test, :new
+      revalidation_singleton.define_method(:new) do |**kwargs|
+        calls << kwargs.slice(:client, :enseigne, :service, :booking_start_time, :staff)
         new_without_create_pending_orchestration_test(**kwargs)
       end
 
@@ -83,21 +89,18 @@ class Bookings::CreatePendingTest < ActiveSupport::TestCase
         ).call
 
         assert result.success?
-        assert_equal 2, calls.size
+        assert_equal 1, calls.size
 
         first_call = calls.first
-        second_call = calls.second
 
         assert_equal @client, first_call[:client]
         assert_equal @enseigne, first_call[:enseigne]
         assert_equal @service, first_call[:service]
+        assert_equal @staff, first_call[:staff]
         assert_equal slot, first_call[:booking_start_time]
-        assert_equal first_call.except(:resource), second_call.except(:resource)
-        assert_equal @enseigne.id, first_call[:resource].identifier
-        assert_equal @enseigne.id, second_call[:resource].identifier
       ensure
-        slot_decision_singleton.alias_method :new, :new_without_create_pending_orchestration_test
-        slot_decision_singleton.remove_method :new_without_create_pending_orchestration_test
+        revalidation_singleton.alias_method :new, :new_without_create_pending_orchestration_test
+        revalidation_singleton.remove_method :new_without_create_pending_orchestration_test
       end
     end
   end
@@ -125,6 +128,88 @@ class Bookings::CreatePendingTest < ActiveSupport::TestCase
         available_slots_singleton.alias_method :new, :new_without_create_pending_available_slots_test
         available_slots_singleton.remove_method :new_without_create_pending_available_slots_test
       end
+    end
+  end
+
+  test "does not use Resource.for_enseigne during create_pending orchestration" do
+    travel_to Time.zone.local(2026, 3, 15, 8, 0, 0) do
+      resource_singleton = class << Bookings::Resource; self; end
+      resource_singleton.alias_method :for_enseigne_without_create_pending_resource_test, :for_enseigne
+      resource_singleton.define_method(:for_enseigne) do |*_args, **_kwargs|
+        raise "Resource.for_enseigne should not be called by CreatePending"
+      end
+
+      begin
+        result = Bookings::CreatePending.new(
+          client: @client,
+          enseigne: @enseigne,
+          service: @service,
+          booking_start_time: Time.zone.local(2026, 3, 16, 10, 0, 0)
+        ).call
+
+        assert result.success?
+      ensure
+        resource_singleton.alias_method :for_enseigne, :for_enseigne_without_create_pending_resource_test
+        resource_singleton.remove_method :for_enseigne_without_create_pending_resource_test
+      end
+    end
+  end
+
+  test "uses cursor rotation order and wraps around on candidates" do
+    second_staff = @enseigne.staffs.create!(name: "Staff secondaire", active: true)
+    create_weekday_staff_availabilities_for(second_staff)
+    StaffServiceCapability.create!(staff: second_staff, service: @service)
+
+    cursor = ServiceAssignmentCursor.find_by!(service: @service)
+    cursor.update!(last_confirmed_staff: second_staff)
+
+    travel_to Time.zone.local(2026, 3, 15, 8, 0, 0) do
+      slot = Time.zone.local(2026, 3, 16, 10, 0, 0)
+
+      result = Bookings::CreatePending.new(
+        client: @client,
+        enseigne: @enseigne,
+        service: @service,
+        booking_start_time: slot
+      ).call
+
+      assert result.success?
+      assert_equal @staff.id, result.booking.staff_id
+    end
+  end
+
+  test "tries next candidate in cursor order when first candidate is blocked" do
+    second_staff = @enseigne.staffs.create!(name: "Staff secondaire", active: true)
+    create_weekday_staff_availabilities_for(second_staff)
+    StaffServiceCapability.create!(staff: second_staff, service: @service)
+
+    cursor = ServiceAssignmentCursor.find_by!(service: @service)
+    cursor.update!(last_confirmed_staff: @staff)
+
+    travel_to Time.zone.local(2026, 3, 15, 8, 0, 0) do
+      slot = Time.zone.local(2026, 3, 16, 10, 0, 0)
+
+      @client.bookings.create!(
+        enseigne: @enseigne,
+        service: @service,
+        staff: second_staff,
+        booking_start_time: slot,
+        booking_end_time: slot + 30.minutes,
+        booking_status: :confirmed,
+        customer_first_name: "Leonard",
+        customer_last_name: "Boisson",
+        customer_email: "leo@example.com"
+      )
+
+      result = Bookings::CreatePending.new(
+        client: @client,
+        enseigne: @enseigne,
+        service: @service,
+        booking_start_time: slot
+      ).call
+
+      assert result.success?
+      assert_equal @staff.id, result.booking.staff_id
     end
   end
 
@@ -183,6 +268,7 @@ class Bookings::CreatePendingTest < ActiveSupport::TestCase
       @client.bookings.create!(
         enseigne: @enseigne,
         service: @service,
+        staff: @staff,
         booking_start_time: slot,
         booking_end_time: slot + 30.minutes,
         booking_status: :confirmed,
@@ -213,6 +299,7 @@ class Bookings::CreatePendingTest < ActiveSupport::TestCase
       @client.bookings.create!(
         enseigne: @enseigne,
         service: @service,
+        staff: @staff,
         booking_start_time: confirmed_start,
         booking_end_time: confirmed_end,
         booking_status: :confirmed,
@@ -245,6 +332,7 @@ class Bookings::CreatePendingTest < ActiveSupport::TestCase
       @client.bookings.create!(
         enseigne: @enseigne,
         service: @service,
+        staff: @staff,
         booking_start_time: confirmed_start,
         booking_end_time: confirmed_end,
         booking_status: :confirmed,
@@ -264,6 +352,7 @@ class Bookings::CreatePendingTest < ActiveSupport::TestCase
 
       assert result.success?
       assert_equal "pending", result.booking.booking_status
+      assert_equal @staff.id, result.booking.staff_id
       assert_equal border_start, result.booking.booking_start_time
     end
   end
@@ -275,6 +364,7 @@ class Bookings::CreatePendingTest < ActiveSupport::TestCase
       @client.bookings.create!(
         enseigne: @enseigne,
         service: @service,
+        staff: @staff,
         booking_start_time: slot,
         booking_end_time: slot + 30.minutes,
         booking_status: :pending,
@@ -302,6 +392,7 @@ class Bookings::CreatePendingTest < ActiveSupport::TestCase
       @client.bookings.create!(
         enseigne: @enseigne,
         service: @service,
+        staff: @staff,
         booking_start_time: slot,
         booking_end_time: slot + 30.minutes,
         booking_status: :pending,
@@ -317,6 +408,7 @@ class Bookings::CreatePendingTest < ActiveSupport::TestCase
 
       assert result.success?
       assert_equal "pending", result.booking.booking_status
+      assert_equal @staff.id, result.booking.staff_id
       assert_equal slot, result.booking.booking_start_time
     end
   end

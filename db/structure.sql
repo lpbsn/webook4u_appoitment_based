@@ -366,7 +366,8 @@ CREATE TABLE public.service_assignment_cursors (
     id bigint NOT NULL,
     service_id bigint NOT NULL,
     created_at timestamp(6) without time zone NOT NULL,
-    updated_at timestamp(6) without time zone NOT NULL
+    updated_at timestamp(6) without time zone NOT NULL,
+    last_confirmed_staff_id bigint
 );
 
 
@@ -898,6 +899,13 @@ CREATE UNIQUE INDEX index_expired_booking_links_on_pending_access_token ON publi
 
 
 --
+-- Name: index_service_assignment_cursors_on_last_confirmed_staff_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_service_assignment_cursors_on_last_confirmed_staff_id ON public.service_assignment_cursors USING btree (last_confirmed_staff_id);
+
+
+--
 -- Name: index_service_assignment_cursors_on_service_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1052,6 +1060,14 @@ ALTER TABLE ONLY public.services
 
 
 --
+-- Name: service_assignment_cursors fk_rails_54fa980254; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.service_assignment_cursors
+    ADD CONSTRAINT fk_rails_54fa980254 FOREIGN KEY (last_confirmed_staff_id) REFERENCES public.staffs(id) ON DELETE SET NULL;
+
+
+--
 -- Name: staff_unavailabilities fk_rails_5a752a5b3c; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1130,6 +1146,7 @@ ALTER TABLE ONLY public.bookings
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260402143000'),
 ('20260402133000'),
 ('20260402123000'),
 ('20260402114000'),

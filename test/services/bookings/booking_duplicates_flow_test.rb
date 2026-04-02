@@ -18,8 +18,12 @@ class BookingDuplicatesFlowTest < ActionDispatch::IntegrationTest
       duration_minutes: 30,
       price_cents: 2500
     )
+    @staff = @enseigne.staffs.create!(name: "Staff duplicates", active: true)
 
     create_weekday_opening_hours_for_enseigne(@enseigne)
+    create_weekday_staff_availabilities_for(@staff)
+    StaffServiceCapability.create!(staff: @staff, service: @service)
+    ServiceAssignmentCursor.find_or_create_by!(service: @service)
   end
 
   # =========================================================
@@ -32,6 +36,7 @@ class BookingDuplicatesFlowTest < ActionDispatch::IntegrationTest
       @client.bookings.create!(
         enseigne: @enseigne,
         service: @service,
+        staff: @staff,
         booking_start_time: slot,
         booking_end_time: slot + 30.minutes,
         booking_status: :confirmed,
@@ -64,6 +69,7 @@ class BookingDuplicatesFlowTest < ActionDispatch::IntegrationTest
       @client.bookings.create!(
         enseigne: @enseigne,
         service: @service,
+        staff: @staff,
         booking_start_time: slot,
         booking_end_time: slot + 30.minutes,
         booking_status: :pending,
@@ -94,6 +100,7 @@ class BookingDuplicatesFlowTest < ActionDispatch::IntegrationTest
       @client.bookings.create!(
         enseigne: @enseigne,
         service: @service,
+        staff: @staff,
         booking_start_time: slot,
         booking_end_time: slot + 30.minutes,
         booking_status: :pending,

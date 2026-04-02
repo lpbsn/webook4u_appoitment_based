@@ -22,9 +22,10 @@ class BookingsControllerTest < ActionDispatch::IntegrationTest
       price_cents: 2500
     )
 
-    staff = @enseigne.staffs.create!(name: "Staff controller", active: true)
-    staff.staff_availabilities.create!(day_of_week: 1, opens_at: "09:00", closes_at: "18:00")
-    StaffServiceCapability.create!(staff: staff, service: @service)
+    @staff = @enseigne.staffs.create!(name: "Staff controller", active: true)
+    @staff.staff_availabilities.create!(day_of_week: 1, opens_at: "09:00", closes_at: "18:00")
+    StaffServiceCapability.create!(staff: @staff, service: @service)
+    ServiceAssignmentCursor.find_or_create_by!(service: @service)
 
     create_weekday_opening_hours_for_enseigne(@enseigne)
   end
@@ -221,6 +222,7 @@ class BookingsControllerTest < ActionDispatch::IntegrationTest
       @client.bookings.create!(
         enseigne: @enseigne,
         service: @service,
+        staff: @staff,
         booking_start_time: slot,
         booking_end_time: slot + 30.minutes,
         booking_status: :confirmed,

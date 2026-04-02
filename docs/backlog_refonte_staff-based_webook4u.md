@@ -1121,11 +1121,11 @@ Statut après revue:
 
 Objectif:
 
-- assigner un staff de manière déterministe et sûre sous concurrence
+- basculer l'orchestration transactionnelle de réservation du modèle `enseigne-based` vers un modèle `staff-based`, avec round robin explicite et sûreté sous concurrence
 
 Risque principal:
 
-- laisser au développeur des décisions implicites sur l'ordre exact des verrous et de la revalidation
+- laisser au développeur des décisions implicites sur l'ordre exact des verrous, la revalidation transactionnelle et le point de sortie de `Resource.for_enseigne`
 
 Dépendances:
 
@@ -1134,11 +1134,13 @@ Dépendances:
 
 Signal de fin:
 
-- `create_pending` et `confirm` suivent une orchestration non ambiguë
+- `create_pending` et `confirm` n'utilisent plus `Resource.for_enseigne` comme ressource transactionnelle
+- `create_pending` et `confirm` suivent une orchestration staff-based non ambiguë
 - le curseur de rotation n'avance qu'au `confirmed`
 - l'anti-overlap `confirmed` par staff est garanti
+- les tests transactionnels documentent explicitement le moteur staff-based
 
-### E3-US1 - Formaliser le curseur de rotation par service
+### E3-US1 - Formaliser l'usage transactionnel du curseur par service
 
 Statut:
 
@@ -1146,11 +1148,11 @@ Statut:
 
 But:
 
-- disposer d'une source de vérité explicite pour la rotation d'un service
+- disposer d'une source de vérité explicite pour la rotation transactionnelle d'un service à partir de `ServiceAssignmentCursor`
 
 Pourquoi:
 
-- la rotation ne doit être ni implicite ni portée par les staffs eux-mêmes
+- le modèle du curseur existe déjà dans le repo, mais son rôle transactionnel doit être rendu explicite avant de brancher `create_pending` et `confirm`
 
 Entrées / dépendances:
 
@@ -1158,18 +1160,27 @@ Entrées / dépendances:
 
 Changements attendus:
 
-- définir le curseur de rotation par `service`
+- définir le curseur de rotation par `service` comme point d'entrée obligatoire de l'assignation
 - définir son ordre initial déterministe
+- définir le curseur comme un état basé sur `last_confirmed_staff_id`
+- définir l'ordre déterministe des candidats comme `staff.id ASC` sur les staffs actifs et compatibles du service
+- expliciter le comportement si aucun staff compatible n'a encore jamais été confirmé
+- expliciter le comportement si le `last_confirmed_staff_id` n'est plus éligible
 
 Zones du repo concernées:
 
-- modèle du curseur
+- `app/models/service_assignment_cursor.rb`
 - services métier d'assignation
+- tests du curseur et de l'assignation
 
 Critères d'acceptation:
 
 - un service possède un état de rotation unique
 - l'ordre initial ne dépend pas d'un comportement implicite en mémoire
+- le contrat métier du curseur est exploitable sans arbitrage dans les services transactionnels
+- le curseur repose sur `last_confirmed_staff_id`, pas sur un index mutable
+- si `last_confirmed_staff_id` est `nil`, la rotation commence au premier staff éligible selon l'ordre déterministe
+- si `last_confirmed_staff_id` n'est plus éligible, la rotation repart sur le premier staff éligible suivant avec wrap-around
 
 Non-objectifs:
 
@@ -1179,10 +1190,14 @@ Non-objectifs:
 Blocages / décisions déjà verrouillées:
 
 - la rotation n'est pas portée par `staff`
+- la rotation n'est pas portée par un `current_index`
+- le curseur stocke `last_confirmed_staff_id`
+- l'ordre déterministe des candidats est `staff.id ASC` sur les staffs actifs et compatibles
 
 Questions interdites au dev:
 
 - "Peut-on utiliser `last_confirmed_assignment_at` sur staff comme source de vérité ?" Non
+- "Peut-on utiliser un `current_index` comme source de vérité du round robin ?" Non
 
 ### E3-US2 - Définir la stratégie de verrouillage
 
@@ -1210,10 +1225,12 @@ Changements attendus:
   - lock staff candidat
   - revalidation
   - création pending ou confirmation
+- remplacer la sérialisation transactionnelle portée par l'enseigne entière
 - expliciter la frontière entre lock applicatif et contrainte DB
 
 Zones du repo concernées:
 
+- `app/services/bookings/slot_lock.rb` ou son remplaçant
 - services d'assignation
 - services de lock
 - documentation technique du backlog
@@ -1223,6 +1240,7 @@ Critères d'acceptation:
 - l'ordre des verrous est écrit et non interprétable
 - la responsabilité du lock de rotation et du lock staff est distinguée
 - la contrainte DB est présentée comme protection finale, pas comme orchestration primaire
+- aucun verrou transactionnel critique ne reste porté par l'enseigne entière
 
 Non-objectifs:
 
@@ -1232,10 +1250,12 @@ Blocages / décisions déjà verrouillées:
 
 - lock rotation avant lock staff
 - pas de fallback opportuniste hors ordre de rotation
+- la granularité cible du verrou transactionnel est `service` puis `staff`, pas `enseigne`
 
 Questions interdites au dev:
 
 - "Peut-on locker directement un staff sans verrouiller la rotation ?" Non
+- "Peut-on conserver `SlotLock` au niveau enseigne comme verrou principal ?" Non
 
 ### E3-US3 - Orchestrer `create_pending` sur le round robin
 
@@ -1262,10 +1282,12 @@ Changements attendus:
 - verrouiller puis revalider chaque candidat
 - créer le pending sur le premier staff valide
 - renvoyer `slot_unavailable` si aucun staff n'est valide
+- sortir `create_pending` d'une revalidation transactionnelle portée par `Resource.for_enseigne`
 
 Zones du repo concernées:
 
 - `app/services/bookings/create_pending.rb`
+- `app/services/bookings/slot_decision.rb` ou son remplaçant transactionnel
 - services d'assignation
 - services de lock
 
@@ -1274,6 +1296,8 @@ Critères d'acceptation:
 - `create_pending` crée un booking avec `staff_id`
 - le pending est créé sur le premier candidat valide
 - aucun autre ordre n'est utilisé
+- aucun pending n'est créé sans staff assigné
+- `create_pending` ne dépend plus d'une ressource transactionnelle globale par enseigne
 
 Non-objectifs:
 
@@ -1283,10 +1307,13 @@ Non-objectifs:
 Blocages / décisions déjà verrouillées:
 
 - le curseur n'avance pas au `pending`
+- la revalidation transactionnelle doit être staff-based, pas enseigne-based
+- l'ordre des candidats est dérivé de `last_confirmed_staff_id` puis de `staff.id ASC`
 
 Questions interdites au dev:
 
 - "Peut-on avancer la rotation lors de `create_pending` ?" Non
+- "Peut-on continuer à déléguer la décision transactionnelle à `Resource.for_enseigne` ?" Non
 
 ### E3-US4 - Orchestrer `confirm` sans réassignation
 
@@ -1311,28 +1338,48 @@ Changements attendus:
 - verrouiller le staff déjà porté par le pending
 - revalider le slot sur ce même staff
 - confirmer sans réassigner
+- sortir `confirm` de la sérialisation transactionnelle au niveau enseigne
+- limiter la revalidation de `confirm` au slot déjà réservé sur le `staff_id` assigné
+- vérifier seulement:
+  - que le booking est toujours `pending`
+  - qu'il n'est pas expiré
+  - que le `staff_id` existe encore et appartient à la bonne enseigne
+  - qu'aucun autre booking bloquant ne prend ce slot sur ce même staff, en excluant le booking lui-même
 
 Zones du repo concernées:
 
 - `app/services/bookings/confirm.rb`
+- `app/services/bookings/slot_decision.rb` ou son remplaçant transactionnel
 - services d'assignation
+- services de lock
 
 Critères d'acceptation:
 
 - `confirm` conserve le même `staff_id`
 - aucun fallback vers un autre staff n'existe
+- `confirm` ne dépend plus d'un verrou principal au niveau enseigne
+- `confirm` échoue si le staff assigné a disparu ou n'appartient plus à la bonne enseigne
+- `confirm` échoue si le slot n'est plus libre sur ce même staff
+- `confirm` ne réévalue pas l'éligibilité complète du staff au sens visibilité/assignation
 
 Non-objectifs:
 
 - recherche d'un autre staff si le slot n'est plus valable
+- réévaluation de `staff.active`
+- réévaluation de la capability `staff <-> service`
+- réévaluation des disponibilités hebdomadaires
+- réévaluation des indisponibilités ponctuelles
 
 Blocages / décisions déjà verrouillées:
 
 - pas de réassignation au `confirm`
+- le `pending` déjà créé matérialise déjà la réservation temporaire du staff
+- `confirm` applique une revalidation minimale de conflit et d'intégrité, pas une recomposition complète d'éligibilité
 
 Questions interdites au dev:
 
 - "Peut-on essayer un autre staff si celui du pending n'est plus disponible ?" Non
+- "Faut-il réévaluer `staff.active`, capability ou disponibilité staff au `confirm` ?" Non
 
 ### E3-US5 - Avancer le curseur uniquement au `confirmed`
 
@@ -1359,14 +1406,17 @@ Changements attendus:
 
 Zones du repo concernées:
 
+- `app/services/bookings/confirm.rb`
 - services d'assignation
 - services de confirmation
+- modèle du curseur
 
 Critères d'acceptation:
 
 - le curseur n'avance jamais sur `pending`
 - le curseur n'avance jamais sur expiration ou échec
 - le curseur avance dans la même transaction que le `confirmed`
+- la mise à jour du curseur reflète le staff effectivement confirmé
 
 Non-objectifs:
 
@@ -1402,18 +1452,21 @@ Entrées / dépendances:
 Changements attendus:
 
 - remplacer l'anti-overlap confirmed par une contrainte par `staff_id + interval`
+- mettre à jour le mapping d'erreurs applicatif vers la nouvelle contrainte
 
 Zones du repo concernées:
 
 - `db/migrate`
 - `db/structure.sql`
 - `app/services/bookings/errors.rb`
+- tests d'infrastructure DB et tests modèle liés aux conflits `confirmed`
 
 Critères d'acceptation:
 
 - deux `confirmed` overlapping sont refusés sur un même staff
 - deux `confirmed` overlapping restent autorisés sur deux staffs distincts
 - la protection critique existe côté DB
+- les erreurs applicatives reconnaissent la nouvelle contrainte
 
 Non-objectifs:
 
@@ -1427,12 +1480,78 @@ Questions interdites au dev:
 
 - "La contrainte DB suffit-elle pour piloter toute l'orchestration ?" Non
 
+### E3-US7 - Réaligner les tests transactionnels sur l'assignation staff-based
+
+Statut:
+
+- Ready
+
+But:
+
+- faire évoluer les tests transactionnels pour documenter explicitement le moteur staff-based de `create_pending` et `confirm`
+
+Pourquoi:
+
+- le repo contient déjà des tests transactionnels centrés sur `Resource.for_enseigne`, la revalidation par enseigne et l'ancienne protection `confirmed`
+
+Entrées / dépendances:
+
+- E3-US2
+- E3-US3
+- E3-US4
+- E3-US5
+- E3-US6
+
+Changements attendus:
+
+- réécrire les tests transactionnels pour exprimer:
+  - assignation d'un `staff_id` au `create_pending`
+  - conservation du même `staff_id` au `confirm`
+  - absence de réassignation au `confirm`
+  - usage du round robin uniquement dans le transactionnel
+  - refus d'un conflit `confirmed` sur le même staff
+  - acceptation de deux `confirmed` overlapping sur deux staffs distincts
+- supprimer les assertions de test qui supposent encore:
+  - un verrou principal au niveau enseigne
+  - une ressource transactionnelle `Resource.for_enseigne`
+  - une protection finale `confirmed` portée par l'enseigne
+
+Zones du repo concernées:
+
+- `test/services/bookings/create_pending_test.rb`
+- `test/services/bookings/confirm_test.rb`
+- `test/services/bookings/slot_decision_test.rb`
+- `test/services/bookings/errors_test.rb`
+- `test/models/booking_test.rb`
+- tests d'infrastructure DB liés aux contraintes de conflit `confirmed`
+
+Critères d'acceptation:
+
+- les tests transactionnels décrivent l'orchestration staff-based réellement attendue
+- aucun test transactionnel actif ne documente encore un verrou principal par enseigne
+- aucun test transactionnel actif ne documente encore `Resource.for_enseigne` comme ressource de réservation
+
+Non-objectifs:
+
+- tests de visibilité publique déjà couverts par l'Epic 2
+- tests d'UI publique du flow complet
+
+Blocages / décisions déjà verrouillées:
+
+- les tests transactionnels doivent documenter le moteur cible, pas un état de transition
+
+Questions interdites au dev:
+
+- "Peut-on conserver les anciens tests enseigne-based parce qu'ils passent encore ?" Non
+
 ### Definition of Done Epic 3
 
 - la rotation est explicite et non ambiguë
 - l'ordre des verrous est fixé
+- `create_pending` et `confirm` n'utilisent plus `Resource.for_enseigne` comme ressource transactionnelle
 - `create_pending` et `confirm` n'ont plus d'arbitrage implicite
 - l'anti-overlap `confirmed` par staff est garanti
+- les tests transactionnels documentent explicitement le moteur staff-based
 
 ## Epic 4 - Flow public staff-based
 
