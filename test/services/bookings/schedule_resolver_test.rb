@@ -30,7 +30,7 @@ class Bookings::ScheduleResolverTest < ActiveSupport::TestCase
     assert_equal [], intervals
   end
 
-  test "returns empty when neither client nor enseigne have opening hours for the day" do
+  test "returns empty when selected enseigne has no opening hours for the day" do
     intervals = Bookings::ScheduleResolver.new(
       client: @client,
       enseigne: @enseigne,
@@ -40,7 +40,7 @@ class Bookings::ScheduleResolverTest < ActiveSupport::TestCase
     assert_equal [], intervals
   end
 
-  test "uses opening hours from the selected enseigne only" do
+  test "uses opening hours from the selected enseigne only, not from other enseignes" do
     other_enseigne = @client.enseignes.create!(name: "Other enseigne")
     other_enseigne.enseigne_opening_hours.create!(day_of_week: 1, opens_at: "08:00", closes_at: "12:00")
     other_enseigne.enseigne_opening_hours.create!(day_of_week: 1, opens_at: "13:00", closes_at: "20:00")

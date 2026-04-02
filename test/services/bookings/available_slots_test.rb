@@ -22,6 +22,10 @@ class Bookings::AvailableSlotsTest < ActiveSupport::TestCase
       price_cents: 2500
     )
 
+    @staff = @enseigne.staffs.create!(name: "Staff principal", active: true)
+    @staff.staff_availabilities.create!(day_of_week: 1, opens_at: "09:00", closes_at: "18:00")
+    StaffServiceCapability.create!(staff: @staff, service: @service)
+
     create_weekday_opening_hours_for_enseigne(@enseigne)
     create_weekday_opening_hours_for_enseigne(@other_enseigne)
   end
@@ -110,6 +114,90 @@ class Bookings::AvailableSlotsTest < ActiveSupport::TestCase
     end
   end
 
+  test "returns no slots when selected service has no eligible staff capability" do
+    service_without_capability = @enseigne.services.create!(
+      name: "Coloration",
+      duration_minutes: 45,
+      price_cents: 4500
+    )
+
+    travel_to Time.zone.local(2026, 3, 15, 8, 0, 0) do
+      monday = Date.new(2026, 3, 16)
+
+      slots = Bookings::AvailableSlots.new(
+        client: @client,
+        enseigne: @enseigne,
+        service: service_without_capability,
+        date: monday
+      ).call
+
+      assert_equal [], slots
+    end
+  end
+
+  test "does not use inactive staffs even when they have service capability" do
+    @staff.update!(active: false)
+
+    travel_to Time.zone.local(2026, 3, 15, 8, 0, 0) do
+      monday = Date.new(2026, 3, 16)
+
+      slots = Bookings::AvailableSlots.new(
+        client: @client,
+        enseigne: @enseigne,
+        service: @service,
+        date: monday
+      ).call
+
+      assert_equal [], slots
+    end
+  end
+
+  test "limits visible slots to staff weekly availability windows" do
+    @staff.staff_availabilities.delete_all
+    @staff.staff_availabilities.create!(day_of_week: 1, opens_at: "10:00", closes_at: "12:00")
+
+    travel_to Time.zone.local(2026, 3, 15, 8, 0, 0) do
+      monday = Date.new(2026, 3, 16)
+
+      slots = Bookings::AvailableSlots.new(
+        client: @client,
+        enseigne: @enseigne,
+        service: @service,
+        date: monday
+      ).call
+
+      assert_not_includes slots, Time.zone.local(2026, 3, 16, 9, 30, 0)
+      assert_includes slots, Time.zone.local(2026, 3, 16, 10, 0, 0)
+      assert_includes slots, Time.zone.local(2026, 3, 16, 11, 30, 0)
+      assert_not_includes slots, Time.zone.local(2026, 3, 16, 12, 0, 0)
+    end
+  end
+
+  test "removes slots covered by staff unavailability" do
+    @staff.staff_availabilities.delete_all
+    @staff.staff_availabilities.create!(day_of_week: 1, opens_at: "09:00", closes_at: "12:00")
+    @staff.staff_unavailabilities.create!(
+      starts_at: Time.zone.local(2026, 3, 16, 10, 0, 0),
+      ends_at: Time.zone.local(2026, 3, 16, 11, 0, 0)
+    )
+
+    travel_to Time.zone.local(2026, 3, 15, 8, 0, 0) do
+      monday = Date.new(2026, 3, 16)
+
+      slots = Bookings::AvailableSlots.new(
+        client: @client,
+        enseigne: @enseigne,
+        service: @service,
+        date: monday
+      ).call
+
+      assert_includes slots, Time.zone.local(2026, 3, 16, 9, 30, 0)
+      assert_not_includes slots, Time.zone.local(2026, 3, 16, 10, 0, 0)
+      assert_not_includes slots, Time.zone.local(2026, 3, 16, 10, 30, 0)
+      assert_includes slots, Time.zone.local(2026, 3, 16, 11, 0, 0)
+    end
+  end
+
   test "hides blocked confirmed intervals from the visible slot grid" do
     travel_to Time.zone.local(2026, 3, 15, 8, 0, 0) do
       monday = Date.new(2026, 3, 16)
@@ -117,6 +205,7 @@ class Bookings::AvailableSlotsTest < ActiveSupport::TestCase
       @client.bookings.create!(
         enseigne: @enseigne,
         service: @service,
+        staff: @staff,
         booking_start_time: Time.zone.local(2026, 3, 16, 10, 0, 0),
         booking_end_time: Time.zone.local(2026, 3, 16, 10, 30, 0),
         booking_status: :confirmed,
@@ -143,6 +232,7 @@ class Bookings::AvailableSlotsTest < ActiveSupport::TestCase
       @client.bookings.create!(
         enseigne: @enseigne,
         service: @service,
+        staff: @staff,
         booking_start_time: Time.zone.local(2026, 3, 16, 11, 0, 0),
         booking_end_time: Time.zone.local(2026, 3, 16, 11, 30, 0),
         booking_status: :pending,
@@ -167,6 +257,7 @@ class Bookings::AvailableSlotsTest < ActiveSupport::TestCase
       @client.bookings.create!(
         enseigne: @enseigne,
         service: @service,
+        staff: @staff,
         booking_start_time: Time.zone.local(2026, 3, 16, 11, 30, 0),
         booking_end_time: Time.zone.local(2026, 3, 16, 12, 0, 0),
         booking_status: :pending,
@@ -192,6 +283,7 @@ class Bookings::AvailableSlotsTest < ActiveSupport::TestCase
       @client.bookings.create!(
         enseigne: @enseigne,
         service: @service,
+        staff: @staff,
         booking_start_time: Time.zone.local(2026, 3, 16, 8, 30, 0),
         booking_end_time: Time.zone.local(2026, 3, 16, 9, 30, 0),
         booking_status: :confirmed,
@@ -223,6 +315,7 @@ class Bookings::AvailableSlotsTest < ActiveSupport::TestCase
       @client.bookings.create!(
         enseigne: @enseigne,
         service: @service,
+        staff: @staff,
         booking_start_time: Time.zone.local(2026, 3, 15, 23, 30, 0),
         booking_end_time:   Time.zone.local(2026, 3, 16, 9, 30, 0),
         booking_status: :confirmed,
@@ -246,14 +339,18 @@ class Bookings::AvailableSlotsTest < ActiveSupport::TestCase
     end
   end
 
-  test "booking in another enseigne does not remove the slot" do
+  test "slot stays visible when at least one eligible staff remains free" do
     travel_to Time.zone.local(2026, 3, 15, 8, 0, 0) do
       monday = Date.new(2026, 3, 16)
       slot = Time.zone.local(2026, 3, 16, 10, 0, 0)
+      other_staff = @enseigne.staffs.create!(name: "Staff secondaire", active: true)
+      other_staff.staff_availabilities.create!(day_of_week: 1, opens_at: "09:00", closes_at: "18:00")
+      StaffServiceCapability.create!(staff: other_staff, service: @service)
 
       @client.bookings.create!(
         enseigne: @enseigne,
         service: @service,
+        staff: @staff,
         booking_start_time: slot,
         booking_end_time: slot + 30.minutes,
         booking_status: :confirmed,
@@ -264,12 +361,53 @@ class Bookings::AvailableSlotsTest < ActiveSupport::TestCase
 
       slots = Bookings::AvailableSlots.new(
         client: @client,
-        enseigne: @other_enseigne,
+        enseigne: @enseigne,
         service: @service,
         date: monday
       ).call
 
       assert_includes slots, slot
+    end
+  end
+
+  test "slot disappears when all eligible staffs are blocked on that interval" do
+    travel_to Time.zone.local(2026, 3, 15, 8, 0, 0) do
+      monday = Date.new(2026, 3, 16)
+      slot = Time.zone.local(2026, 3, 16, 10, 0, 0)
+      other_staff = @enseigne.staffs.create!(name: "Staff tertiaire", active: true)
+      other_staff.staff_availabilities.create!(day_of_week: 1, opens_at: "09:00", closes_at: "18:00")
+      StaffServiceCapability.create!(staff: other_staff, service: @service)
+
+      @client.bookings.create!(
+        enseigne: @enseigne,
+        service: @service,
+        staff: @staff,
+        booking_start_time: slot,
+        booking_end_time: slot + 30.minutes,
+        booking_status: :confirmed,
+        customer_first_name: "Leonard",
+        customer_last_name: "Boisson",
+        customer_email: "leo@example.com"
+      )
+
+      @client.bookings.create!(
+        enseigne: @enseigne,
+        service: @service,
+        staff: other_staff,
+        booking_start_time: slot,
+        booking_end_time: slot + 30.minutes,
+        booking_status: :pending,
+        booking_expires_at: BookingRules.pending_expires_at
+      )
+
+      slots = Bookings::AvailableSlots.new(
+        client: @client,
+        enseigne: @enseigne,
+        service: @service,
+        date: monday
+      ).call
+
+      assert_not_includes slots, slot
     end
   end
 
@@ -295,6 +433,30 @@ class Bookings::AvailableSlotsTest < ActiveSupport::TestCase
       assert_not_includes slots, Time.zone.local(2026, 3, 16, 13, 30, 0)
       assert_includes slots, Time.zone.local(2026, 3, 16, 14, 0, 0)
       assert_includes slots, Time.zone.local(2026, 3, 16, 17, 30, 0)
+    end
+  end
+
+  test "does not depend on Resource.for_enseigne for visible slots" do
+    travel_to Time.zone.local(2026, 3, 15, 8, 0, 0) do
+      resource_singleton = class << Bookings::Resource; self; end
+      resource_singleton.alias_method :for_enseigne_without_available_slots_visibility_test, :for_enseigne
+      resource_singleton.define_method(:for_enseigne) do |*_args, **_kwargs|
+        raise "Resource.for_enseigne should not be called by AvailableSlots"
+      end
+
+      begin
+        slots = Bookings::AvailableSlots.new(
+          client: @client,
+          enseigne: @enseigne,
+          service: @service,
+          date: Date.new(2026, 3, 16)
+        ).call
+
+        assert_includes slots, Time.zone.local(2026, 3, 16, 10, 0, 0)
+      ensure
+        resource_singleton.alias_method :for_enseigne, :for_enseigne_without_available_slots_visibility_test
+        resource_singleton.remove_method :for_enseigne_without_available_slots_visibility_test
+      end
     end
   end
 end

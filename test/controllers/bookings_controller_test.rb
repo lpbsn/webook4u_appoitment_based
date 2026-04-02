@@ -22,6 +22,10 @@ class BookingsControllerTest < ActionDispatch::IntegrationTest
       price_cents: 2500
     )
 
+    staff = @enseigne.staffs.create!(name: "Staff controller", active: true)
+    staff.staff_availabilities.create!(day_of_week: 1, opens_at: "09:00", closes_at: "18:00")
+    StaffServiceCapability.create!(staff: staff, service: @service)
+
     create_weekday_opening_hours_for_enseigne(@enseigne)
   end
 

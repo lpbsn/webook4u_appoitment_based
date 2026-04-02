@@ -9,6 +9,9 @@ class Bookings::PublicPageTest < ActiveSupport::TestCase
     @client = Client.create!(name: "Salon Page", slug: "salon-page")
     @enseigne = @client.enseignes.create!(name: "Enseigne A", full_address: "1 rue de Paris", active: true)
     @service = @enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2500)
+    staff = @enseigne.staffs.create!(name: "Staff page", active: true)
+    staff.staff_availabilities.create!(day_of_week: 1, opens_at: "09:00", closes_at: "18:00")
+    StaffServiceCapability.create!(staff: staff, service: @service)
     create_weekday_opening_hours_for_enseigne(@enseigne)
   end
 
@@ -72,6 +75,26 @@ class Bookings::PublicPageTest < ActiveSupport::TestCase
       assert_equal @service, result.selected_service
       assert_equal Date.new(2026, 3, 16), result.date
       assert result.slots.any?, "Expected available slots for a free Monday"
+    end
+  end
+
+  test "returns empty slots when selected service has no eligible active staff" do
+    service_without_capability = @enseigne.services.create!(
+      name: "Brushing",
+      duration_minutes: 30,
+      price_cents: 3000
+    )
+
+    travel_to Time.zone.local(2026, 3, 15, 8, 0, 0) do
+      result = Bookings::PublicPage.new(
+        slug: @client.slug,
+        enseigne_id: @enseigne.id.to_s,
+        service_id: service_without_capability.id.to_s,
+        date_param: "2026-03-16"
+      ).call
+
+      assert_equal service_without_capability, result.selected_service
+      assert_equal [], result.slots
     end
   end
 

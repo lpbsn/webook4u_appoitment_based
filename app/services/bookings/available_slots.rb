@@ -19,21 +19,49 @@ module Bookings
     end
 
     def call
-      return [] if opening_intervals.empty?
+      return [] if enseigne.blank? || service.blank?
+      return [] if service.enseigne_id != enseigne.id
 
-      slots.reject { |slot| slot_overlaps_blocking_booking?(slot) }
+      eligible_staffs.flat_map { |staff| slots_for_staff(staff) }.uniq.sort
     end
 
     private
 
     attr_reader :client, :service, :date, :enseigne
 
-    def slots
-      # Generate the theoretical schedule grid before filtering out slots that
-      # should no longer be shown in the public UX.
+    def eligible_staffs
+      @eligible_staffs ||= EligibleStaffsResolver.new(service: service, enseigne: enseigne).call
+    end
+
+    def slots_for_staff(staff)
+      staff_windows = visible_windows_for_staff(staff)
+      return [] if staff_windows.empty?
+
+      slots = slots_from_windows(staff_windows)
+      blocking_intervals = blocking_intervals_for_staff(staff, staff_windows)
+
+      slots.reject do |slot|
+        slot_end = slot + service.duration_minutes.minutes
+
+        blocking_intervals.any? do |booking_start, booking_end|
+          Availability.overlap?(booking_start, booking_end, slot, slot_end)
+        end
+      end
+    end
+
+    def visible_windows_for_staff(staff)
+      StaffVisibleWindowsResolver.new(
+        staff: staff,
+        service: service,
+        enseigne: enseigne,
+        date: date
+      ).call
+    end
+
+    def slots_from_windows(windows)
       result = []
 
-      opening_intervals.each do |(start_of_day, end_of_day)|
+      windows.each do |(start_of_day, end_of_day)|
         current_slot = start_of_day
 
         while current_slot + service.duration_minutes.minutes <= end_of_day
@@ -45,33 +73,12 @@ module Bookings
       result.reject { |slot| slot < BookingRules.minimum_bookable_time }
     end
 
-    def blocking_intervals_for_day
-      @blocking_intervals_for_day ||= begin
-        resource = Resource.for_enseigne(client: client, enseigne: enseigne)
-
-        BlockingBookings.intervals_for_range(
-          client: client,
-          resource: resource,
-          range_start: opening_intervals.first.first,
-          range_end: opening_intervals.last.last
-        )
-      end
-    end
-
-    def opening_intervals
-      @opening_intervals ||= ScheduleResolver.new(
-        client: client,
-        enseigne: enseigne,
-        date: date
-      ).call
-    end
-
-    def slot_overlaps_blocking_booking?(slot_start)
-      slot_end = slot_start + service.duration_minutes.minutes
-
-      blocking_intervals_for_day.any? do |(booking_start, booking_end)|
-        Availability.overlap?(booking_start, booking_end, slot_start, slot_end)
-      end
+    def blocking_intervals_for_staff(staff, windows)
+      StaffBlockingBookings.intervals_for_range(
+        staff: staff,
+        range_start: windows.first.first,
+        range_end: windows.last.last
+      )
     end
   end
 end
