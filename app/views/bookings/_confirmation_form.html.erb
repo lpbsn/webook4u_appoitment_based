@@ -1,0 +1,20 @@
+<%= form_with model: @booking, url: confirm_booking_path(@client.slug, @booking.pending_access_token), method: :post do |form| %>
+  <div class="field">
+    <label class="field-label" for="booking_customer_first_name">Prénom</label>
+    <%= form.text_field :customer_first_name, required: true, class: "field-input" %>
+  </div>
+
+  <div class="field">
+    <label class="field-label" for="booking_customer_last_name">Nom</label>
+    <%= form.text_field :customer_last_name, required: true, class: "field-input" %>
+  </div>
+
+  <div class="field">
+    <label class="field-label" for="booking_customer_email">Email</label>
+    <%= form.email_field :customer_email, required: true, class: "field-input" %>
+  </div>
+
+  <div class="field">
+    <%= form.submit "Valider la réservation", class: "btn-primary" %>
+  </div>
+<% end %>

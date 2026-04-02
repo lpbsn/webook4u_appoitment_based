@@ -1,0 +1,31 @@
+<div class="booking-header">
+  <h1 class="booking-header-title"><%= @client.name %></h1>
+  <p class="booking-header-subtitle">Réservez votre créneau en quelques secondes</p>
+</div>
+
+<div class="booking-summary">
+  <h2 class="booking-section-title">Votre sélection</h2>
+  <div class="booking-fields">
+    <div class="booking-summary-row">
+      <span class="booking-summary-label">Enseigne</span>
+      <span class="booking-summary-value"><%= public_client_selected_enseigne_name(@selected_enseigne) %></span>
+    </div>
+    <div class="booking-summary-row">
+      <span class="booking-summary-label">Adresse</span>
+      <span class="booking-summary-value"><%= public_client_selected_enseigne_address(@selected_enseigne) %></span>
+    </div>
+    <div class="booking-summary-row">
+      <span class="booking-summary-label">Prestation</span>
+      <span class="booking-summary-value"><%= public_client_selected_service_name(@selected_service) %></span>
+    </div>
+    <div class="booking-summary-row">
+      <span class="booking-summary-label">Date :</span>
+      <span class="booking-summary-value"><%= public_client_selected_date(@date) %></span>
+    </div>
+    <div class="booking-summary-row">
+      <span class="booking-summary-label">Créneau</span>
+      <span class="booking-summary-value">—</span>
+    </div>
+  </div>
+</div>
+

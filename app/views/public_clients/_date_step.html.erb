@@ -1,0 +1,26 @@
+<% if @selected_enseigne.present? && @selected_service.present? %>
+  <div class="booking-section">
+    <h2 class="booking-section-title">3. Choisissez une date</h2>
+    <p class="booking-section-meta">Précisez la date souhaitée pour votre réservation.</p>
+
+    <div class="booking-fields">
+      <p><strong>Enseigne sélectionnée :</strong> <%= @selected_enseigne.name %></p>
+      <p><strong>Prestation sélectionnée :</strong> <%= @selected_service.name %></p>
+      <p><strong>Durée :</strong> <%= @selected_service.duration_minutes %> minutes</p>
+      <p><strong>Prix :</strong> <%= public_client_service_price(@selected_service) %></p>
+    </div>
+
+    <%= form_with url: public_client_path(@client.slug), method: :get, local: true do %>
+      <%= hidden_field_tag :enseigne_id, @selected_enseigne.id %>
+      <%= hidden_field_tag :service_id, @selected_service.id %>
+
+      <div class="field">
+        <label class="field-label" for="date">Date</label>
+        <%= date_field_tag :date, params[:date], required: true, class: "field-input booking-date-input", min: BookingRules.business_today %>
+      </div>
+
+      <%= submit_tag "Voir les créneaux disponibles", class: "btn-primary" %>
+    <% end %>
+  </div>
+<% end %>
+

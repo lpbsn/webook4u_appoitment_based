@@ -1,0 +1,222 @@
+:root {
+  --booking-bg: #F5F5F4;
+  --booking-surface: #FFFFFF;
+  --booking-text: #111827;
+  --booking-text-muted: #6B7280;
+  --booking-border: #E5E7EB;
+  --booking-success: #10B981;
+}
+
+body.booking-body {
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+  background-color: var(--booking-bg);
+  color: var(--booking-text);
+}
+
+.booking-page {
+  max-width: 960px;
+  margin: 32px auto;
+  padding: 0 16px;
+}
+
+.booking-card {
+  background-color: var(--booking-surface);
+  border-radius: 12px;
+  border: 1px solid var(--booking-border);
+  padding: 24px 20px;
+}
+
+@media (min-width: 768px) {
+  .booking-card {
+    padding: 28px 24px;
+  }
+}
+
+.booking-header {
+  margin-bottom: 16px;
+}
+
+.booking-header-title {
+  font-size: 26px;
+  font-weight: 600;
+  margin: 0 0 4px;
+}
+
+.booking-header-subtitle {
+  font-size: 14px;
+  color: var(--booking-text-muted);
+  margin: 0;
+}
+
+.booking-section {
+  margin-top: 24px;
+}
+
+.booking-section-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 8px;
+}
+
+.booking-section-meta {
+  font-size: 13px;
+  color: var(--booking-text-muted);
+  margin-bottom: 12px;
+}
+
+.booking-summary {
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--booking-border);
+  margin-bottom: 16px;
+}
+
+.booking-summary-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.booking-summary-label {
+  color: var(--booking-text-muted);
+}
+
+.booking-summary-value {
+  font-weight: 500;
+}
+
+.booking-fields p {
+  margin: 4px 0;
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 20px;
+  border-radius: 9999px;
+  border: none;
+  background-color: var(--booking-text);
+  color: #ffffff;
+  font-weight: 500;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.btn-primary:hover {
+  background-color: #020617;
+}
+
+.btn-primary:focus-visible {
+  outline: 2px solid rgba(15, 23, 42, 0.2);
+  outline-offset: 2px;
+}
+
+.slot-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 8px;
+}
+
+@media (max-width: 600px) {
+  .slot-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+}
+
+.slot-button {
+  display: block;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 9999px;
+  border: 1px solid var(--booking-border);
+  background-color: var(--booking-surface);
+  color: var(--booking-text);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.slot-button:hover {
+  background-color: #F3F4F6;
+  border-color: #D1D5DB;
+}
+
+.slot-button--selected {
+  background-color: var(--booking-text);
+  color: #ffffff;
+  border-color: var(--booking-text);
+}
+
+.slot-button--disabled {
+  background-color: #F9FAFB;
+  color: #9CA3AF;
+  border-style: dashed;
+  cursor: not-allowed;
+}
+
+.field {
+  margin-bottom: 16px;
+}
+
+.field-label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--booking-text-muted);
+}
+
+.field-input {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #D1D5DB;
+  background-color: #F9FAFB;
+  font-size: 14px;
+}
+
+.booking-date-input {
+  max-width: 260px;
+}
+
+.field-input:focus-visible {
+  outline: none;
+  border-color: var(--booking-text);
+  box-shadow: 0 0 0 1px var(--booking-text);
+  background-color: #ffffff;
+}
+
+.booking-errors {
+  margin: 16px 0;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background-color: #FEF2F2;
+  border: 1px solid #FECACA;
+  color: #B91C1C;
+  font-size: 14px;
+}
+
+.booking-success {
+  margin: 16px 0;
+  padding: 20px 22px;
+  border-radius: 12px;
+  background-color: var(--booking-surface);
+  border: 1px solid var(--booking-border);
+  border-left: 4px solid var(--booking-success);
+  color: var(--booking-text);
+  font-size: 14px;
+}
+
+.booking-success-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 8px;
+}
+
+.booking-success-body p {
+  margin: 4px 0;
+}
+

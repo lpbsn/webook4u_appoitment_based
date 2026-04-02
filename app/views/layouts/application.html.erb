@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <%= render "layouts/app_shell_head" %>
+  </head>
+
+  <body class="<%= content_for?(:body_class) ? yield(:body_class) : '' %>">
+    <%= yield %>
+    <% if notice.present? %>
+      <p><%= notice %></p>
+    <% end %>
+
+    <% if alert.present? %>
+      <p><%= alert %></p>
+    <% end %>
+  </body>
+</html>

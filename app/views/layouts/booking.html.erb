@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <%= render "layouts/app_shell_head" %>
+  </head>
+
+  <body class="booking-body">
+    <div class="booking-page">
+      <div class="booking-card <%= content_for?(:booking_card_modifier) ? yield(:booking_card_modifier) : '' %>">
+        <%= yield %>
+      </div>
+    </div>
+
+    <% if notice.present? %>
+      <p><%= notice %></p>
+    <% end %>
+
+    <% if alert.present? %>
+      <p><%= alert %></p>
+    <% end %>
+  </body>
+</html>

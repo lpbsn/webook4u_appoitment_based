@@ -1,0 +1,19 @@
+<div class="booking-section">
+  <h2 class="booking-section-title">1. Choisissez une enseigne</h2>
+  <p class="booking-section-meta">Sélectionnez le lieu de votre rendez-vous.</p>
+
+  <% if @enseignes.any? %>
+    <div class="slot-grid">
+      <% @enseignes.each do |enseigne| %>
+        <% selected = @selected_enseigne&.id == enseigne.id %>
+
+        <%= form_with url: public_client_path(@client.slug), method: :get, local: true do %>
+          <%= hidden_field_tag :enseigne_id, enseigne.id %>
+          <%= submit_tag "#{enseigne.name}#{enseigne.full_address.present? ? " - #{enseigne.full_address}" : ""}", class: ["slot-button", ("slot-button--selected" if selected)].compact.join(" ") %>
+        <% end %>
+      <% end %>
+    </div>
+  <% else %>
+    <p>Aucune enseigne active n'est disponible pour le moment.</p>
+  <% end %>
+</div>

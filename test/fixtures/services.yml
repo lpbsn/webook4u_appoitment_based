@@ -1,0 +1,13 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  enseigne: one
+  name: MyString
+  duration_minutes: 1
+  price_cents: 1
+
+two:
+  enseigne: two
+  name: MyString
+  duration_minutes: 1
+  price_cents: 1

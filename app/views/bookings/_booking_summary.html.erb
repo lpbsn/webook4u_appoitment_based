@@ -1,0 +1,10 @@
+<div class="booking-summary">
+  <h2 class="booking-section-title">Créneau choisi</h2>
+  <div class="booking-fields">
+    <p><strong>Client :</strong> <%= @client.name %></p>
+    <p><strong>Enseigne :</strong> <%= booking_enseigne_name(@booking) %></p>
+    <p><strong>Adresse :</strong> <%= booking_enseigne_address(@booking) %></p>
+    <p><strong>Prestation :</strong> <%= @service.name %></p>
+    <p><%= @booking_start_time.strftime("%d/%m/%Y à %H:%M") %></p>
+  </div>
+</div>

@@ -1,0 +1,23 @@
+<div class="booking-header">
+  <h1 class="booking-header-title"><%= @client.name %></h1>
+  <p class="booking-header-subtitle"><%= @enseigne.name %> — <%= @service.name %></p>
+</div>
+
+<p class="booking-section-meta">
+  Montant à payer : <%= format_price_cents(@service.price_cents) %>
+</p>
+
+<%= render "booking_summary" %>
+
+<% if @booking.errors.any? %>
+  <div class="booking-errors">
+    <strong>Le formulaire contient des erreurs :</strong>
+    <ul>
+      <% @booking.errors.full_messages.each do |message| %>
+        <li><%= message %></li>
+      <% end %>
+    </ul>
+  </div>
+<% end %>
+
+<%= render "confirmation_form" %>
