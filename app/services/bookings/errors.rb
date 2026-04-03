@@ -25,13 +25,7 @@ module Bookings
     }.freeze
 
     SLOT_CONFLICT_CONSTRAINTS = [
-      "bookings_confirmed_no_overlapping_intervals_per_staff",
-      "bookings_confirmed_no_overlapping_intervals_per_enseigne",
-      # Legacy compatibility during rollout: some environments may still expose
-      # the former unique index name until every database has been migrated to
-      # the overlap exclusion constraint. Remove this entry once all
-      # environments are aligned on the new constraint.
-      "index_bookings_on_enseigne_and_start_time_confirmed"
+      "bookings_confirmed_no_overlapping_intervals_per_staff"
     ].freeze
 
     def self.message_for(code)

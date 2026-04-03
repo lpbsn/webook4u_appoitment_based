@@ -7,7 +7,7 @@ module Bookings
   # be shown to the user right now?
   #
   # It intentionally remains separate from transactional booking validation:
-  # CreatePending and Confirm rely on SlotDecision for business reservability,
+  # CreatePending and Confirm use dedicated staff-based revalidation services,
   # while AvailableSlots only produces the currently visible slot list from
   # schedule intervals, booking window rules and blocking bookings.
   class AvailableSlots

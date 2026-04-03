@@ -95,27 +95,6 @@ class Bookings::CreatePendingStaffRevalidationTest < ActiveSupport::TestCase
     end
   end
 
-  test "does not use Resource.for_enseigne" do
-    travel_to Time.zone.local(2026, 3, 15, 8, 0, 0) do
-      resource_singleton = class << Bookings::Resource; self; end
-      resource_singleton.alias_method :for_enseigne_without_create_pending_staff_revalidation_test, :for_enseigne
-      resource_singleton.define_method(:for_enseigne) do |*_args, **_kwargs|
-        raise "Resource.for_enseigne should not be called by CreatePendingStaffRevalidation"
-      end
-
-      begin
-        result = build_revalidation(
-          booking_start_time: Time.zone.local(2026, 3, 16, 10, 30, 0)
-        ).call
-
-        assert result.bookable?
-      ensure
-        resource_singleton.alias_method :for_enseigne, :for_enseigne_without_create_pending_staff_revalidation_test
-        resource_singleton.remove_method :for_enseigne_without_create_pending_staff_revalidation_test
-      end
-    end
-  end
-
   private
 
   def build_revalidation(booking_start_time:)

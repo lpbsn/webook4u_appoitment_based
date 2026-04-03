@@ -131,30 +131,6 @@ class Bookings::CreatePendingTest < ActiveSupport::TestCase
     end
   end
 
-  test "does not use Resource.for_enseigne during create_pending orchestration" do
-    travel_to Time.zone.local(2026, 3, 15, 8, 0, 0) do
-      resource_singleton = class << Bookings::Resource; self; end
-      resource_singleton.alias_method :for_enseigne_without_create_pending_resource_test, :for_enseigne
-      resource_singleton.define_method(:for_enseigne) do |*_args, **_kwargs|
-        raise "Resource.for_enseigne should not be called by CreatePending"
-      end
-
-      begin
-        result = Bookings::CreatePending.new(
-          client: @client,
-          enseigne: @enseigne,
-          service: @service,
-          booking_start_time: Time.zone.local(2026, 3, 16, 10, 0, 0)
-        ).call
-
-        assert result.success?
-      ensure
-        resource_singleton.alias_method :for_enseigne, :for_enseigne_without_create_pending_resource_test
-        resource_singleton.remove_method :for_enseigne_without_create_pending_resource_test
-      end
-    end
-  end
-
   test "uses cursor rotation order and wraps around on candidates" do
     second_staff = @enseigne.staffs.create!(name: "Staff secondaire", active: true)
     create_weekday_staff_availabilities_for(second_staff)

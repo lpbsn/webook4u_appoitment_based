@@ -5,20 +5,6 @@ module Bookings
     SERVICE_ROTATION_NAMESPACE = 3_001
     STAFF_NAMESPACE = 3_002
 
-    # Transitional main lock:
-    # keep locking on the currently effective transactional resource
-    # until create_pending/confirm fully migrate away from Resource.for_enseigne.
-    def self.with_resource_lock(resource:)
-      raise ArgumentError, "resource is required" if resource.blank?
-
-      lock_key_1, lock_key_2 = resource.lock_key
-
-      ActiveRecord::Base.transaction do
-        acquire_lock(lock_key_1, lock_key_2)
-        yield
-      end
-    end
-
     def self.with_service_rotation_lock(service:)
       raise ArgumentError, "service is required" if service.blank?
 

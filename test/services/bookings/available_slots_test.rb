@@ -436,27 +436,4 @@ class Bookings::AvailableSlotsTest < ActiveSupport::TestCase
     end
   end
 
-  test "does not depend on Resource.for_enseigne for visible slots" do
-    travel_to Time.zone.local(2026, 3, 15, 8, 0, 0) do
-      resource_singleton = class << Bookings::Resource; self; end
-      resource_singleton.alias_method :for_enseigne_without_available_slots_visibility_test, :for_enseigne
-      resource_singleton.define_method(:for_enseigne) do |*_args, **_kwargs|
-        raise "Resource.for_enseigne should not be called by AvailableSlots"
-      end
-
-      begin
-        slots = Bookings::AvailableSlots.new(
-          client: @client,
-          enseigne: @enseigne,
-          service: @service,
-          date: Date.new(2026, 3, 16)
-        ).call
-
-        assert_includes slots, Time.zone.local(2026, 3, 16, 10, 0, 0)
-      ensure
-        resource_singleton.alias_method :for_enseigne, :for_enseigne_without_available_slots_visibility_test
-        resource_singleton.remove_method :for_enseigne_without_available_slots_visibility_test
-      end
-    end
-  end
 end
