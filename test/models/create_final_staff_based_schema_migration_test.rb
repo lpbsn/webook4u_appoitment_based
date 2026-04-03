@@ -2,6 +2,7 @@ require "test_helper"
 require "open3"
 require "pg"
 require "securerandom"
+require "uri"
 
 class CreateFinalStaffBasedSchemaMigrationTest < SchemaMutationMigrationTestCase
   MIGRATION_VERSION = "20260403113000"
@@ -14,7 +15,7 @@ class CreateFinalStaffBasedSchemaMigrationTest < SchemaMutationMigrationTestCase
       migrate_output, status = Open3.capture2e(
         {
           "RAILS_ENV" => "test",
-          "DATABASE_URL" => "postgresql:///#{database_name}"
+          "DATABASE_URL" => database_url_for(database_name)
         },
         Rails.root.join("bin/rails").to_s,
         "db:migrate:up",
@@ -102,9 +103,42 @@ class CreateFinalStaffBasedSchemaMigrationTest < SchemaMutationMigrationTestCase
   end
 
   def with_database_connection(database_name)
-    connection = PG.connect(dbname: database_name)
+    connection = PG.connect(base_pg_connection_params.merge(dbname: database_name))
     yield connection
   ensure
     connection&.close
+  end
+
+  def database_url_for(database_name)
+    params = base_pg_connection_params.merge(dbname: database_name)
+
+    URI::Generic.build(
+      scheme: "postgresql",
+      userinfo: credentials_for_uri(params),
+      host: params[:host],
+      port: params[:port],
+      path: "/#{params[:dbname]}"
+    ).to_s
+  end
+
+  def credentials_for_uri(params)
+    return nil if params[:user].blank?
+
+    [ params[:user], params[:password] ].compact.join(":")
+  end
+
+  def base_pg_connection_params
+    @base_pg_connection_params ||= begin
+      db_config = ActiveRecord::Base.configurations.configs_for(env_name: "test", name: "primary").first ||
+        ActiveRecord::Base.configurations.configs_for(env_name: "test").first
+      configuration_hash = db_config.configuration_hash.symbolize_keys
+
+      {
+        host: configuration_hash[:host].presence,
+        port: configuration_hash[:port].presence,
+        user: configuration_hash[:username].presence,
+        password: configuration_hash[:password].presence
+      }.compact
+    end
   end
 end
