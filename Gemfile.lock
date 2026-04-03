@@ -425,6 +425,7 @@ DEPENDENCIES
   importmap-rails
   jbuilder
   kamal
+  mcp (>= 0.1.0)
   pg (~> 1.1)
   propshaft
   puma (>= 5.0)
