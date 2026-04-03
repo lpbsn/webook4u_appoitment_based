@@ -2,7 +2,6 @@ require "test_helper"
 require "open3"
 require "pg"
 require "securerandom"
-require "uri"
 
 class CreateFinalStaffBasedSchemaMigrationTest < SchemaMutationMigrationTestCase
   MIGRATION_VERSION = "20260403113000"
@@ -13,13 +12,27 @@ class CreateFinalStaffBasedSchemaMigrationTest < SchemaMutationMigrationTestCase
 
     begin
       migrate_output, status = Open3.capture2e(
-        {
-          "RAILS_ENV" => "test",
-          "DATABASE_URL" => database_url_for(database_name)
-        },
+        child_process_env_for(database_name),
         Rails.root.join("bin/rails").to_s,
-        "db:migrate:up",
-        "VERSION=#{MIGRATION_VERSION}"
+        "runner",
+        <<~RUBY
+          connection_config = {
+            adapter: "postgresql",
+            database: ENV.fetch("PGDATABASE")
+          }
+
+          connection_config[:host] = ENV["PGHOST"] if ENV["PGHOST"].present?
+          connection_config[:port] = ENV["PGPORT"] if ENV["PGPORT"].present?
+          connection_config[:username] = ENV["PGUSER"] if ENV["PGUSER"].present?
+          connection_config[:password] = ENV["PGPASSWORD"] if ENV["PGPASSWORD"].present?
+
+          ActiveRecord::Base.establish_connection(connection_config)
+          ActiveRecord.dump_schema_after_migration = false
+          migration_context = ActiveRecord::Base.connection_pool.migration_context
+          migration_context.schema_migration.create_table
+          migration_context.internal_metadata.create_table
+          migration_context.up(#{MIGRATION_VERSION.to_i})
+        RUBY
       )
 
       assert status.success?, "Expected baseline migration to succeed.\n#{migrate_output}"
@@ -109,24 +122,6 @@ class CreateFinalStaffBasedSchemaMigrationTest < SchemaMutationMigrationTestCase
     connection&.close
   end
 
-  def database_url_for(database_name)
-    params = base_pg_connection_params.merge(dbname: database_name)
-
-    URI::Generic.build(
-      scheme: "postgresql",
-      userinfo: credentials_for_uri(params),
-      host: params[:host],
-      port: params[:port],
-      path: "/#{params[:dbname]}"
-    ).to_s
-  end
-
-  def credentials_for_uri(params)
-    return nil if params[:user].blank?
-
-    [ params[:user], params[:password] ].compact.join(":")
-  end
-
   def base_pg_connection_params
     @base_pg_connection_params ||= begin
       db_config = Array(ActiveRecord::Base.configurations.configs_for(env_name: "test", name: "primary")).first ||
@@ -140,5 +135,19 @@ class CreateFinalStaffBasedSchemaMigrationTest < SchemaMutationMigrationTestCase
         password: configuration_hash[:password].presence
       }.compact
     end
+  end
+
+  def child_process_env_for(database_name)
+    env = {
+      "RAILS_ENV" => "test",
+      "PGDATABASE" => database_name
+    }
+
+    env["PGHOST"] = base_pg_connection_params[:host].to_s if base_pg_connection_params[:host].present?
+    env["PGPORT"] = base_pg_connection_params[:port].to_s if base_pg_connection_params[:port].present?
+    env["PGUSER"] = base_pg_connection_params[:user].to_s if base_pg_connection_params[:user].present?
+    env["PGPASSWORD"] = base_pg_connection_params[:password].to_s if base_pg_connection_params[:password].present?
+
+    env
   end
 end
