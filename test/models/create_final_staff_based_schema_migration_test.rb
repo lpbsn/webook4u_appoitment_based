@@ -4,44 +4,52 @@ require "pg"
 require "securerandom"
 
 class CreateFinalStaffBasedSchemaMigrationTest < SchemaMutationMigrationTestCase
-  MIGRATION_VERSION = "20260403113000"
+  BASELINE_MIGRATION_VERSION = "20260403113000"
+  LATEST_MIGRATION_VERSION = "20260403120000"
+  EXPECTED_SCHEMA_VERSIONS = [
+    BASELINE_MIGRATION_VERSION,
+    LATEST_MIGRATION_VERSION
+  ].freeze
 
-  test "baseline migration rebuilds a fresh database on its own" do
+  test "schema migrations rebuild a fresh database to the latest schema" do
     database_name = "webook4u_baseline_#{SecureRandom.hex(6)}"
     create_database!(database_name)
 
     begin
-      migrate_output, status = Open3.capture2e(
-        child_process_env_for(database_name),
-        Rails.root.join("bin/rails").to_s,
-        "runner",
-        <<~RUBY
-          connection_config = {
-            adapter: "postgresql",
-            database: ENV.fetch("PGDATABASE")
-          }
+      migrate_database_to!(database_name, LATEST_MIGRATION_VERSION)
 
-          connection_config[:host] = ENV["PGHOST"] if ENV["PGHOST"].present?
-          connection_config[:port] = ENV["PGPORT"] if ENV["PGPORT"].present?
-          connection_config[:username] = ENV["PGUSER"] if ENV["PGUSER"].present?
-          connection_config[:password] = ENV["PGPASSWORD"] if ENV["PGPASSWORD"].present?
-
-          ActiveRecord::Base.establish_connection(connection_config)
-          ActiveRecord.dump_schema_after_migration = false
-          migration_context = ActiveRecord::Base.connection_pool.migration_context
-          migration_context.schema_migration.create_table
-          migration_context.internal_metadata.create_table
-          migration_context.up(#{MIGRATION_VERSION.to_i})
-        RUBY
-      )
-
-      assert status.success?, "Expected baseline migration to succeed.\n#{migrate_output}"
-
-      assert_equal [ MIGRATION_VERSION ], schema_versions_for(database_name)
+      assert_equal EXPECTED_SCHEMA_VERSIONS, schema_versions_for(database_name)
       assert table_exists_for?(database_name, "staffs")
       refute table_exists_for?(database_name, "client_opening_hours")
       assert constraint_exists_for?(database_name, "bookings_confirmed_no_overlapping_intervals_per_staff")
+      assert constraint_exists_for?(database_name, "bookings_assignment_mode_allowed_values")
       refute constraint_exists_for?(database_name, "bookings_confirmed_no_overlapping_intervals_per_enseigne")
+
+      column = column_definition_for(database_name, "bookings", "assignment_mode")
+      assert_equal "character varying", column.fetch("data_type")
+      assert_equal "NO", column.fetch("is_nullable")
+      assert_includes column.fetch("column_default"), "automatic"
+
+      constraint_definition = constraint_definition_for(database_name, "bookings_assignment_mode_allowed_values")
+      assert_includes constraint_definition, "assignment_mode"
+      assert_includes constraint_definition, "automatic"
+      assert_includes constraint_definition, "specific_staff"
+    ensure
+      drop_database!(database_name)
+    end
+  end
+
+  test "latest migration backfills existing bookings to automatic assignment_mode" do
+    database_name = "webook4u_assignment_mode_backfill_#{SecureRandom.hex(6)}"
+    create_database!(database_name)
+
+    begin
+      migrate_database_to!(database_name, BASELINE_MIGRATION_VERSION)
+      booking_id = insert_booking_without_assignment_mode!(database_name)
+
+      migrate_database_to!(database_name, LATEST_MIGRATION_VERSION)
+
+      assert_equal "automatic", booking_assignment_mode_for(database_name, booking_id)
     ensure
       drop_database!(database_name)
     end
@@ -109,6 +117,119 @@ class CreateFinalStaffBasedSchemaMigrationTest < SchemaMutationMigrationTestCase
 
       ActiveModel::Type::Boolean.new.cast(exists_value)
     end
+  end
+
+  def column_definition_for(database_name, table_name, column_name)
+    with_database_connection(database_name) do |connection|
+      connection.exec_params(
+        <<~SQL,
+          SELECT data_type, is_nullable, column_default
+          FROM information_schema.columns
+          WHERE table_schema = 'public'
+            AND table_name = $1
+            AND column_name = $2
+        SQL
+        [ table_name, column_name ]
+      ).first
+    end
+  end
+
+  def constraint_definition_for(database_name, constraint_name)
+    with_database_connection(database_name) do |connection|
+      connection.exec_params(
+        <<~SQL,
+          SELECT pg_get_constraintdef(oid) AS definition
+          FROM pg_constraint
+          WHERE conname = $1
+        SQL
+        [ constraint_name ]
+      ).first.fetch("definition")
+    end
+  end
+
+  def booking_assignment_mode_for(database_name, booking_id)
+    with_database_connection(database_name) do |connection|
+      connection.exec_params(
+        "SELECT assignment_mode FROM bookings WHERE id = $1",
+        [ booking_id ]
+      ).first.fetch("assignment_mode")
+    end
+  end
+
+  def insert_booking_without_assignment_mode!(database_name)
+    with_database_connection(database_name) do |connection|
+      client_id = connection.exec_params(
+        "INSERT INTO clients (name, slug, created_at, updated_at) VALUES ($1, $2, NOW(), NOW()) RETURNING id",
+        [ "Client migration", "client-migration-#{SecureRandom.hex(4)}" ]
+      ).first.fetch("id")
+
+      enseigne_id = connection.exec_params(
+        "INSERT INTO enseignes (client_id, name, created_at, updated_at) VALUES ($1, $2, NOW(), NOW()) RETURNING id",
+        [ client_id, "Enseigne migration" ]
+      ).first.fetch("id")
+
+      service_id = connection.exec_params(
+        <<~SQL,
+          INSERT INTO services (enseigne_id, name, duration_minutes, price_cents, created_at, updated_at)
+          VALUES ($1, $2, $3, $4, NOW(), NOW())
+          RETURNING id
+        SQL
+        [ enseigne_id, "Service migration", 30, 2500 ]
+      ).first.fetch("id")
+
+      connection.exec_params(
+        <<~SQL,
+          INSERT INTO bookings (
+            client_id,
+            enseigne_id,
+            service_id,
+            booking_start_time,
+            booking_end_time,
+            booking_status,
+            created_at,
+            updated_at
+          )
+          VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
+          RETURNING id
+        SQL
+        [
+          client_id,
+          enseigne_id,
+          service_id,
+          Time.utc(2026, 4, 3, 9, 0, 0),
+          Time.utc(2026, 4, 3, 9, 30, 0),
+          "failed"
+        ]
+      ).first.fetch("id")
+    end
+  end
+
+  def migrate_database_to!(database_name, version)
+    migrate_output, status = Open3.capture2e(
+      child_process_env_for(database_name),
+      Rails.root.join("bin/rails").to_s,
+      "runner",
+      <<~RUBY
+        connection_config = {
+          adapter: "postgresql",
+          database: ENV.fetch("PGDATABASE")
+        }
+
+        connection_config[:host] = ENV["PGHOST"] if ENV["PGHOST"].present?
+        connection_config[:port] = ENV["PGPORT"] if ENV["PGPORT"].present?
+        connection_config[:username] = ENV["PGUSER"] if ENV["PGUSER"].present?
+        connection_config[:password] = ENV["PGPASSWORD"] if ENV["PGPASSWORD"].present?
+
+        ActiveRecord::Base.establish_connection(connection_config)
+        ActiveRecord.dump_schema_after_migration = false
+        migration_context = ActiveRecord::Base.connection_pool.migration_context
+        migration_context.schema_migration.create_table
+        migration_context.internal_metadata.create_table
+        migration_context.up(#{version.to_i})
+      RUBY
+    )
+
+    assert status.success?, "Expected migrations through #{version} to succeed.\n#{migrate_output}"
   end
 
   def with_postgres_connection

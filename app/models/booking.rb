@@ -27,6 +27,10 @@ class Booking < ApplicationRecord
     confirmed: "confirmed",
     failed: "failed"
   }
+  enum :assignment_mode, {
+    automatic: "automatic",
+    specific_staff: "specific_staff"
+  }, default: :automatic, validate: true
 
   # =========================================================
   # VALIDATIONS GÉNÉRALES
@@ -34,6 +38,7 @@ class Booking < ApplicationRecord
   validates :booking_start_time, presence: true
   validates :booking_end_time, presence: true
   validates :booking_status, presence: true
+  validates :assignment_mode, presence: true
 
   # =========================================================
   # VALIDATIONS CONDITIONNELLES

@@ -44,6 +44,20 @@ class BookingTest < ActiveSupport::TestCase
     assert booking.valid?
   end
 
+  test "defaults assignment_mode to automatic" do
+    booking = @client.bookings.create!(
+      enseigne: @enseigne,
+      service: @service,
+      booking_start_time: Time.zone.local(2026, 3, 16, 10, 0, 0),
+      booking_end_time: Time.zone.local(2026, 3, 16, 10, 30, 0),
+      booking_status: :pending,
+      booking_expires_at: Time.zone.local(2026, 3, 15, 10, 5, 0)
+    )
+
+    assert_equal "automatic", booking.assignment_mode
+    assert booking.automatic?
+  end
+
   test "staff association is optional in transitional contract" do
     booking = Booking.new(
       client: @client,
@@ -116,6 +130,38 @@ class BookingTest < ActiveSupport::TestCase
 
     assert_not booking.valid?
     assert booking.errors[:booking_status].any?
+  end
+
+  test "requires assignment_mode" do
+    booking = Booking.new(
+      client: @client,
+      enseigne: @enseigne,
+      service: @service,
+      booking_start_time: Time.zone.local(2026, 3, 16, 10, 0, 0),
+      booking_end_time: Time.zone.local(2026, 3, 16, 10, 30, 0),
+      booking_status: :pending,
+      booking_expires_at: Time.zone.local(2026, 3, 15, 10, 5, 0),
+      assignment_mode: nil
+    )
+
+    assert_not booking.valid?
+    assert booking.errors[:assignment_mode].any?
+  end
+
+  test "rejects unsupported assignment_mode values at model level" do
+    booking = Booking.new(
+      client: @client,
+      enseigne: @enseigne,
+      service: @service,
+      booking_start_time: Time.zone.local(2026, 3, 16, 10, 0, 0),
+      booking_end_time: Time.zone.local(2026, 3, 16, 10, 30, 0),
+      booking_status: :pending,
+      booking_expires_at: Time.zone.local(2026, 3, 15, 10, 5, 0),
+      assignment_mode: "manual"
+    )
+
+    assert_not booking.valid?
+    assert_includes booking.errors[:assignment_mode], "is not included in the list"
   end
 
   # =========================================================
@@ -519,6 +565,23 @@ class BookingTest < ActiveSupport::TestCase
     )
   end
 
+  test "assignment modes remain limited to automatic and specific_staff" do
+    assert_equal(
+      {
+        "automatic" => "automatic",
+        "specific_staff" => "specific_staff"
+      },
+      Booking.assignment_modes
+    )
+  end
+
+  test "specific_staff assignment mode exposes enum predicate" do
+    booking = Booking.new(assignment_mode: :specific_staff)
+
+    assert booking.specific_staff?
+    assert_not booking.automatic?
+  end
+
   test "terminal? is true for confirmed bookings" do
     booking = Booking.new(booking_status: :confirmed, staff: @staff)
 
@@ -775,6 +838,29 @@ class BookingTest < ActiveSupport::TestCase
         }
       ])
     end
+  end
+
+  test "database enforces allowed assignment_mode values" do
+    now = Time.current
+    error = assert_raises ActiveRecord::StatementInvalid do
+      Booking.insert_all!([
+        {
+          client_id: @client.id,
+          enseigne_id: @enseigne.id,
+          service_id: @service.id,
+          booking_start_time: now,
+          booking_end_time: now + 30.minutes,
+          booking_status: "pending",
+          booking_expires_at: now + 5.minutes,
+          pending_access_token: "pending-token-#{SecureRandom.hex(6)}",
+          assignment_mode: "manual",
+          created_at: now,
+          updated_at: now
+        }
+      ])
+    end
+
+    assert_includes error.message, "bookings_assignment_mode_allowed_values"
   end
 
   test "database enforces booking_end_time after booking_start_time" do
