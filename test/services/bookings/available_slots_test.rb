@@ -435,5 +435,4 @@ class Bookings::AvailableSlotsTest < ActiveSupport::TestCase
       assert_includes slots, Time.zone.local(2026, 3, 16, 17, 30, 0)
     end
   end
-
 end

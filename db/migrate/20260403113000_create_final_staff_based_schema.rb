@@ -55,8 +55,8 @@ class CreateFinalStaffBasedSchema < ActiveRecord::Migration[8.1]
       t.time :closes_at, null: false
       t.timestamps
 
-      t.index [:enseigne_id, :day_of_week], name: "index_enseigne_opening_hours_on_enseigne_and_day"
-      t.index [:enseigne_id, :day_of_week, :opens_at, :closes_at],
+      t.index [ :enseigne_id, :day_of_week ], name: "index_enseigne_opening_hours_on_enseigne_and_day"
+      t.index [ :enseigne_id, :day_of_week, :opens_at, :closes_at ],
         unique: true,
         name: "index_enseigne_opening_hours_on_exact_interval_per_day"
       t.check_constraint "opens_at < closes_at", name: "enseigne_opening_hours_opens_before_closes"
@@ -98,7 +98,7 @@ class CreateFinalStaffBasedSchema < ActiveRecord::Migration[8.1]
       t.time :closes_at, null: false
       t.timestamps
 
-      t.index [:staff_id, :day_of_week], name: "index_staff_availabilities_on_staff_and_day"
+      t.index [ :staff_id, :day_of_week ], name: "index_staff_availabilities_on_staff_and_day"
     end
   end
 
@@ -109,7 +109,7 @@ class CreateFinalStaffBasedSchema < ActiveRecord::Migration[8.1]
       t.datetime :ends_at, null: false
       t.timestamps
 
-      t.index [:staff_id, :starts_at], name: "index_staff_unavailabilities_on_staff_and_starts_at"
+      t.index [ :staff_id, :starts_at ], name: "index_staff_unavailabilities_on_staff_and_starts_at"
     end
   end
 
@@ -119,7 +119,7 @@ class CreateFinalStaffBasedSchema < ActiveRecord::Migration[8.1]
       t.references :service, null: false
       t.timestamps
 
-      t.index [:staff_id, :service_id], unique: true, name: "index_staff_service_capabilities_on_staff_and_service"
+      t.index [ :staff_id, :service_id ], unique: true, name: "index_staff_service_capabilities_on_staff_and_service"
     end
   end
 
