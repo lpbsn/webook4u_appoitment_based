@@ -1,6 +1,7 @@
 SET statement_timeout = 0;
 SET lock_timeout = 0;
 SET idle_in_transaction_session_timeout = 0;
+SET transaction_timeout = 0;
 SET client_encoding = 'UTF8';
 SET standard_conforming_strings = on;
 SELECT pg_catalog.set_config('search_path', '', false);
@@ -137,8 +138,6 @@ CREATE TABLE public.bookings (
     booking_expires_at timestamp(6) without time zone,
     stripe_session_id character varying,
     stripe_payment_intent character varying,
-    created_at timestamp(6) without time zone NOT NULL,
-    updated_at timestamp(6) without time zone NOT NULL,
     customer_first_name character varying,
     customer_last_name character varying,
     confirmation_token character varying,
@@ -146,6 +145,8 @@ CREATE TABLE public.bookings (
     pending_access_token character varying,
     staff_id bigint,
     user_id bigint,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
     CONSTRAINT bookings_confirmed_requires_confirmation_token CHECK ((((booking_status)::text <> 'confirmed'::text) OR (NULLIF(btrim((confirmation_token)::text), ''::text) IS NOT NULL))),
     CONSTRAINT bookings_confirmed_requires_customer_email CHECK ((((booking_status)::text <> 'confirmed'::text) OR (NULLIF(btrim((customer_email)::text), ''::text) IS NOT NULL))),
     CONSTRAINT bookings_confirmed_requires_customer_first_name CHECK ((((booking_status)::text <> 'confirmed'::text) OR (NULLIF(btrim((customer_first_name)::text), ''::text) IS NOT NULL))),
@@ -175,41 +176,6 @@ CREATE SEQUENCE public.bookings_id_seq
 --
 
 ALTER SEQUENCE public.bookings_id_seq OWNED BY public.bookings.id;
-
-
---
--- Name: client_opening_hours; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.client_opening_hours (
-    id bigint NOT NULL,
-    client_id bigint NOT NULL,
-    day_of_week integer NOT NULL,
-    opens_at time without time zone NOT NULL,
-    closes_at time without time zone NOT NULL,
-    created_at timestamp(6) without time zone NOT NULL,
-    updated_at timestamp(6) without time zone NOT NULL,
-    CONSTRAINT client_opening_hours_opens_before_closes CHECK ((opens_at < closes_at))
-);
-
-
---
--- Name: client_opening_hours_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.client_opening_hours_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: client_opening_hours_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.client_opening_hours_id_seq OWNED BY public.client_opening_hours.id;
 
 
 --
@@ -366,9 +332,9 @@ CREATE TABLE public.schema_migrations (
 CREATE TABLE public.service_assignment_cursors (
     id bigint NOT NULL,
     service_id bigint NOT NULL,
+    last_confirmed_staff_id bigint,
     created_at timestamp(6) without time zone NOT NULL,
-    updated_at timestamp(6) without time zone NOT NULL,
-    last_confirmed_staff_id bigint
+    updated_at timestamp(6) without time zone NOT NULL
 );
 
 
@@ -397,13 +363,12 @@ ALTER SEQUENCE public.service_assignment_cursors_id_seq OWNED BY public.service_
 
 CREATE TABLE public.services (
     id bigint NOT NULL,
-    client_id bigint,
     name character varying NOT NULL,
     duration_minutes integer NOT NULL,
     price_cents integer NOT NULL,
+    enseigne_id bigint NOT NULL,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
-    enseigne_id bigint NOT NULL,
     CONSTRAINT services_duration_minutes_positive CHECK ((duration_minutes > 0)),
     CONSTRAINT services_price_cents_non_negative CHECK ((price_cents >= 0))
 );
@@ -603,13 +568,6 @@ ALTER TABLE ONLY public.bookings ALTER COLUMN id SET DEFAULT nextval('public.boo
 
 
 --
--- Name: client_opening_hours id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.client_opening_hours ALTER COLUMN id SET DEFAULT nextval('public.client_opening_hours_id_seq'::regclass);
-
-
---
 -- Name: clients id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -708,22 +666,6 @@ ALTER TABLE ONLY public.bookings
 
 ALTER TABLE ONLY public.bookings
     ADD CONSTRAINT bookings_pkey PRIMARY KEY (id);
-
-
---
--- Name: client_opening_hours client_opening_hours_no_overlapping_intervals_per_day; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.client_opening_hours
-    ADD CONSTRAINT client_opening_hours_no_overlapping_intervals_per_day EXCLUDE USING gist (client_id WITH =, day_of_week WITH =, int4range((EXTRACT(epoch FROM opens_at))::integer, (EXTRACT(epoch FROM closes_at))::integer, '[)'::text) WITH &&);
-
-
---
--- Name: client_opening_hours client_opening_hours_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.client_opening_hours
-    ADD CONSTRAINT client_opening_hours_pkey PRIMARY KEY (id);
 
 
 --
@@ -880,27 +822,6 @@ CREATE INDEX index_bookings_on_user_id ON public.bookings USING btree (user_id);
 
 
 --
--- Name: index_client_opening_hours_on_client_and_day; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX index_client_opening_hours_on_client_and_day ON public.client_opening_hours USING btree (client_id, day_of_week);
-
-
---
--- Name: index_client_opening_hours_on_client_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX index_client_opening_hours_on_client_id ON public.client_opening_hours USING btree (client_id);
-
-
---
--- Name: index_client_opening_hours_on_exact_interval_per_day; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX index_client_opening_hours_on_exact_interval_per_day ON public.client_opening_hours USING btree (client_id, day_of_week, opens_at, closes_at);
-
-
---
 -- Name: index_clients_on_slug; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -968,13 +889,6 @@ CREATE INDEX index_service_assignment_cursors_on_last_confirmed_staff_id ON publ
 --
 
 CREATE UNIQUE INDEX index_service_assignment_cursors_on_service_id ON public.service_assignment_cursors USING btree (service_id);
-
-
---
--- Name: index_services_on_client_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX index_services_on_client_id ON public.services USING btree (client_id);
 
 
 --
@@ -1092,14 +1006,6 @@ ALTER TABLE ONLY public.bookings
 
 
 --
--- Name: services fk_rails_1b9e100e65; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.services
-    ADD CONSTRAINT fk_rails_1b9e100e65 FOREIGN KEY (client_id) REFERENCES public.clients(id);
-
-
---
 -- Name: staff_availabilities fk_rails_26975c979e; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1164,14 +1070,6 @@ ALTER TABLE ONLY public.service_assignment_cursors
 
 
 --
--- Name: client_opening_hours fk_rails_8e88be3c44; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.client_opening_hours
-    ADD CONSTRAINT fk_rails_8e88be3c44 FOREIGN KEY (client_id) REFERENCES public.clients(id);
-
-
---
 -- Name: expired_booking_links fk_rails_c2bc6272db; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1226,44 +1124,5 @@ ALTER TABLE ONLY public.bookings
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
-('20260402164004'),
-('20260402163938'),
-('20260402160000'),
-('20260402153000'),
-('20260402143000'),
-('20260402133000'),
-('20260402123000'),
-('20260402114000'),
-('20260402113000'),
-('20260402103000'),
-('20260402093113'),
-('20260402060100'),
-('20260402050000'),
-('20260402030000'),
-('20260401150000'),
-('20260401120000'),
-('20260325130000'),
-('20260325123000'),
-('20260325113000'),
-('20260325103000'),
-('20260325090000'),
-('20260325080000'),
-('20260325073349'),
-('20260325000003'),
-('20260325000002'),
-('20260325000001'),
-('20260324000002'),
-('20260324000001'),
-('20260319000002'),
-('20260319000001'),
-('20260318091500'),
-('20260318043805'),
-('20260316073931'),
-('20260315110003'),
-('20260315105010'),
-('20260315104615'),
-('20260315102949'),
-('20260315102534'),
-('20260314081835'),
-('20260314080003'),
-('20260314075954');
+('20260403113000');
+

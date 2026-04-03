@@ -7,6 +7,7 @@ class Bookings::PurgeExpiredPendingTest < ActiveSupport::TestCase
     @client = Client.create!(name: "Client purge", slug: "client-purge")
     @enseigne = @client.enseignes.create!(name: "Enseigne purge")
     @service = @enseigne.services.create!(name: "Service purge", duration_minutes: 30, price_cents: 1500)
+    @staff = @enseigne.staffs.create!(name: "Staff purge", active: true)
   end
 
   test "deletes only pending bookings expired strictly before cutoff" do
@@ -129,6 +130,7 @@ class Bookings::PurgeExpiredPendingTest < ActiveSupport::TestCase
     when :pending
       attrs[:booking_expires_at] = expires_at
     when :confirmed
+      attrs[:staff] = @staff
       attrs[:customer_first_name] = "Jean"
       attrs[:customer_last_name] = "Dupont"
       attrs[:customer_email] = "jean@example.com"

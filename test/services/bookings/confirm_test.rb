@@ -599,42 +599,6 @@ class Bookings::ConfirmTest < ActiveSupport::TestCase
     end
   end
 
-  test "confirmation does not use Resource.for_enseigne" do
-    travel_to Time.zone.local(2026, 3, 16, 10, 4, 0) do
-      booking = @client.bookings.create!(
-        enseigne: @enseigne,
-        service: @service,
-        staff: @staff,
-        booking_start_time: Time.zone.local(2026, 3, 16, 10, 30, 0),
-        booking_end_time: Time.zone.local(2026, 3, 16, 11, 0, 0),
-        booking_status: :pending,
-        booking_expires_at: 1.minute.from_now
-      )
-
-      resource_singleton = class << Bookings::Resource; self; end
-      resource_singleton.alias_method :for_enseigne_without_confirm_resource_test, :for_enseigne
-      resource_singleton.define_method(:for_enseigne) do |*_args, **_kwargs|
-        raise "Resource.for_enseigne should not be called by Confirm"
-      end
-
-      begin
-        result = Bookings::Confirm.new(
-          booking: booking,
-          booking_params: {
-            customer_first_name: "Léonard",
-            customer_last_name: "Boisson",
-            customer_email: "leo@example.com"
-          }
-        ).call
-
-        assert result.success?
-      ensure
-        resource_singleton.alias_method :for_enseigne, :for_enseigne_without_confirm_resource_test
-        resource_singleton.remove_method :for_enseigne_without_confirm_resource_test
-      end
-    end
-  end
-
   test "confirmation ignores bookings from another enseigne of the same client" do
     travel_to Time.zone.local(2026, 3, 15, 8, 0, 0) do
       slot = Time.zone.local(2026, 3, 16, 13, 30, 0)

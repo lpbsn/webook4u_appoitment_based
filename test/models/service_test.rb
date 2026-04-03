@@ -54,6 +54,10 @@ class ServiceTest < ActiveSupport::TestCase
     assert_not service.valid?
   end
 
+  test "service does not expose a direct client association" do
+    assert_nil Service.reflect_on_association(:client)
+  end
+
   test "database enforces non null name" do
     timestamp = Time.current
 

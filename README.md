@@ -154,16 +154,9 @@ bin/rails test test/integration/booking_flow_test.rb
 
 ## Documentation
 
-- [docs/DeveloperOnboarding.md](/Users/leobsn/Desktop/webook4u-engine/docs/DeveloperOnboarding.md) : vue d'ensemble technique pour un nouveau developpeur
-- [docs/TestOnboarding.md](/Users/leobsn/Desktop/webook4u-engine/docs/TestOnboarding.md) : vue d'ensemble de la strategie et de la structure des tests
-- [docs/DatabaseOnboarding.md](/Users/leobsn/Desktop/webook4u-engine/docs/DatabaseOnboarding.md) : vue d'ensemble rapide de la structure de la base et des invariants DB
-- [README.md](/Users/leobsn/Desktop/webook4u-engine/README.md) : point d'entree setup, base locale, tests et perimetre courant
-- [docs/BookingRules.md](/Users/leobsn/Desktop/webook4u-engine/docs/BookingRules.md) : point d'entree technique vers la documentation de reservation
-- [docs/BookingFlow.md](/Users/leobsn/Desktop/webook4u-engine/docs/BookingFlow.md) : reference du flux de reservation et du cycle de vie courant
-- [docs/BookingInvariants.md](/Users/leobsn/Desktop/webook4u-engine/docs/BookingInvariants.md) : reference des invariants de domaine, DB et concurrence
-- [docs/DatabaseArchitecture.md](/Users/leobsn/Desktop/webook4u-engine/docs/DatabaseArchitecture.md) : architecture de la base, tables, relations et garde-fous PostgreSQL
-- [docs/ProductScope.md](/Users/leobsn/Desktop/webook4u-engine/docs/ProductScope.md) : cadrage produit/strategie courant
-- [docs/FutureInvariantsChecklist.md](/Users/leobsn/Desktop/webook4u-engine/docs/FutureInvariantsChecklist.md) : memo prospectif a relire seulement si le perimetre evolue
+- [docs/README.md](/Users/leobsn/Desktop/webook4u_appoitment_based/docs/README.md) : index de la documentation active
+- [docs/EDB-Webook4U-Appointment-Based-V1.md](/Users/leobsn/Desktop/webook4u_appoitment_based/docs/EDB-Webook4U-Appointment-Based-V1.md) : cible produit V1
+- [docs/archive/README.md](/Users/leobsn/Desktop/webook4u_appoitment_based/docs/archive/README.md) : documents intermediaires archives (non normatifs)
 
 ## Base de donnees locale
 
@@ -242,6 +235,6 @@ Hors perimetre actuel :
 
 Regles metier actuelles :
 
-- les prestations sont partagees entre toutes les enseignes d'un meme client
-- pour un jour donne, si une enseigne a au moins une plage dans `enseigne_opening_hours`, ces horaires remplacent totalement le fallback `client` pour ce jour
-- les horaires `client` ne servent de fallback que lorsqu'aucune plage `enseigne` n'existe pour le jour demande
+- les services sont portes par l'enseigne (`Service` appartient a `Enseigne`)
+- la seule source d'horaires d'ouverture runtime est `enseigne_opening_hours` (pas de fallback `client_opening_hours`)
+- la ressource reservable explicite est le `Staff` (compatibilite staff/service explicite, pas de ressource implicite par enseigne)

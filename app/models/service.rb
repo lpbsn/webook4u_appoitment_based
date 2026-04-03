@@ -1,6 +1,5 @@
 class Service < ApplicationRecord
   belongs_to :enseigne
-  has_one :client, through: :enseigne
   has_many :bookings, dependent: :destroy
   has_many :staff_service_capabilities, dependent: :destroy
   has_many :staffs, through: :staff_service_capabilities

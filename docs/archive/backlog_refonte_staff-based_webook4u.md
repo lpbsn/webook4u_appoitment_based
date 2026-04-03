@@ -1561,7 +1561,7 @@ Type:
 
 Statut après revue:
 
-- Ready
+- Implémentée
 
 Objectif:
 
@@ -1569,7 +1569,7 @@ Objectif:
 
 Risque principal:
 
-- réécrire des comportements publics sans verrouiller les contrats qui doivent rester stables
+- réintroduire plus tard un contrat public hybride alors que le flow est déjà branché sur le noyau staff-based
 
 Dépendances:
 
@@ -1580,12 +1580,13 @@ Signal de fin:
 
 - le parcours public fonctionne de bout en bout sur le nouveau noyau
 - les contrats publics utiles restent stables
+- les tests contrôleur et d'intégration documentent déjà ce flow public staff-based
 
 ### E4-US1 - Charger les services publics depuis l'enseigne
 
 Statut:
 
-- Ready
+- Implémentée
 
 But:
 
@@ -1614,6 +1615,7 @@ Critères d'acceptation:
 
 - la page publique ne lit plus `client.services`
 - les services affichés appartiennent tous à l'enseigne sélectionnée
+- ce comportement est couvert par le runtime actuel et les tests publics
 
 Non-objectifs:
 
@@ -1632,7 +1634,7 @@ Questions interdites au dev:
 
 Statut:
 
-- Ready
+- Implémentée
 
 But:
 
@@ -1660,6 +1662,7 @@ Critères d'acceptation:
 
 - les slots affichés viennent de l'union des staffs éligibles
 - la visibilité publique n'assigne pas de staff
+- ce branchement est déjà effectif dans `PublicPage` et le moteur visible
 
 Non-objectifs:
 
@@ -1677,7 +1680,7 @@ Questions interdites au dev:
 
 Statut:
 
-- Ready
+- Implémentée
 
 But:
 
@@ -1707,6 +1710,7 @@ Critères d'acceptation:
 
 - `create_pending` crée un booking avec `staff_id`
 - la structure publique du flow reste inchangée
+- ce comportement est déjà couvert par les tests contrôleur et d'intégration du flow
 
 Non-objectifs:
 
@@ -1724,7 +1728,7 @@ Questions interdites au dev:
 
 Statut:
 
-- Ready
+- Implémentée
 
 But:
 
@@ -1755,6 +1759,7 @@ Critères d'acceptation:
 - aucun écran public n'affiche de choix staff
 - aucun redirect public n'introduit de notion de staff
 - le `confirm` garde le même `staff_id`
+- ce comportement est déjà couvert par les vues, redirects et tests d'intégration
 
 Non-objectifs:
 
@@ -1773,6 +1778,7 @@ Questions interdites au dev:
 - le flow public est branché sur le moteur staff-based
 - le contrat public utile reste stable
 - le staff reste invisible partout dans l'UX publique
+- l'epic est considérée livrée; les éventuels ajustements futurs relèvent d'une correction ciblée ou du nettoyage final, pas d'une refonte supplémentaire du flow public
 
 ## Epic 5 - Nettoyage final complet
 
@@ -1786,11 +1792,11 @@ Statut après revue:
 
 Objectif:
 
-- supprimer totalement l'ancien noyau et ses artefacts pour éviter toute dette hybride durable
+- supprimer le code mort, les reliquats de schéma et la documentation intermédiaire qui subsistent après la bascule effective du moteur staff-based
 
 Risque principal:
 
-- laisser une partie du runtime, des tests ou du socle DB encore attachée à l'ancien modèle
+- laisser survivre des services morts, des tests historiques et un socle DB hybride alors que le runtime principal est déjà staff-based
 
 Dépendances:
 
@@ -1802,8 +1808,10 @@ Signal de fin:
 - tests et seeds propres
 - socle DB propre
 - docs propres
+- aucun artefact mort ne documente encore `enseigne` comme ressource réservable
+- `db/schema.rb` et `db/structure.sql` sont réalignés sur le socle final
 
-### E5-US1 - Supprimer le runtime `enseigne-based`
+### E5-US1 - Supprimer les artefacts runtime morts de l'ancien noyau
 
 Statut:
 
@@ -1811,11 +1819,11 @@ Statut:
 
 But:
 
-- retirer toute logique runtime où l'enseigne est encore traitée comme ressource réservable
+- retirer les services et branches mortes encore construits autour de `enseigne` comme ressource réservable
 
 Pourquoi:
 
-- l'ancien noyau ne doit plus coexister avec le nouveau
+- le runtime principal a déjà basculé; il reste surtout du code mort et des commentaires faux qui entretiennent une dette de lecture
 
 Entrées / dépendances:
 
@@ -1823,19 +1831,26 @@ Entrées / dépendances:
 
 Changements attendus:
 
-- supprimer les branches runtime `resource = enseigne`
-- supprimer les locks applicatifs au niveau enseigne
-- supprimer les commentaires de transition devenus faux
+- supprimer `Bookings::Resource` s'il n'a plus d'usage métier utile
+- supprimer `Bookings::BlockingBookings` s'il n'a plus d'usage métier utile
+- supprimer `Bookings::SlotDecision` s'il n'a plus d'usage métier utile
+- supprimer `SlotLock.with_resource_lock` s'il n'a plus d'usage métier utile
+- supprimer les commentaires de transition devenus faux dans les modèles et services encore conservés
 
 Zones du repo concernées:
 
-- services de booking runtime
-- helpers et contrôleurs liés au flow de réservation
+- `app/services/bookings/resource.rb`
+- `app/services/bookings/blocking_bookings.rb`
+- `app/services/bookings/slot_decision.rb`
+- `app/services/bookings/slot_lock.rb`
+- `app/models/booking.rb`
 
 Critères d'acceptation:
 
-- aucune logique runtime ne suppose encore `une enseigne = une ressource`
-- les locks runtime ne sont plus portés au niveau enseigne
+- aucun service runtime actif ne suppose encore `une enseigne = une ressource`
+- aucun service runtime actif n'utilise `Resource.for_enseigne`
+- aucun service runtime actif n'utilise `SlotLock.with_resource_lock`
+- aucun commentaire actif ne décrit encore le moteur courant comme transitoire vers le staff-based
 
 Non-objectifs:
 
@@ -1849,7 +1864,7 @@ Questions interdites au dev:
 
 - "Peut-on conserver une branche de compatibilité `enseigne-based` ?" Non
 
-### E5-US2 - Supprimer `client_opening_hours` du runtime, des tests, des seeds et du schéma
+### E5-US2 - Supprimer physiquement `client_opening_hours`
 
 Statut:
 
@@ -1857,11 +1872,11 @@ Statut:
 
 But:
 
-- éliminer totalement `client_opening_hours` du projet
+- éliminer totalement `client_opening_hours` du code, des tests et du socle DB final
 
 Pourquoi:
 
-- cette notion ne doit plus exister ni au runtime ni dans le socle final
+- le runtime n'en dépend déjà plus; il reste maintenant à supprimer la notion du projet lui-même
 
 Entrées / dépendances:
 
@@ -1869,23 +1884,25 @@ Entrées / dépendances:
 
 Changements attendus:
 
-- supprimer le runtime lié à `client_opening_hours`
-- supprimer les tests et seeds qui l'utilisent
-- retirer son support du schéma final
+- supprimer l'association `client_opening_hours` de `Client`
+- supprimer le modèle, les tests et helpers qui construisent encore `client_opening_hours`
+- supprimer la table, ses contraintes, ses indexes et les migrations historiques si le socle DB est régénéré
+- supprimer les tests de migration/infrastructure spécifiques à `client_opening_hours`
 
 Zones du repo concernées:
 
 - `app/models/client.rb`
-- `app/services/bookings/schedule_resolver.rb` ou son remplaçant
-- `db/seeds.rb`
 - tests liés aux opening hours
+- `db/migrate`
+- `db/schema.rb`
+- `db/structure.sql`
 
 Critères d'acceptation:
 
-- aucune règle métier runtime n'utilise `client_opening_hours`
-- les tests ne construisent plus de `client_opening_hours`
-- les seeds ne créent plus de `client_opening_hours`
-- le schéma final n'inclut plus `client_opening_hours`
+- aucun modèle actif ne référence `client_opening_hours`
+- aucun test actif ne construit `client_opening_hours`
+- aucun seed actif ne construit `client_opening_hours`
+- `db/schema.rb` et `db/structure.sql` n'incluent plus `client_opening_hours`
 
 Non-objectifs:
 
@@ -1899,7 +1916,7 @@ Questions interdites au dev:
 
 - "Peut-on garder la table en archive dans le schéma final ?" Non
 
-### E5-US3 - Supprimer `client.services` du runtime, des tests, des seeds et du schéma
+### E5-US3 - Clôturer définitivement le modèle de service global client
 
 Statut:
 
@@ -1907,11 +1924,11 @@ Statut:
 
 But:
 
-- éliminer totalement le modèle de service global au client
+- supprimer les derniers reliquats qui pourraient encore laisser croire à un catalogue global au niveau client
 
 Pourquoi:
 
-- le socle final ne doit plus conserver cette notion
+- le runtime principal a déjà basculé; il faut maintenant empêcher tout retour implicite du modèle `client.services`
 
 Entrées / dépendances:
 
@@ -1919,23 +1936,23 @@ Entrées / dépendances:
 
 Changements attendus:
 
-- supprimer les associations et usages runtime de `client.services`
-- supprimer les tests et seeds qui créent les services via le client
-- retirer les reliquats du schéma final
+- supprimer les helpers, tests ou commentaires qui parlent encore de `client.services`
+- supprimer les reliquats de docs techniques ou de code qui suggèrent un service porté par `Client`
+- vérifier que le socle final n'expose plus aucun raccourci ou reliquat de lecture vers un catalogue client
 
 Zones du repo concernées:
 
 - `app/models/client.rb`
 - `app/models/service.rb`
-- `db/seeds.rb`
 - tests domaine et flow public
+- docs techniques et backlog si nécessaire
 
 Critères d'acceptation:
 
 - aucune logique métier n'utilise `client.services`
-- les tests créent les services via l'enseigne
-- les seeds créent les services via l'enseigne
-- le schéma final n'exprime plus de service global client
+- les tests actifs créent les services via l'enseigne
+- les seeds actifs créent les services via l'enseigne
+- aucune doc active ne présente encore `Service` comme une entité portée par `Client`
 
 Non-objectifs:
 
@@ -1973,18 +1990,22 @@ Changements attendus:
 - supprimer les tests obsolètes
 - réécrire les tests devenus faux
 - nettoyer les helpers de test et helpers de vues devenus inutiles
+- supprimer les tests portant uniquement sur des services morts ou des artefacts historiques supprimés
+- supprimer les docs de tickets intermédiaires si elles ne décrivent plus un état utile
 
 Zones du repo concernées:
 
 - `test/`
 - `db/seeds.rb`
 - helpers liés au flow public
+- `docs/tickets_technique_epic_*.md`
 
 Critères d'acceptation:
 
 - aucun test ne documente encore un comportement désormais interdit
 - aucun helper de test ne reconstruit l'ancien modèle
 - aucun seed ne reconstruit l'ancien modèle
+- aucun test actif ne cible uniquement `Resource`, `BlockingBookings`, `SlotDecision` ou `client_opening_hours` si ces artefacts ont été supprimés
 
 Non-objectifs:
 
@@ -2022,6 +2043,8 @@ Changements attendus:
 - supprimer les migrations et contraintes obsolètes qui n'ont plus de valeur dans le nouveau socle
 - régénérer le schéma final
 - régénérer `db/structure.sql`
+- réaligner `db/schema.rb` et `db/structure.sql` sur le même socle final
+- supprimer les reliquats de l'ancien overlap `confirmed` par enseigne
 
 Zones du repo concernées:
 
@@ -2034,6 +2057,9 @@ Critères d'acceptation:
 - la base peut être reconstruite proprement à partir du nouveau socle
 - le schéma final ne contient plus d'artefacts de l'ancien modèle
 - `db/structure.sql` reflète uniquement le modèle cible
+- `db/schema.rb` ne contient plus `client_opening_hours`
+- `db/schema.rb` ne contient plus `index_bookings_on_enseigne_and_start_time_confirmed`
+- les contraintes et indexes legacy `confirmed by enseigne` ont disparu du socle final
 
 Non-objectifs:
 
@@ -2071,6 +2097,7 @@ Changements attendus:
 
 - retirer les docs obsolètes
 - réaligner les docs restantes sur le noyau staff-based
+- supprimer ou archiver clairement les documents intermédiaires qui décrivent un état de transition déjà dépassé
 
 Zones du repo concernées:
 
@@ -2081,6 +2108,7 @@ Critères d'acceptation:
 
 - les docs actives décrivent uniquement le socle cible
 - aucune doc active ne décrit encore `client.services` ou `client_opening_hours` comme runtime métier
+- aucune doc active ne décrit encore `Resource.for_enseigne` ou une ressource réservable implicite par enseigne comme moteur courant
 
 Non-objectifs:
 
@@ -2102,6 +2130,7 @@ Questions interdites au dev:
 - docs propres
 - aucune dépendance active à `client.services`
 - aucune dépendance active à `client_opening_hours`
+- aucun artefact actif ou mort n'entretient encore l'ancien noyau `enseigne-based`
 
 ## Priorisation finale
 
