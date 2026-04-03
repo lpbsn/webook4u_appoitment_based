@@ -1,0 +1,4 @@
+interface:
+  display_name: "PO Fonctionnelle"
+  short_description: "Write functional specs and user stories"
+  default_prompt: "Use $po-fonctionnelle to turn this feature brief into a functional spec and user stories."

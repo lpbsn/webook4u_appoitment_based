@@ -153,9 +153,11 @@ Webook4U V1 doit permettre :
 - la gestion des pauses et indisponibilités du staff
 - la sélection publique d'une enseigne
 - la sélection publique d'un service
+- le choix public du mode d'assignation entre `assignation automatique` et `staff spécifique`
 - la sélection publique d'une date
 - le calcul public des créneaux disponibles
-- l'assignation automatique d'un staff via une logique de round robin parmi les staffs compatibles et disponibles
+- l'assignation automatique d'un staff via une logique de round robin parmi les staffs compatibles et disponibles lorsque le mode `assignation automatique` est choisi
+- la réservation sur un `staff spécifique` nommé lorsque ce mode est choisi par l'utilisateur final
 - la création d'une réservation temporaire bloquante
 - le paiement Stripe si activé pour le client
 - la confirmation finale de la réservation
@@ -168,13 +170,13 @@ Webook4U V1 n'inclut pas :
 
 - annulation de réservation
 - replanification
-- choix manuel du staff par l'utilisateur final
 - réservation multi-services dans une même commande
 - capacité collective
 - ressources matérielles complexes
 - logique restaurant
 - logique piscine ou cours collectifs
 - intégration CRM comme dépendance métier
+- exposition publique détaillée du staff au-delà du nom
 - emails transactionnels dans le périmètre officiel
 - multi-devises
 - multi-fuseaux horaires
@@ -210,8 +212,10 @@ L'utilisateur final souhaite :
 
 - choisir une enseigne
 - choisir une prestation
+- choisir un mode d'assignation
 - choisir une date
 - voir des créneaux disponibles
+- choisir un staff nommé s'il préfère un intervenant spécifique
 - réserver simplement
 - payer si le client l'exige
 
@@ -256,8 +260,11 @@ Les règles de portage des données validées sont :
 - une enseigne peut choisir un modèle spécialisé où seuls certains staffs réalisent certains services
 - la relation `staff <-> service` doit donc être configurable explicitement
 - le client final réserve un seul service par réservation
-- l'utilisateur final ne choisit pas de staff en V1
-- le système assigne automatiquement un staff via une logique de round robin parmi les staffs compatibles et disponibles
+- l'utilisateur final choisit avant la date entre `assignation automatique` et `staff spécifique`
+- l'option `assignation automatique` reste l'option recommandée dans l'UI
+- en mode `assignation automatique`, le système assigne automatiquement un staff via une logique de round robin parmi les staffs compatibles et disponibles
+- en mode `staff spécifique`, l'utilisateur final choisit un staff nommé et les créneaux affichés sont limités à ce staff
+- l'exposition publique du staff est limitée à son nom en V1 étendue
 
 ### 9.4 Règle de capacité
 
@@ -294,7 +301,7 @@ Conséquences produit :
 
 ### 9.6 Règles d'assignation round robin
 
-L'assignation automatique du staff repose en V1 sur une logique de round robin souple.
+En mode `assignation automatique`, l'assignation du staff repose en V1 sur une logique de round robin souple.
 
 Cette logique s'applique par couple `enseigne + service`.
 
@@ -306,13 +313,25 @@ Règles validées :
 - si ce staff n'est pas disponible sur le créneau choisi, le moteur passe au staff suivant dans l'ordre de rotation jusqu'à trouver un staff compatible et disponible
 - le premier staff compatible et disponible trouvé est assigné au booking
 - la rotation est mise à jour sur une réservation confirmée et non sur un simple `pending`
+- une confirmation issue du mode `staff spécifique` ne met pas à jour le curseur round robin
 
 Garde-fous validés :
 
 - le round robin n'est pas une recherche d'équité parfaite
 - le round robin doit rester un mécanisme simple de répartition et ne doit pas dégrader la réservation
 - le round robin ne doit jamais réduire artificiellement les créneaux visibles lorsqu'au moins un staff compatible est disponible
-- l'utilisateur final ne choisit pas son staff et n'est pas exposé à la logique de distribution
+- le round robin reste le comportement standard du moteur pour le mode `assignation automatique` uniquement
+- l'utilisateur final peut choisir un `staff spécifique`, mais n'est jamais exposé à la logique interne de distribution du mode `assignation automatique`
+
+### 9.7 Règles de choix public d'assignation
+
+Le choix public d'assignation obéit aux règles suivantes :
+
+- il intervient après le choix du service et avant le choix de la date
+- l'UI doit toujours présenter `assignation automatique` comme option recommandée
+- l'UI doit exposer `assignation automatique` et chaque `staff spécifique` éligible par son nom uniquement
+- ce double mode reste affiché même lorsqu'un seul staff éligible existe
+- le choix du mode d'assignation détermine la logique de disponibilité visible et d'assignation finale
 
 ## 10. Branding et distribution
 
@@ -353,17 +372,23 @@ Le parcours public V1 est le suivant :
 1. l'utilisateur ouvre la page de réservation hébergée du client
 2. il choisit une enseigne
 3. il choisit un service
-4. il choisit une date
-5. le moteur affiche les créneaux disponibles
-6. il choisit un créneau
-7. le système assigne automatiquement un staff selon une logique de round robin parmi les staffs compatibles et disponibles
-8. le système crée une réservation temporaire bloquante
-9. si le paiement est activé, l'utilisateur est dirigé vers Stripe
-10. si le paiement réussit, la réservation est confirmée
-11. si le paiement échoue ou expire, la réservation n'est pas confirmée et le créneau est libéré
-12. si le paiement n'est pas activé, la réservation est confirmée directement
+4. il choisit soit `assignation automatique`, soit un `staff spécifique` nommé
+5. il choisit une date
+6. le moteur affiche les créneaux disponibles selon le mode choisi
+7. il choisit un créneau
+8. si le mode `assignation automatique` est choisi, le système assigne un staff selon une logique de round robin parmi les staffs compatibles et disponibles
+9. si le mode `staff spécifique` est choisi, le système conserve le staff nommé sélectionné
+10. le système crée une réservation temporaire bloquante
+11. si le paiement est activé, l'utilisateur est dirigé vers Stripe
+12. si le paiement réussit, la réservation est confirmée
+13. si le paiement échoue ou expire, la réservation n'est pas confirmée et le créneau est libéré
+14. si le paiement n'est pas activé, la réservation est confirmée directement
 
-Cette assignation reste invisible pour l'utilisateur final.
+Règles d'exposition publique validées :
+
+- `assignation automatique` doit être présentée comme option recommandée
+- le staff n'est exposé publiquement que par son nom
+- le choix `assignation automatique | staff spécifique` reste affiché même lorsqu'un seul staff éligible existe
 
 ## 12. Workflow back-office admin
 
@@ -393,7 +418,7 @@ Le back-office client V1 ne doit pas exposer de moteur de distribution complexe.
 
 Règles validées :
 
-- le round robin est actif par défaut comme comportement standard du moteur
+- le round robin est actif par défaut comme comportement standard du moteur en mode `assignation automatique`
 - le client peut gérer son staff et ses compatibilités service, mais pas piloter des stratégies avancées de distribution en V1
 
 Explicitement hors périmètre V1 :
@@ -412,8 +437,9 @@ Les créneaux affichés doivent être calculés par Webook4U.
 Un créneau est potentiellement réservable s'il respecte :
 
 - le cadre d'ouverture de l'enseigne
-- la disponibilité d'au moins un staff compatible dans la rotation du service
-- l'absence d'indisponibilité ou de pause sur ce staff
+- en mode `assignation automatique`, la disponibilité d'au moins un staff compatible pour le service
+- en mode `staff spécifique`, la disponibilité du staff nommé choisi
+- l'absence d'indisponibilité ou de pause sur le staff concerné
 - la durée du service
 - les règles anti-conflit
 
@@ -422,13 +448,16 @@ Un créneau est potentiellement réservable s'il respecte :
 La V1 distingue deux moments métier :
 
 - `disponibilité visible`
-  - un créneau doit être affiché dès lors qu'au moins un staff compatible est libre sur ce créneau
+  - en mode `assignation automatique`, un créneau doit être affiché dès lors qu'au moins un staff compatible est libre sur ce créneau
+  - en mode `staff spécifique`, un créneau doit être affiché uniquement si le staff nommé choisi est libre sur ce créneau
 - `assignation finale`
-  - une fois le créneau choisi, le moteur applique l'ordre round robin du couple `enseigne + service` et assigne le premier staff compatible et disponible trouvé
+  - en mode `assignation automatique`, une fois le créneau choisi, le moteur applique l'ordre round robin du couple `enseigne + service` et assigne le premier staff compatible et disponible trouvé
+  - en mode `staff spécifique`, une fois le créneau choisi, le moteur tente de confirmer le créneau pour le staff nommé déjà sélectionné
 
 Règle structurante :
 
-- le round robin intervient au moment de l'assignation et ne doit pas être utilisé comme filtre métier dur s'il réduit artificiellement les créneaux visibles
+- le round robin intervient uniquement en mode `assignation automatique`
+- il ne doit pas être utilisé comme filtre métier dur s'il réduit artificiellement les créneaux visibles
 
 ### 14.3 Granularité
 
@@ -534,9 +563,11 @@ Pour rester cohérente avec la vision V1, l'implémentation doit préserver les 
 - ne pas faire du CRM une dépendance de la réservation
 - ne pas introduire annulation ou replanification dans la V1
 - ne pas réintroduire une ressource réservable implicite au niveau enseigne
-- garder un round robin simple, déterministe et limité au couple `enseigne + service`
+- garder un round robin simple, déterministe et limité au couple `enseigne + service` pour le mode `assignation automatique`
 - si le prochain staff théorique n'est pas disponible, passer au suivant
 - ne pas introduire de stratégie avancée de répartition dans la V1
+- ne pas exposer publiquement plus que le nom du staff dans cette V1 étendue
+- ne pas supprimer le double mode `assignation automatique | staff spécifique` lorsqu'un seul staff éligible existe
 
 ## 20. Principaux risques produit
 
@@ -549,7 +580,8 @@ Les principaux risques à contrôler sont :
 - conserver un modèle de capacité par enseigne au lieu d'un modèle de disponibilité par staff
 - transformer le round robin en moteur d'orchestration complexe
 - sacrifier la disponibilité globale pour une équité théorique
-- exposer la distribution staff à l'utilisateur final en V1
+- exposer la logique interne de distribution staff à l'utilisateur final en V1
+- élargir trop tôt l'exposition publique du staff au-delà du nom
 
 ## 21. Résumé décisionnel
 
@@ -559,7 +591,9 @@ Webook4U V1 doit être compris comme :
 - pour activités à rendez-vous
 - avec ressource réservable portée par le staff
 - avec calcul interne de disponibilité
-- avec assignation automatique du staff via un round robin souple par couple `enseigne + service`
+- avec un choix public entre `assignation automatique` et `staff spécifique`
+- avec `assignation automatique` présentée comme option recommandée
+- avec assignation automatique du staff via un round robin souple par couple `enseigne + service` lorsque le mode `assignation automatique` est choisi
 - avec réservation temporaire bloquante
 - avec paiement Stripe séparé et activable par client
 - avec confirmation instantanée si le créneau est disponible et si les conditions de paiement sont satisfaites
@@ -580,7 +614,7 @@ Les sujets suivants sont explicitement renvoyés après la V1 :
 - annulation
 - replanification
 - emails transactionnels dans le périmètre officiel
-- choix manuel du staff par l'utilisateur final
+- exposition publique enrichie des staffs au-delà du nom
 - intégrations CRM bidirectionnelles
 - topologies capacity-based
 - topologies restaurant/table-based

@@ -1,0 +1,4 @@
+interface:
+  display_name: "PO Technique"
+  short_description: "Build technical specs and backlogs"
+  default_prompt: "Use $po-technique to translate this functional scope into a technical plan and backlog."

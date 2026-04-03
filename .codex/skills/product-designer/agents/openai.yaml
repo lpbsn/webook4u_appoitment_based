@@ -1,0 +1,4 @@
+interface:
+  display_name: "Product Designer"
+  short_description: "Frame and challenge product requests"
+  default_prompt: "Use $product-designer to challenge this feature request and produce a scoped feature brief."

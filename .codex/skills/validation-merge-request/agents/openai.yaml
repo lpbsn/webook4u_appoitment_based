@@ -1,0 +1,4 @@
+interface:
+  display_name: "Validation Merge Request"
+  short_description: "Validate final merge readiness and proof"
+  default_prompt: "Use $validation-merge-request to perform final merge validation against the full artifact chain."

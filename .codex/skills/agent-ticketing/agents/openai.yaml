@@ -1,0 +1,4 @@
+interface:
+  display_name: "Agent Ticketing"
+  short_description: "Draft delivery-ready development tickets"
+  default_prompt: "Use $agent-ticketing to convert this technical story into a delivery-ready ticket."
