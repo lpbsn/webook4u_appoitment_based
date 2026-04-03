@@ -129,8 +129,8 @@ class CreateFinalStaffBasedSchemaMigrationTest < SchemaMutationMigrationTestCase
 
   def base_pg_connection_params
     @base_pg_connection_params ||= begin
-      db_config = ActiveRecord::Base.configurations.configs_for(env_name: "test", name: "primary").first ||
-        ActiveRecord::Base.configurations.configs_for(env_name: "test").first
+      db_config = Array(ActiveRecord::Base.configurations.configs_for(env_name: "test", name: "primary")).first ||
+        Array(ActiveRecord::Base.configurations.configs_for(env_name: "test")).first
       configuration_hash = db_config.configuration_hash.symbolize_keys
 
       {
