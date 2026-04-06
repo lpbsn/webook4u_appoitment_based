@@ -82,7 +82,7 @@ if Rails.env.development?
 
   upsert_weekday_hours.call(paris_16.enseigne_opening_hours, opens_at: "09:00", closes_at: "18:00")
   upsert_weekday_hours.call(lyon_06.enseigne_opening_hours, opens_at: "10:00", closes_at: "16:00")
-  valence_sud.enseigne_opening_hours.delete_all
+  upsert_weekday_hours.call(valence_sud.enseigne_opening_hours, opens_at: "10:00", closes_at: "16:00")
   lyon_08.enseigne_opening_hours.delete_all
 
   [
