@@ -8,15 +8,20 @@ module Bookings
       :selected_enseigne,
       :services,
       :selected_service,
+      :assignment_mode,
+      :eligible_staffs,
+      :selected_staff,
       :date,
       :slots,
       keyword_init: true
     )
 
-    def initialize(slug:, enseigne_id:, service_id:, date_param:)
+    def initialize(slug:, enseigne_id:, service_id:, assignment_mode_param:, staff_id_param:, date_param:)
       @slug = slug
       @enseigne_id = enseigne_id
       @service_id = service_id
+      @assignment_mode_param = assignment_mode_param
+      @staff_id_param = staff_id_param
       @date_param = date_param
     end
 
@@ -31,16 +36,56 @@ module Bookings
       services = selected_enseigne.present? ? selected_enseigne.services.order(:name) : Service.none
 
       selected_service = selected_enseigne.services.find_by(id: service_id) if selected_enseigne.present? && service_id.present?
+      eligible_staffs =
+        if selected_enseigne.present? && selected_service.present?
+          EligibleStaffsResolver.new(
+            service: selected_service,
+            enseigne: selected_enseigne
+          ).call
+        else
+          Staff.none
+        end
+      assignment_mode =
+        if selected_service.blank? || eligible_staffs.blank?
+          nil
+        elsif %w[automatic specific_staff].include?(assignment_mode_param)
+          assignment_mode_param
+        else
+          "automatic"
+        end
+      selected_staff =
+        if assignment_mode == "specific_staff" && staff_id_param.present?
+          eligible_staffs.find_by(id: staff_id_param)
+        end
+      date =
+        if assignment_mode == "automatic" ||
+          (assignment_mode == "specific_staff" && selected_staff.present?)
+          Input.safe_date(date_param)
+        end
 
-      date = Input.safe_date(date_param)
-
-      slots = if selected_enseigne.present? && selected_service.present? && date.present?
-        # Public page exposes the visible UX grid only. Transactional flows
-        # revalidate reservability through staff-based transaction services.
-        AvailableSlots.new(client: client, enseigne: selected_enseigne, service: selected_service, date: date).call
-      else
-        []
-      end
+      slots =
+        if selected_enseigne.present? && selected_service.present? && date.present?
+          if assignment_mode == "automatic"
+            AvailableSlots.new(
+              client: client,
+              enseigne: selected_enseigne,
+              service: selected_service,
+              date: date
+            ).call
+          elsif assignment_mode == "specific_staff" && selected_staff.present?
+            AvailableSlots.new(
+              client: client,
+              enseigne: selected_enseigne,
+              service: selected_service,
+              date: date,
+              staff: selected_staff
+            ).call
+          else
+            []
+          end
+        else
+          []
+        end
 
       Result.new(
         client: client,
@@ -48,6 +93,9 @@ module Bookings
         selected_enseigne: selected_enseigne,
         services: services,
         selected_service: selected_service,
+        assignment_mode: assignment_mode,
+        eligible_staffs: eligible_staffs,
+        selected_staff: selected_staff,
         date: date,
         slots: slots
       )
@@ -55,6 +103,6 @@ module Bookings
 
     private
 
-    attr_reader :slug, :enseigne_id, :service_id, :date_param
+    attr_reader :slug, :enseigne_id, :service_id, :assignment_mode_param, :staff_id_param, :date_param
   end
 end

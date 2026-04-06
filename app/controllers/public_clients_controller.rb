@@ -12,6 +12,8 @@ class PublicClientsController < ApplicationController
       slug: params[:slug],
       enseigne_id: params[:enseigne_id],
       service_id: params[:service_id],
+      assignment_mode_param: params[:assignment_mode],
+      staff_id_param: params[:staff_id],
       date_param: params[:date]
     ).call
 
@@ -20,6 +22,9 @@ class PublicClientsController < ApplicationController
     @selected_enseigne = page.selected_enseigne
     @services = page.services
     @selected_service = page.selected_service
+    @assignment_mode = page.assignment_mode
+    @eligible_staffs = page.eligible_staffs
+    @selected_staff = page.selected_staff
     @date = page.date
     @slots = page.slots
   end

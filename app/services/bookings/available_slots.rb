@@ -11,23 +11,30 @@ module Bookings
   # while AvailableSlots only produces the currently visible slot list from
   # schedule intervals, booking window rules and blocking bookings.
   class AvailableSlots
-    def initialize(client:, service:, date:, enseigne: nil)
+    def initialize(client:, service:, date:, enseigne: nil, staff: nil)
       @client = client
       @service = service
       @date = date.to_date
       @enseigne = enseigne
+      @staff = staff
     end
 
     def call
       return [] if enseigne.blank? || service.blank?
       return [] if service.enseigne_id != enseigne.id
 
-      eligible_staffs.flat_map { |staff| slots_for_staff(staff) }.uniq.sort
+      if staff.present?
+        return [] unless eligible_staffs.exists?(id: staff.id)
+
+        slots_for_staff(staff).uniq.sort
+      else
+        eligible_staffs.flat_map { |candidate_staff| slots_for_staff(candidate_staff) }.uniq.sort
+      end
     end
 
     private
 
-    attr_reader :client, :service, :date, :enseigne
+    attr_reader :client, :service, :date, :enseigne, :staff
 
     def eligible_staffs
       @eligible_staffs ||= EligibleStaffsResolver.new(service: service, enseigne: enseigne).call

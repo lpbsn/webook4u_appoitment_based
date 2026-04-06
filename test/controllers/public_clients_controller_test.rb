@@ -21,8 +21,17 @@ class PublicClientsControllerTest < ActionDispatch::IntegrationTest
     create_weekday_opening_hours_for_enseigne(enseigne)
     service = enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2500)
 
+    staff = enseigne.staffs.create!(name: "Emma", active: true)
+    staff.staff_availabilities.create!(day_of_week: 1, opens_at: "10:00", closes_at: "18:00")
+    StaffServiceCapability.create!(staff: staff, service: service)
+
     travel_to Time.zone.local(2026, 3, 15, 8, 0, 0) do
-      get public_client_url(client.slug), params: { enseigne_id: enseigne.id, service_id: service.id }
+      get public_client_url(client.slug), params: {
+        enseigne_id: enseigne.id,
+        service_id: service.id,
+        assignment_mode: "automatic"
+      }
+
       assert_response :success
       assert_select 'input[name="enseigne_id"][value=?]', enseigne.id.to_s
       assert_select 'input[name="date"][min=?]', Date.current.iso8601
@@ -67,8 +76,8 @@ class PublicClientsControllerTest < ActionDispatch::IntegrationTest
     get public_client_url(client.slug)
 
     assert_response :success
-    assert_select "h2", text: "1. Choisissez une enseigne"
-    assert_select "h2", text: "2. Choisissez une prestation", count: 0
+    assert_select "h2", text: "1. Choisir une enseigne"
+    assert_select "h2", text: "2. Choisir un service", count: 0
   end
 
   test "show displays unavailable tunnel message when no active enseigne exists" do
@@ -87,11 +96,18 @@ class PublicClientsControllerTest < ActionDispatch::IntegrationTest
     create_weekday_opening_hours_for_enseigne(enseigne)
     service = enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2500)
 
-    get public_client_url(client.slug), params: { service_id: service.id }
+    staff = enseigne.staffs.create!(name: "Emma", active: true)
+    staff.staff_availabilities.create!(day_of_week: 1, opens_at: "10:00", closes_at: "18:00")
+    StaffServiceCapability.create!(staff: staff, service: service)
+
+    get public_client_url(client.slug), params: {
+      service_id: service.id,
+      assignment_mode: "automatic"
+    }
 
     assert_response :success
     assert_includes response.body, enseigne.name
-    assert_select "h2", text: "2. Choisissez une prestation"
-    assert_select "input[name=\"enseigne_id\"][value=?]", enseigne.id.to_s
+    assert_includes response.body, "2. Choisir un service"
+    assert_select 'input[name="enseigne_id"][value=?]', enseigne.id.to_s
   end
 end

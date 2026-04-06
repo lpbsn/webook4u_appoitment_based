@@ -4,21 +4,42 @@
 </div>
 
 <div class="booking-summary">
-  <h2 class="booking-section-title">Votre sélection</h2>
+  <h2 class="booking-section-title">Votre sélection :</h2>
   <div class="booking-fields">
     <div class="booking-summary-row">
-      <span class="booking-summary-label">Enseigne</span>
+      <span class="booking-summary-label">Enseigne :</span>
       <span class="booking-summary-value"><%= public_client_selected_enseigne_name(@selected_enseigne) %></span>
     </div>
     <div class="booking-summary-row">
-      <span class="booking-summary-label">Adresse</span>
+      <span class="booking-summary-label">Adresse :</span>
       <span class="booking-summary-value"><%= public_client_selected_enseigne_address(@selected_enseigne) %></span>
     </div>
     <div class="booking-summary-row">
-      <span class="booking-summary-label">Prestation</span>
+      <span class="booking-summary-label">Prestation :</span>
       <span class="booking-summary-value"><%= public_client_selected_service_name(@selected_service) %></span>
     </div>
-    <div class="booking-summary-row">
+    <% if @selected_service.present? %>
+      <div class="booking-summary-row">
+        <span class="booking-summary-label">Prix :</span>
+        <span class="booking-summary-value"><%= public_client_service_price(@selected_service) %></span>
+      </div>
+    <% end %>
+    <% if @selected_service.present? %>
+      <div class="booking-summary-row">
+        <span class="booking-summary-label">Durée :</span>
+        <span class="booking-summary-value"><%= @selected_service.duration_minutes %> min</span>
+      </div>
+    <% end %>
+    <% if @assignment_mode == "specific_staff" && @selected_staff.present? %>
+      <div class="booking-summary-row">
+        <span class="booking-summary-label">Attribution :</span>
+        <span class="booking-summary-value">
+          <%= @selected_staff.name %>
+        </span>
+      </div>
+    <% end %>
+  </div>
+  <div class="booking-summary-row">
       <span class="booking-summary-label">Date :</span>
       <span class="booking-summary-value"><%= public_client_selected_date(@date) %></span>
     </div>
@@ -27,5 +48,3 @@
       <span class="booking-summary-value">—</span>
     </div>
   </div>
-</div>
-

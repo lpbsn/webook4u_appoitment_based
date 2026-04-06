@@ -1,19 +1,25 @@
-<% if @selected_enseigne.present? && @selected_service.present? %>
+<% assignment_complete =
+     @assignment_mode == "automatic" ||
+     (@assignment_mode == "specific_staff" && @selected_staff.present?) %>
+
+<% if @selected_enseigne.present? && @selected_service.present? && assignment_complete %>
   <div class="booking-section">
-    <h2 class="booking-section-title">3. Choisissez une date</h2>
+    <h2 class="booking-section-title">4. Choisir une date</h2>
+    <div class="booking-section-meta">
+      <strong><%= @selected_enseigne.name %></strong> —
+      <strong><%= @selected_service.name %></strong> -
+      <strong><%= @selected_service.duration_minutes %>'</strong>
+    </div>
     <p class="booking-section-meta">Précisez la date souhaitée pour votre réservation.</p>
 
-    <div class="booking-fields">
-      <p><strong>Enseigne sélectionnée :</strong> <%= @selected_enseigne.name %></p>
-      <p><strong>Prestation sélectionnée :</strong> <%= @selected_service.name %></p>
-      <p><strong>Durée :</strong> <%= @selected_service.duration_minutes %> minutes</p>
-      <p><strong>Prix :</strong> <%= public_client_service_price(@selected_service) %></p>
-    </div>
-
     <%= form_with url: public_client_path(@client.slug), method: :get, local: true do %>
-      <%= hidden_field_tag :enseigne_id, @selected_enseigne.id %>
-      <%= hidden_field_tag :service_id, @selected_service.id %>
+      <%= hidden_field_tag :assignment_mode, @assignment_mode %>
+      <% if @assignment_mode == "specific_staff" && @selected_staff.present? %>
+        <%= hidden_field_tag :staff_id, @selected_staff.id %>
+      <% end %>
 
+      <%= hidden_field_tag :service_id, @selected_service.id %>
+      <%= hidden_field_tag :enseigne_id, @selected_enseigne.id %>
       <div class="field">
         <label class="field-label" for="date">Date</label>
         <%= date_field_tag :date, params[:date], required: true, class: "field-input booking-date-input", min: BookingRules.business_today %>
@@ -23,4 +29,3 @@
     <% end %>
   </div>
 <% end %>
-
