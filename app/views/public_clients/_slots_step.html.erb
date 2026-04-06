@@ -1,16 +1,22 @@
-<% if @selected_enseigne.present? && @selected_service.present? && @date.present? %>
+<% assignment_complete =
+     @assignment_mode == "automatic" ||
+     (@assignment_mode == "specific_staff" && @selected_staff.present?) %>
+
+<% if @selected_enseigne.present? && @selected_service.present? && @date.present? && assignment_complete %>
   <div class="booking-section">
-    <h2 class="booking-section-title">4. Choisissez un créneau</h2>
-    <p class="booking-section-meta">
-      <strong><%= @selected_enseigne.name %></strong> — <strong><%= @selected_service.name %></strong> — <%= public_client_formatted_date(@date) %>
-    </p>
+    <h2 class="booking-section-title">5. Choisir un créneau</h2>
+    <p class="booking-section-meta">Sélectionnez l’horaire qui vous convient.</p>
 
     <% if @slots.any? %>
       <div class="slot-grid">
         <% @slots.each do |slot| %>
           <%= form_with url: service_bookings_path(@client.slug, @selected_service), method: :post, local: true do %>
-            <%= hidden_field_tag :enseigne_id, @selected_enseigne.id %>
+            <%= hidden_field_tag :assignment_mode, @assignment_mode %>
+            <% if @assignment_mode == "specific_staff" && @selected_staff.present? %>
+              <%= hidden_field_tag :staff_id, @selected_staff.id %>
+            <% end %>
             <%= hidden_field_tag :date, @date %>
+            <%= hidden_field_tag :enseigne_id, @selected_enseigne.id %>
             <%= hidden_field_tag :start_time, slot %>
             <%= submit_tag public_client_slot_label(slot), class: "slot-button" %>
           <% end %>
@@ -21,4 +27,3 @@
     <% end %>
   </div>
 <% end %>
-

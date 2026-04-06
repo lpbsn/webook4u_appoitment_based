@@ -17,18 +17,32 @@ class Bookings::PublicPageTest < ActiveSupport::TestCase
 
   test "raises RecordNotFound for unknown slug" do
     assert_raises(ActiveRecord::RecordNotFound) do
-      Bookings::PublicPage.new(slug: "unknown-xyz", enseigne_id: nil, service_id: nil, date_param: nil).call
+      Bookings::PublicPage.new(
+        slug: "unknown-xyz",
+        enseigne_id: nil,
+        service_id: nil,
+        assignment_mode_param: nil,
+        staff_id_param: nil,
+        date_param: nil
+      ).call
     end
   end
 
   test "returns client and services for known slug without selection" do
-    result = Bookings::PublicPage.new(slug: @client.slug, enseigne_id: nil, service_id: nil, date_param: nil).call
+    result = Bookings::PublicPage.new(
+      slug: @client.slug,
+      enseigne_id: @enseigne.id.to_s,
+      service_id: @service.id.to_s,
+      assignment_mode_param: nil,
+      staff_id_param: nil,
+      date_param: nil
+    ).call
 
     assert_equal @client, result.client
     assert_equal [ @enseigne ], result.enseignes.to_a
     assert_equal @enseigne, result.selected_enseigne
     assert_includes result.services, @service
-    assert_nil result.selected_service
+    assert_equal @service, result.selected_service
     assert_nil result.date
     assert_equal [], result.slots
   end
@@ -38,6 +52,8 @@ class Bookings::PublicPageTest < ActiveSupport::TestCase
       slug: @client.slug,
       enseigne_id: @enseigne.id.to_s,
       service_id: @service.id.to_s,
+      assignment_mode_param: nil,
+      staff_id_param: nil,
       date_param: nil
     ).call
 
@@ -53,6 +69,8 @@ class Bookings::PublicPageTest < ActiveSupport::TestCase
         slug: @client.slug,
         enseigne_id: @enseigne.id.to_s,
         service_id: nil,
+        assignment_mode_param: nil,
+        staff_id_param: nil,
         date_param: "2026-03-16"
       ).call
 
@@ -68,6 +86,8 @@ class Bookings::PublicPageTest < ActiveSupport::TestCase
         slug: @client.slug,
         enseigne_id: @enseigne.id.to_s,
         service_id: @service.id.to_s,
+        assignment_mode_param: nil,
+        staff_id_param: nil,
         date_param: "2026-03-16"
       ).call
 
@@ -90,6 +110,8 @@ class Bookings::PublicPageTest < ActiveSupport::TestCase
         slug: @client.slug,
         enseigne_id: @enseigne.id.to_s,
         service_id: service_without_capability.id.to_s,
+        assignment_mode_param: nil,
+        staff_id_param: nil,
         date_param: "2026-03-16"
       ).call
 
@@ -106,6 +128,8 @@ class Bookings::PublicPageTest < ActiveSupport::TestCase
         slug: @client.slug,
         enseigne_id: @enseigne.id.to_s,
         service_id: @service.id.to_s,
+        assignment_mode_param: nil,
+        staff_id_param: nil,
         date_param: date_beyond
       ).call
 
@@ -122,6 +146,8 @@ class Bookings::PublicPageTest < ActiveSupport::TestCase
       slug: @client.slug,
       enseigne_id: nil,
       service_id: @service.id.to_s,
+      assignment_mode_param: nil,
+      staff_id_param: nil,
       date_param: "2026-03-16"
     ).call
 
@@ -137,6 +163,8 @@ class Bookings::PublicPageTest < ActiveSupport::TestCase
       slug: @client.slug,
       enseigne_id: inactive_enseigne.id,
       service_id: nil,
+      assignment_mode_param: nil,
+      staff_id_param: nil,
       date_param: nil
     ).call
 
@@ -151,6 +179,8 @@ class Bookings::PublicPageTest < ActiveSupport::TestCase
       slug: @client.slug,
       enseigne_id: nil,
       service_id: nil,
+      assignment_mode_param: nil,
+      staff_id_param: nil,
       date_param: nil
     ).call
 
@@ -167,6 +197,8 @@ class Bookings::PublicPageTest < ActiveSupport::TestCase
       slug: @client.slug,
       enseigne_id: @enseigne.id.to_s,
       service_id: other_service.id.to_s,
+      assignment_mode_param: nil,
+      staff_id_param: nil,
       date_param: "2026-03-16"
     ).call
 
