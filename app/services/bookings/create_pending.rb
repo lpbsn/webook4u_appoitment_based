@@ -4,12 +4,14 @@ module Bookings
   class CreatePending
     Result = Struct.new(:success?, :booking, :error_code, :error_message, keyword_init: true)
 
-    def initialize(client:, service:, booking_start_time:, enseigne:, user: nil)
+    def initialize(client:, service:, booking_start_time:, enseigne:, user: nil, assignment_mode: "automatic", staff_id: nil)
       @client = client
       @enseigne = enseigne
       @service = service
       @booking_start_time = booking_start_time
       @user = user
+      @assignment_mode = assignment_mode
+      @staff_id = staff_id
     end
 
     def call
@@ -19,7 +21,7 @@ module Bookings
       failure_code = Errors::SLOT_UNAVAILABLE
 
       SlotLock.with_service_rotation_lock(service: service) do
-        candidates = service_assignment_cursor.eligible_staffs_in_rotation_order
+        candidates = candidate_staffs
         return failure(Errors::SLOT_UNAVAILABLE) if candidates.empty?
 
         candidates.each do |candidate_staff|
@@ -37,6 +39,7 @@ module Bookings
                 service: service,
                 user: user,
                 staff: candidate_staff,
+                assignment_mode: assignment_mode,
                 booking_start_time: decision.booking_start_time,
                 booking_end_time: decision.booking_end_time,
                 booking_status: :pending,
@@ -60,7 +63,7 @@ module Bookings
 
     private
 
-    attr_reader :client, :enseigne, :service, :booking_start_time, :user
+    attr_reader :client, :enseigne, :service, :booking_start_time, :user, :assignment_mode, :staff_id
 
     def valid_enseigne_context?
       enseigne.present? && enseigne.active? && enseigne.client_id == client.id
@@ -72,6 +75,23 @@ module Bookings
 
     def service_assignment_cursor
       @service_assignment_cursor ||= ServiceAssignmentCursor.find_or_create_by!(service: service)
+    end
+
+    def candidate_staffs
+      if assignment_mode == "specific_staff"
+        specific_staff_candidate
+      else
+        service_assignment_cursor.eligible_staffs_in_rotation_order
+      end
+    end
+
+    def specific_staff_candidate
+      return [] if staff_id.blank?
+
+      staff = service.staffs.find_by(id: staff_id)
+      return [] if staff.blank?
+
+      [ staff ]
     end
 
     def revalidation_decision(staff:)

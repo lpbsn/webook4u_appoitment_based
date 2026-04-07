@@ -854,4 +854,62 @@ class Bookings::ConfirmTest < ActiveSupport::TestCase
       assert_equal "pending", booking.booking_status
     end
   end
+
+  test "advances cursor when confirming an automatic booking" do
+    cursor = ServiceAssignmentCursor.create!(service: @service, last_confirmed_staff: @backup_staff)
+
+    travel_to Time.zone.local(2026, 3, 15, 8, 0, 0) do
+      booking = @client.bookings.create!(
+        enseigne: @enseigne,
+        service: @service,
+        staff: @staff,
+        assignment_mode: "automatic",
+        booking_start_time: Time.zone.local(2026, 3, 16, 16, 0, 0),
+        booking_end_time: Time.zone.local(2026, 3, 16, 16, 30, 0),
+        booking_status: :pending,
+        booking_expires_at: BookingRules.pending_expires_at
+      )
+
+      result = Bookings::Confirm.new(
+        booking: booking,
+        booking_params: {
+          customer_first_name: "Léonard",
+          customer_last_name: "Boisson",
+          customer_email: "leo@example.com"
+        }
+      ).call
+
+      assert result.success?
+      assert_equal @staff.id, cursor.reload.last_confirmed_staff_id
+    end
+  end
+
+  test "does not advance cursor when confirming a specific staff booking" do
+    cursor = ServiceAssignmentCursor.create!(service: @service, last_confirmed_staff: @backup_staff)
+
+    travel_to Time.zone.local(2026, 3, 15, 8, 0, 0) do
+      booking = @client.bookings.create!(
+        enseigne: @enseigne,
+        service: @service,
+        staff: @staff,
+        assignment_mode: "specific_staff",
+        booking_start_time: Time.zone.local(2026, 3, 16, 16, 30, 0),
+        booking_end_time: Time.zone.local(2026, 3, 16, 17, 0, 0),
+        booking_status: :pending,
+        booking_expires_at: BookingRules.pending_expires_at
+      )
+
+      result = Bookings::Confirm.new(
+        booking: booking,
+        booking_params: {
+          customer_first_name: "Léonard",
+          customer_last_name: "Boisson",
+          customer_email: "leo@example.com"
+        }
+      ).call
+
+      assert result.success?
+      assert_equal @backup_staff.id, cursor.reload.last_confirmed_staff_id
+    end
+  end
 end

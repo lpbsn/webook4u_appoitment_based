@@ -45,7 +45,7 @@ module Bookings
         customer_email: booking_params[:customer_email],
         booking_status: :confirmed
       )
-      advance_assignment_cursor!(staff: booking.staff)
+      advance_assignment_cursor!(staff: booking.staff) if booking.assignment_mode == "automatic"
 
       success(booking)
     end
