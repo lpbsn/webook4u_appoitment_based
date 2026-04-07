@@ -255,6 +255,16 @@
       <% end %>
 
       <div class="sign-up-field">
+        <%= f.label :last_name, "Nom" %>
+        <%= f.text_field :last_name, autocomplete: "family-name", class: "sign-up-input", placeholder: "Votre nom", required: true %>
+      </div>
+
+      <div class="sign-up-field">
+        <%= f.label :first_name, "Prénom" %>
+        <%= f.text_field :first_name, autocomplete: "given-name", class: "sign-up-input", placeholder: "Votre prénom", required: true %>
+      </div>
+
+      <div class="sign-up-field">
         <%= f.label :email, "Email" %>
         <%= f.email_field :email, autofocus: true, autocomplete: "email", class: "sign-up-input", placeholder: "vous@exemple.com" %>
       </div>

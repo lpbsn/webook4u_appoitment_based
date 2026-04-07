@@ -148,7 +148,7 @@ CREATE TABLE public.bookings (
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
     assignment_mode character varying DEFAULT 'automatic'::character varying NOT NULL,
-    CONSTRAINT bookings_assignment_mode_allowed_values CHECK (((assignment_mode)::text = ANY ((ARRAY['automatic'::character varying, 'specific_staff'::character varying])::text[]))),
+    CONSTRAINT bookings_assignment_mode_allowed_values CHECK (((assignment_mode)::text = ANY (ARRAY[('automatic'::character varying)::text, ('specific_staff'::character varying)::text]))),
     CONSTRAINT bookings_confirmed_requires_confirmation_token CHECK ((((booking_status)::text <> 'confirmed'::text) OR (NULLIF(btrim((confirmation_token)::text), ''::text) IS NOT NULL))),
     CONSTRAINT bookings_confirmed_requires_customer_email CHECK ((((booking_status)::text <> 'confirmed'::text) OR (NULLIF(btrim((customer_email)::text), ''::text) IS NOT NULL))),
     CONSTRAINT bookings_confirmed_requires_customer_first_name CHECK ((((booking_status)::text <> 'confirmed'::text) OR (NULLIF(btrim((customer_first_name)::text), ''::text) IS NOT NULL))),
@@ -539,7 +539,9 @@ CREATE TABLE public.users (
     reset_password_sent_at timestamp(6) without time zone,
     remember_created_at timestamp(6) without time zone,
     created_at timestamp(6) without time zone NOT NULL,
-    updated_at timestamp(6) without time zone NOT NULL
+    updated_at timestamp(6) without time zone NOT NULL,
+    last_name character varying,
+    first_name character varying
 );
 
 
@@ -1126,6 +1128,7 @@ ALTER TABLE ONLY public.bookings
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260407134147'),
 ('20260403120000'),
 ('20260403113000');
 
