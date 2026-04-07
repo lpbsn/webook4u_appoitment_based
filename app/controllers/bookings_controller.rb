@@ -12,7 +12,9 @@ class BookingsController < ApplicationController
       enseigne: @enseigne,
       service: @service,
       booking_start_time: @booking_start_time,
-      user: current_user
+      user: current_user,
+      assignment_mode: create_pending_assignment_mode,
+      staff_id: staff_id_param
     ).call
 
     unless result.success?
@@ -67,6 +69,8 @@ class BookingsController < ApplicationController
     @service = @enseigne.services.find(params[:service_id])
     @booking_start_time = Bookings::Input.safe_time(params[:start_time])
     @booking_date = redirect_date(@booking_start_time)
+    @assignment_mode = assignment_mode_param
+    @staff_id = staff_id_param
   end
 
   def load_public_pending_booking
@@ -135,12 +139,26 @@ class BookingsController < ApplicationController
       @client.slug,
       enseigne_id: @enseigne.id,
       service_id: @service.id,
-      date: @booking_date
+      date: @booking_date,
+      assignment_mode: @assignment_mode,
+      staff_id: @staff_id
     ),
                 alert: message
   end
 
   def redirect_enseigne_id(enseigne)
     enseigne&.active? ? enseigne.id : nil
+  end
+
+  def assignment_mode_param
+    params[:assignment_mode].presence
+  end
+
+  def create_pending_assignment_mode
+    assignment_mode_param || "automatic"
+  end
+
+  def staff_id_param
+    params[:staff_id].presence
   end
 end

@@ -71,6 +71,77 @@ class BookingsControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "POST #create_pending creates a pending booking for a specific staff" do
+    second_staff = @enseigne.staffs.create!(name: "Staff spécifique", active: true)
+    second_staff.staff_availabilities.create!(day_of_week: 1, opens_at: "09:00", closes_at: "18:00")
+    StaffServiceCapability.create!(staff: second_staff, service: @service)
+
+    travel_to Time.zone.local(2026, 3, 15, 8, 0, 0) do
+      slot = Time.zone.local(2026, 3, 16, 10, 30, 0)
+
+      assert_difference "Booking.count", 1 do
+        post service_bookings_path(@client.slug, @service),
+            params: {
+              start_time: slot,
+              enseigne_id: @enseigne.id,
+              assignment_mode: "specific_staff",
+              staff_id: second_staff.id
+            }
+      end
+
+      booking = Booking.last
+      assert_redirected_to pending_booking_path(@client.slug, booking.pending_access_token)
+      assert_equal second_staff.id, booking.staff_id
+      assert_equal "specific_staff", booking.assignment_mode
+      assert_equal slot, booking.booking_start_time
+    end
+  end
+
+  test "POST #create_pending keeps specific staff context on redirect when selected staff is unavailable" do
+    second_staff = @enseigne.staffs.create!(name: "Staff indisponible", active: true)
+    second_staff.staff_availabilities.create!(day_of_week: 1, opens_at: "09:00", closes_at: "18:00")
+    StaffServiceCapability.create!(staff: second_staff, service: @service)
+
+    travel_to Time.zone.local(2026, 3, 15, 8, 0, 0) do
+      slot = Time.zone.local(2026, 3, 16, 11, 0, 0)
+
+      @client.bookings.create!(
+        enseigne: @enseigne,
+        service: @service,
+        staff: second_staff,
+        assignment_mode: "specific_staff",
+        booking_start_time: slot,
+        booking_end_time: slot + 30.minutes,
+        booking_status: :confirmed,
+        customer_first_name: "Jean",
+        customer_last_name: "Dupont",
+        customer_email: "jean@example.com"
+      )
+
+      assert_no_difference "Booking.count" do
+        post service_bookings_path(@client.slug, @service),
+            params: {
+              start_time: slot,
+              enseigne_id: @enseigne.id,
+              assignment_mode: "specific_staff",
+              staff_id: second_staff.id
+            }
+      end
+
+      assert_redirected_to public_client_path(
+        @client.slug,
+        enseigne_id: @enseigne.id,
+        service_id: @service.id,
+        date: slot.to_date,
+        assignment_mode: "specific_staff",
+        staff_id: second_staff.id
+      )
+
+      follow_redirect!
+      assert_equal Bookings::Errors.message_for(Bookings::Errors::SLOT_UNAVAILABLE), flash[:alert]
+    end
+  end
+
   test "GET #show displays the form for an existing pending booking" do
     travel_to Time.zone.local(2026, 3, 15, 8, 0, 0) do
       booking = @client.bookings.create!(

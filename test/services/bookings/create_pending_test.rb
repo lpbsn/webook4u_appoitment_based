@@ -597,4 +597,56 @@ class Bookings::CreatePendingTest < ActiveSupport::TestCase
       assert_equal Bookings::Errors::SLOT_NOT_BOOKABLE, result.error_code
     end
   end
+
+  test "creates a pending booking for a specific staff without using rotation" do
+    second_staff = @enseigne.staffs.create!(name: "Staff secondaire", active: true)
+    create_weekday_staff_availabilities_for(second_staff)
+    StaffServiceCapability.create!(staff: second_staff, service: @service)
+
+    cursor = ServiceAssignmentCursor.find_by!(service: @service)
+    cursor.update!(last_confirmed_staff: @staff)
+
+    travel_to Time.zone.local(2026, 3, 15, 8, 0, 0) do
+      slot = Time.zone.local(2026, 3, 16, 10, 0, 0)
+
+      result = Bookings::CreatePending.new(
+        client: @client,
+        enseigne: @enseigne,
+        service: @service,
+        booking_start_time: slot,
+        assignment_mode: "specific_staff",
+        staff_id: second_staff.id
+      ).call
+
+      assert result.success?
+      assert_not_nil result.booking
+      assert_equal second_staff.id, result.booking.staff_id
+      assert_equal "specific_staff", result.booking.assignment_mode
+      assert_equal @staff.id, cursor.reload.last_confirmed_staff_id
+    end
+  end
+
+  test "fails when specific staff is not eligible for the selected service" do
+    ineligible_staff = @enseigne.staffs.create!(name: "Staff non éligible", active: true)
+    create_weekday_staff_availabilities_for(ineligible_staff)
+    # Intentionally no StaffServiceCapability for @service
+
+    travel_to Time.zone.local(2026, 3, 15, 8, 0, 0) do
+      slot = Time.zone.local(2026, 3, 16, 10, 30, 0)
+
+      result = Bookings::CreatePending.new(
+        client: @client,
+        enseigne: @enseigne,
+        service: @service,
+        booking_start_time: slot,
+        assignment_mode: "specific_staff",
+        staff_id: ineligible_staff.id
+      ).call
+
+      assert_not result.success?
+      assert_nil result.booking
+      assert_equal Bookings::Errors::SLOT_UNAVAILABLE, result.error_code
+      assert_equal "Le créneau sélectionné n'est plus disponible.", result.error_message
+    end
+  end
 end
