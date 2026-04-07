@@ -78,9 +78,16 @@ end
 class ActionDispatch::IntegrationTest
   include Devise::Test::IntegrationHelpers
 
-  def create_test_user(email: nil, password: "password123")
+  def create_test_user(email: nil, password: "password123", first_name: "Test", last_name: "User")
     generated_email = email || "user-#{SecureRandom.hex(6)}@example.com"
-    User.create!(email: generated_email, password: password, password_confirmation: password)
+
+    User.create!(
+      email: generated_email,
+      password: password,
+      password_confirmation: password,
+      first_name: first_name,
+      last_name: last_name
+    )
   end
 end
 

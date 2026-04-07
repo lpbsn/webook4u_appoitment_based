@@ -130,6 +130,7 @@ class BookingsController < ApplicationController
 
   def hydrate_booking_view_context
     hydrate_booking_relations
+    prefill_booking_customer_from_current_user
     @booking_start_time = @booking.booking_start_time
     @booking_end_time = @booking.booking_end_time
   end
@@ -160,5 +161,13 @@ class BookingsController < ApplicationController
 
   def staff_id_param
     params[:staff_id].presence
+  end
+
+  def prefill_booking_customer_from_current_user
+    return unless current_user
+
+    @booking.customer_first_name = current_user.first_name if @booking.customer_first_name.blank?
+    @booking.customer_last_name = current_user.last_name if @booking.customer_last_name.blank?
+    @booking.customer_email = current_user.email if @booking.customer_email.blank?
   end
 end
