@@ -9,10 +9,10 @@
       <div style="max-width: 640px; width: 100%; margin: 0 auto 12px auto; display: flex; justify-content: flex-end; gap: 8px;">
         <% if user_signed_in? %>
           <span><%= current_user.email %></span>
-          <%= button_to "Se déconnecter", destroy_user_session_path, method: :delete %>
+          <%= button_to "Se déconnecter", destroy_user_session_path(redirect_to: request.fullpath), method: :delete %>
         <% else %>
-          <%= link_to "Créer un compte", new_user_registration_path %>
-          <%= link_to "Se connecter", new_user_session_path %>
+          <%= link_to "Créer un compte", new_user_registration_path(redirect_to: request.fullpath) %>
+          <%= link_to "Se connecter", new_user_session_path(redirect_to: request.fullpath) %>
         <% end %>
       </div>
 

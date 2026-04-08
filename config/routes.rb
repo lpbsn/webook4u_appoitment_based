@@ -1,5 +1,8 @@
 Rails.application.routes.draw do
-  devise_for :users
+  devise_for :users, controllers: {
+    sessions: "users/sessions",
+    registrations: "users/registrations"
+  }
   get "/up", to: "rails/health#show", as: :rails_health_check
 
   get "/:slug", to: "public_clients#show", as: :public_client
