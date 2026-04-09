@@ -1,6 +1,6 @@
 class Users::SessionsController < Devise::SessionsController
   before_action :store_redirect_to_in_session, only: %i[new create]
-  before_action :ensure_auth_client!, only: :create
+  before_action :ensure_auth_client!, only: %i[new create]
 
   def create
     Current.set(auth_client: current_auth_client) do
