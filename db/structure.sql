@@ -541,7 +541,8 @@ CREATE TABLE public.users (
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
     last_name character varying,
-    first_name character varying
+    first_name character varying,
+    client_id bigint NOT NULL
 );
 
 
@@ -959,10 +960,17 @@ CREATE INDEX index_staffs_on_enseigne_id ON public.staffs USING btree (enseigne_
 
 
 --
--- Name: index_users_on_email; Type: INDEX; Schema: public; Owner: -
+-- Name: index_users_on_client_id; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX index_users_on_email ON public.users USING btree (email);
+CREATE INDEX index_users_on_client_id ON public.users USING btree (client_id);
+
+
+--
+-- Name: index_users_on_client_id_and_email; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_users_on_client_id_and_email ON public.users USING btree (client_id, email);
 
 
 --
@@ -1098,6 +1106,14 @@ ALTER TABLE ONLY public.bookings
 
 
 --
+-- Name: users fk_rails_d3559eaf4c; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.users
+    ADD CONSTRAINT fk_rails_d3559eaf4c FOREIGN KEY (client_id) REFERENCES public.clients(id);
+
+
+--
 -- Name: staff_service_capabilities fk_rails_e926fda810; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1128,6 +1144,7 @@ ALTER TABLE ONLY public.bookings
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260408105352'),
 ('20260407134147'),
 ('20260403120000'),
 ('20260403113000');
