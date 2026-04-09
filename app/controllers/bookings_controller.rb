@@ -2,6 +2,7 @@ class BookingsController < ApplicationController
   layout "booking"
   before_action :authenticate_user!
   before_action :load_client
+  before_action :ensure_current_user_matches_client!
   before_action :load_creation_context, only: %i[create_pending]
   before_action :load_public_pending_booking, only: %i[show create]
   before_action :load_booking_by_confirmation_token, only: %i[success]
@@ -62,6 +63,15 @@ class BookingsController < ApplicationController
 
   def load_client
     @client = Client.find_by!(slug: params[:slug])
+  end
+
+  def ensure_current_user_matches_client!
+    return unless current_user
+    return if current_user.client_id == @client.id
+
+    sign_out(current_user)
+    redirect_to new_user_session_path(redirect_to: request.fullpath),
+                alert: "Your session does not match this booking context. Please sign in again."
   end
 
   def load_creation_context
