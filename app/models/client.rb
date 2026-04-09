@@ -1,4 +1,5 @@
 class Client < ApplicationRecord
+  has_many :users, dependent: :restrict_with_exception
   has_many :bookings, dependent: :destroy
   has_many :enseignes, dependent: :destroy
 

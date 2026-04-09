@@ -1,5 +1,12 @@
 class Users::SessionsController < Devise::SessionsController
   before_action :store_redirect_to_in_session, only: %i[new create]
+  before_action :ensure_auth_client!, only: :create
+
+  def create
+    Current.set(auth_client: current_auth_client) do
+      super
+    end
+  end
 
   def destroy
     redirect_to = params[:redirect_to].presence
@@ -26,9 +33,9 @@ class Users::SessionsController < Devise::SessionsController
 
   private
 
-  def store_redirect_to_in_session
-    return if params[:redirect_to].blank?
+  def ensure_auth_client!
+    return if current_auth_client.present?
 
-    session[:after_auth_redirect_to] = params[:redirect_to]
+    redirect_to new_user_session_path, alert: "You must sign in from a client context."
   end
 end

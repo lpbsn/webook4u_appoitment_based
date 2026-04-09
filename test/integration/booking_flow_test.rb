@@ -6,13 +6,13 @@ class BookingFlowTest < ActionDispatch::IntegrationTest
   include ActiveSupport::Testing::TimeHelpers
 
   setup do
-    @user = create_test_user
-    sign_in @user
-
     @client = Client.create!(
       name: "Le Salon Des gâté",
       slug: "salon-des-gate"
     )
+    @user = create_test_user(client: @client)
+    sign_in @user
+
     @enseigne = @client.enseignes.create!(name: "Enseigne principale", full_address: "1 rue de Paris")
 
     @service = @enseigne.services.create!(

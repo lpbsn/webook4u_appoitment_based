@@ -75,11 +75,12 @@ class BookingAuthenticationFlowTest < ActionDispatch::IntegrationTest
       user: {
         email: @user.email,
         password: "password123"
-      }
+      },
+      redirect_to: pending_booking_path(@client.slug, @booking.pending_access_token)
     }
-    assert_response :redirect
+    assert_redirected_to pending_booking_path(@client.slug, @booking.pending_access_token)
 
-    get pending_booking_path(@client.slug, @booking.pending_access_token)
+    follow_redirect!
     assert_response :success
 
     delete destroy_user_session_path, params: {
