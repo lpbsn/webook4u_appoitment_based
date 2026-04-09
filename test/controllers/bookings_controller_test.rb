@@ -80,12 +80,12 @@ class BookingsControllerTest < ActionDispatch::IntegrationTest
 
       assert_difference "Booking.count", 1 do
         post service_bookings_path(@client.slug, @service),
-            params: {
-              start_time: slot,
-              enseigne_id: @enseigne.id,
-              assignment_mode: "specific_staff",
-              staff_id: second_staff.id
-            }
+             params: {
+               start_time: slot,
+               enseigne_id: @enseigne.id,
+               assignment_mode: "specific_staff",
+               staff_id: second_staff.id
+             }
       end
 
       booking = Booking.last
@@ -119,12 +119,12 @@ class BookingsControllerTest < ActionDispatch::IntegrationTest
 
       assert_no_difference "Booking.count" do
         post service_bookings_path(@client.slug, @service),
-            params: {
-              start_time: slot,
-              enseigne_id: @enseigne.id,
-              assignment_mode: "specific_staff",
-              staff_id: second_staff.id
-            }
+             params: {
+               start_time: slot,
+               enseigne_id: @enseigne.id,
+               assignment_mode: "specific_staff",
+               staff_id: second_staff.id
+             }
       end
 
       assert_redirected_to public_client_path(
@@ -595,7 +595,7 @@ class BookingsControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
-  test "POST #create returns 404 for booking not belonging to client" do
+  test "POST #create redirects to contextualized login for booking not belonging to client" do
     travel_to Time.zone.local(2026, 3, 15, 8, 0, 0) do
       other_client = Client.create!(name: "Autre", slug: "autre-404")
       booking = @client.bookings.create!(
@@ -610,7 +610,10 @@ class BookingsControllerTest < ActionDispatch::IntegrationTest
       post confirm_booking_path(other_client.slug, booking.pending_access_token), params: {
         booking: { customer_first_name: "A", customer_last_name: "B", customer_email: "a@b.com" }
       }
-      assert_response :not_found
+
+      assert_redirected_to new_user_session_path(
+        redirect_to: confirm_booking_path(other_client.slug, booking.pending_access_token)
+      )
     end
   end
 
@@ -630,7 +633,7 @@ class BookingsControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
-  test "GET #show returns 404 for booking not belonging to client" do
+  test "GET #show redirects to contextualized login for booking not belonging to client" do
     travel_to Time.zone.local(2026, 3, 15, 8, 0, 0) do
       other_client = Client.create!(name: "Autre", slug: "autre-show-404")
       booking = @client.bookings.create!(
@@ -643,7 +646,10 @@ class BookingsControllerTest < ActionDispatch::IntegrationTest
       )
 
       get pending_booking_path(other_client.slug, booking.pending_access_token)
-      assert_response :not_found
+
+      assert_redirected_to new_user_session_path(
+        redirect_to: pending_booking_path(other_client.slug, booking.pending_access_token)
+      )
     end
   end
 
@@ -786,7 +792,7 @@ class BookingsControllerTest < ActionDispatch::IntegrationTest
     assert_response :not_found
   end
 
-  test "GET #success returns 404 when booking does not belong to client" do
+  test "GET #success redirects to contextualized login when booking does not belong to client" do
     other_client = Client.create!(name: "Autre", slug: "autre-client")
     booking = @client.bookings.create!(
       enseigne: @enseigne,
@@ -803,7 +809,9 @@ class BookingsControllerTest < ActionDispatch::IntegrationTest
 
     get booking_success_path(other_client.slug, booking.confirmation_token)
 
-    assert_response :not_found
+    assert_redirected_to new_user_session_path(
+      redirect_to: booking_success_path(other_client.slug, booking.confirmation_token)
+    )
   end
 
   test "GET #success still works when booking enseigne has been deactivated" do

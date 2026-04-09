@@ -108,4 +108,39 @@ class BookingAuthenticationFlowTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_match @user.email, response.body
   end
+
+  test "signed in user from another client is signed out and redirected to contextualized sign in" do
+    other_client = clients(:two)
+    other_enseigne = enseignes(:two)
+    other_service = services(:two)
+
+    start_time = Time.zone.now.change(sec: 0) + 2.days
+
+    other_booking = Booking.create!(
+      client: other_client,
+      enseigne: other_enseigne,
+      service: other_service,
+      user: nil,
+      booking_start_time: start_time,
+      booking_end_time: start_time + other_service.duration_minutes.minutes,
+      booking_status: :pending,
+      booking_expires_at: 5.minutes.from_now,
+      pending_access_token: SecureRandom.uuid
+    )
+
+    post user_session_path, params: {
+      user: {
+        email: @user.email,
+        password: "password123"
+      },
+      redirect_to: pending_booking_path(@client.slug, @booking.pending_access_token)
+    }
+    assert_redirected_to pending_booking_path(@client.slug, @booking.pending_access_token)
+
+    get pending_booking_path(other_client.slug, other_booking.pending_access_token)
+
+    assert_redirected_to new_user_session_path(
+      redirect_to: pending_booking_path(other_client.slug, other_booking.pending_access_token)
+    )
+  end
 end
