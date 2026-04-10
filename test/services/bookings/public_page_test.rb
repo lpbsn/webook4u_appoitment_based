@@ -206,4 +206,98 @@ class Bookings::PublicPageTest < ActiveSupport::TestCase
     assert_nil result.selected_service
     assert_equal [ @service ], result.services.to_a
   end
+
+  test "call keeps search_mode nil when param is absent" do
+    client = Client.create!(name: "Salon Search", slug: "salon-search")
+    enseigne = client.enseignes.create!(name: "Enseigne Search", full_address: "1 rue search", active: true)
+    service = enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2500)
+
+    staff = enseigne.staffs.create!(name: "Emma", active: true)
+    staff.staff_availabilities.create!(day_of_week: 1, opens_at: "10:00", closes_at: "18:00")
+    StaffServiceCapability.create!(staff: staff, service: service)
+
+    result = Bookings::PublicPage.new(
+      slug: client.slug,
+      enseigne_id: enseigne.id,
+      service_id: service.id,
+      assignment_mode_param: "automatic",
+      staff_id_param: nil,
+      search_mode_param: nil,
+      selected_start_time_param: nil,
+      date_param: nil
+    ).call
+
+    assert_nil result.search_mode
+    assert_nil result.selected_start_time
+  end
+
+  test "call exposes valid search_mode from params" do
+    client = Client.create!(name: "Salon Search Mode", slug: "salon-search-mode")
+    enseigne = client.enseignes.create!(name: "Enseigne Search Mode", full_address: "1 rue mode", active: true)
+    service = enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2500)
+
+    staff = enseigne.staffs.create!(name: "Emma", active: true)
+    staff.staff_availabilities.create!(day_of_week: 1, opens_at: "10:00", closes_at: "18:00")
+    StaffServiceCapability.create!(staff: staff, service: service)
+
+    result = Bookings::PublicPage.new(
+      slug: client.slug,
+      enseigne_id: enseigne.id,
+      service_id: service.id,
+      assignment_mode_param: "automatic",
+      staff_id_param: nil,
+      search_mode_param: "precise_date",
+      selected_start_time_param: nil,
+      date_param: nil
+    ).call
+
+    assert_equal "precise_date", result.search_mode
+  end
+
+  test "call exposes selected_start_time as provided" do
+    client = Client.create!(name: "Salon Selected Slot", slug: "salon-selected-slot")
+    enseigne = client.enseignes.create!(name: "Enseigne Selected Slot", full_address: "1 rue slot", active: true)
+    service = enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2500)
+
+    staff = enseigne.staffs.create!(name: "Emma", active: true)
+    staff.staff_availabilities.create!(day_of_week: 1, opens_at: "10:00", closes_at: "18:00")
+    StaffServiceCapability.create!(staff: staff, service: service)
+
+    selected_start_time = "2026-03-16 10:00"
+
+    assert_no_difference "Booking.count" do
+      result = Bookings::PublicPage.new(
+        slug: client.slug,
+        enseigne_id: enseigne.id,
+        service_id: service.id,
+        assignment_mode_param: "automatic",
+        staff_id_param: nil,
+        search_mode_param: nil,
+        selected_start_time_param: selected_start_time,
+        date_param: nil
+      ).call
+
+      assert_equal selected_start_time, result.selected_start_time
+    end
+  end
+
+  test "call keeps search_mode nil when assignment mode is not resolved" do
+    client = Client.create!(name: "Salon Incomplete", slug: "salon-incomplete")
+    enseigne = client.enseignes.create!(name: "Enseigne Incomplete", full_address: "1 rue incomplete", active: true)
+    service = enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2500)
+
+    result = Bookings::PublicPage.new(
+      slug: client.slug,
+      enseigne_id: enseigne.id,
+      service_id: service.id,
+      assignment_mode_param: nil,
+      staff_id_param: nil,
+      search_mode_param: "precise_date",
+      selected_start_time_param: nil,
+      date_param: nil
+    ).call
+
+    assert_nil result.assignment_mode
+    assert_nil result.search_mode
+  end
 end

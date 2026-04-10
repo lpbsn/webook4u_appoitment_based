@@ -110,4 +110,27 @@ class PublicClientsControllerTest < ActionDispatch::IntegrationTest
     assert_includes response.body, "2. Choisir un service"
     assert_select 'input[name="enseigne_id"][value=?]', enseigne.id.to_s
   end
+
+  test "show renders automatic staff option as Tous while keeping automatic assignment_mode" do
+    client = Client.create!(name: "Salon Tous", slug: "salon-tous")
+    enseigne = client.enseignes.create!(name: "Enseigne Tous", full_address: "1 rue tous", active: true)
+    create_weekday_opening_hours_for_enseigne(enseigne)
+    service = enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2500)
+
+    staff = enseigne.staffs.create!(name: "Emma", active: true)
+    staff.staff_availabilities.create!(day_of_week: 1, opens_at: "10:00", closes_at: "18:00")
+    StaffServiceCapability.create!(staff: staff, service: service)
+
+    get public_client_url(client.slug), params: {
+      enseigne_id: enseigne.id,
+      service_id: service.id,
+      assignment_mode: "automatic"
+    }
+
+    assert_response :success
+    assert_includes response.body, "Tous"
+    assert_not_includes response.body, "Premier disponible"
+    assert_select 'input[name="assignment_mode"][value="automatic"]', minimum: 1
+    assert_select 'input[type="submit"][value="Tous"]', count: 1
+  end
 end

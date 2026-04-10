@@ -14,6 +14,8 @@ class PublicClientsController < ApplicationController
       service_id: params[:service_id],
       assignment_mode_param: params[:assignment_mode],
       staff_id_param: params[:staff_id],
+      search_mode_param: params[:search_mode],
+      selected_start_time_param: params[:selected_start_time],
       date_param: params[:date]
     ).call
 
@@ -25,6 +27,8 @@ class PublicClientsController < ApplicationController
     @assignment_mode = page.assignment_mode
     @eligible_staffs = page.eligible_staffs
     @selected_staff = page.selected_staff
+    @search_mode = page.search_mode
+    @selected_start_time = page.selected_start_time
     @date = page.date
     @slots = page.slots
   end

@@ -9,7 +9,7 @@
           <%= hidden_field_tag :enseigne_id, @selected_enseigne.id %>
           <%= hidden_field_tag :service_id, @selected_service.id %>
           <%= hidden_field_tag :assignment_mode, "automatic" %>
-          <%= submit_tag "Premier disponible", class: ["slot-button", ("slot-button--selected" if @assignment_mode == "automatic")].compact.join(" ") %>
+          <%= submit_tag "Tous", class: ["slot-button", ("slot-button--selected" if @assignment_mode == "automatic")].compact.join(" ") %>
         <% end %>
 
         <% @eligible_staffs.each do |staff| %>
