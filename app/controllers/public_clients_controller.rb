@@ -40,5 +40,7 @@ class PublicClientsController < ApplicationController
     @first_available_start_time_max = page.first_available_start_time_max
     @first_available_available_days_of_week = page.first_available_available_days_of_week
     @first_available_errors = page.first_available_errors
+    @first_available_slot = page.first_available_slot
+    @first_available_search_performed = page.first_available_search_performed
   end
 end

@@ -20,6 +20,8 @@ module Bookings
       :first_available_start_time_max,
       :first_available_available_days_of_week,
       :first_available_errors,
+      :first_available_slot,
+      :first_available_search_performed,
       keyword_init: true
     )
 
@@ -151,6 +153,33 @@ module Bookings
           start_time_max: first_available_start_time_max
         )
 
+      first_available_search_performed =
+        selected_enseigne.present? &&
+        selected_service.present? &&
+        search_mode == "first_available" &&
+        first_available_errors.empty? &&
+        first_available_selected_days_of_week.present? &&
+        first_available_start_time_min.present? &&
+        first_available_start_time_max.present? &&
+        (
+          assignment_mode == "automatic" ||
+          (assignment_mode == "specific_staff" && selected_staff.present?)
+        )
+
+      first_available_slot =
+        if first_available_search_performed
+          Bookings::FirstAvailableSlotSearch.new(
+            client: client,
+            enseigne: selected_enseigne,
+            service: selected_service,
+            assignment_mode: assignment_mode,
+            staff: selected_staff,
+            selected_days_of_week: first_available_selected_days_of_week,
+            start_time_min: first_available_start_time_min,
+            start_time_max: first_available_start_time_max
+          ).call
+        end
+
       Result.new(
         client: client,
         enseignes: enseignes,
@@ -168,7 +197,9 @@ module Bookings
         first_available_start_time_min: first_available_start_time_min,
         first_available_start_time_max: first_available_start_time_max,
         first_available_available_days_of_week: first_available_available_days_of_week,
-        first_available_errors: first_available_errors
+        first_available_errors: first_available_errors,
+        first_available_slot: first_available_slot,
+        first_available_search_performed: first_available_search_performed
       )
     end
 

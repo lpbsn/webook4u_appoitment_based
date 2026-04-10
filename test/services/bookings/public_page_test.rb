@@ -389,4 +389,64 @@ class Bookings::PublicPageTest < ActiveSupport::TestCase
 
     assert_equal({}, result.first_available_errors)
   end
+  test "call exposes first available slot when search is valid and a slot is found" do
+    travel_to Time.zone.local(2026, 3, 15, 8, 0, 0) do
+      result = Bookings::PublicPage.new(
+        slug: @client.slug,
+        enseigne_id: @enseigne.id.to_s,
+        service_id: @service.id.to_s,
+        assignment_mode_param: "automatic",
+        staff_id_param: nil,
+        search_mode_param: "first_available",
+        selected_start_time_param: nil,
+        date_param: nil,
+        first_available_selected_days_of_week_param: [ "1" ],
+        first_available_start_time_min_param: "09:00",
+        first_available_start_time_max_param: "18:00"
+      ).call
+
+      assert_equal true, result.first_available_search_performed
+      assert_equal Time.zone.local(2026, 3, 16, 9, 0, 0), result.first_available_slot
+    end
+  end
+
+  test "call exposes nil first available slot when search is valid and no slot is found" do
+    travel_to Time.zone.local(2026, 3, 15, 8, 0, 0) do
+      result = Bookings::PublicPage.new(
+        slug: @client.slug,
+        enseigne_id: @enseigne.id.to_s,
+        service_id: @service.id.to_s,
+        assignment_mode_param: "automatic",
+        staff_id_param: nil,
+        search_mode_param: "first_available",
+        selected_start_time_param: nil,
+        date_param: nil,
+        first_available_selected_days_of_week_param: [ "3" ],
+        first_available_start_time_min_param: "15:00",
+        first_available_start_time_max_param: "16:00"
+      ).call
+
+      assert_equal true, result.first_available_search_performed
+      assert_nil result.first_available_slot
+    end
+  end
+
+  test "call does not perform first available search when criteria are invalid" do
+    result = Bookings::PublicPage.new(
+      slug: @client.slug,
+      enseigne_id: @enseigne.id.to_s,
+      service_id: @service.id.to_s,
+      assignment_mode_param: "automatic",
+      staff_id_param: nil,
+      search_mode_param: "first_available",
+      selected_start_time_param: nil,
+      date_param: nil,
+      first_available_selected_days_of_week_param: [],
+      first_available_start_time_min_param: "09:00",
+      first_available_start_time_max_param: nil
+    ).call
+
+    assert_equal false, result.first_available_search_performed
+    assert_nil result.first_available_slot
+  end
 end

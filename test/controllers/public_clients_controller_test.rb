@@ -420,4 +420,84 @@ class PublicClientsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".booking-alert--error li",
                   text: "L'heure de début minimale doit être inférieure ou égale à l'heure de début maximale."
   end
+
+  test "show displays first available suggestion when a slot is found" do
+    client = Client.create!(name: "Salon Suggestion", slug: "salon-suggestion")
+    enseigne = client.enseignes.create!(name: "Enseigne Suggestion", full_address: "1 rue suggestion", active: true)
+    create_weekday_opening_hours_for_enseigne(enseigne)
+    service = enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2500)
+
+    staff = enseigne.staffs.create!(name: "Emma", active: true)
+    staff.staff_availabilities.create!(day_of_week: 1, opens_at: "09:00", closes_at: "12:00")
+    StaffServiceCapability.create!(staff: staff, service: service)
+
+    travel_to Time.zone.local(2026, 3, 15, 8, 0, 0) do
+      assert_no_difference("Booking.count") do
+        get public_client_url(client.slug), params: {
+          enseigne_id: enseigne.id,
+          service_id: service.id,
+          assignment_mode: "automatic",
+          search_mode: "first_available",
+          selected_days_of_week: [ "1" ],
+          start_time_min: "09:00",
+          start_time_max: "18:00"
+        }
+      end
+
+      assert_response :success
+      assert_select "h2", text: "6. Premier créneau disponible"
+      assert_includes response.body, "Créneau suggéré :"
+      assert_includes response.body, "09:00"
+    end
+  end
+
+  test "show displays no result message when no first available slot matches criteria" do
+    client = Client.create!(name: "Salon No Result", slug: "salon-no-result")
+    enseigne = client.enseignes.create!(name: "Enseigne No Result", full_address: "1 rue no result", active: true)
+    create_weekday_opening_hours_for_enseigne(enseigne)
+    service = enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2500)
+
+    staff = enseigne.staffs.create!(name: "Emma", active: true)
+    staff.staff_availabilities.create!(day_of_week: 1, opens_at: "09:00", closes_at: "12:00")
+    StaffServiceCapability.create!(staff: staff, service: service)
+
+    travel_to Time.zone.local(2026, 3, 15, 8, 0, 0) do
+      assert_no_difference("Booking.count") do
+        get public_client_url(client.slug), params: {
+          enseigne_id: enseigne.id,
+          service_id: service.id,
+          assignment_mode: "automatic",
+          search_mode: "first_available",
+          selected_days_of_week: [ "3" ],
+          start_time_min: "15:00",
+          start_time_max: "16:00"
+        }
+      end
+
+      assert_response :success
+      assert_select "h2", text: "6. Premier créneau disponible"
+      assert_includes response.body, "Aucun créneau disponible ne correspond à vos critères."
+    end
+  end
+
+  test "show does not display first available result block before a valid search is performed" do
+    client = Client.create!(name: "Salon No Search Yet", slug: "salon-no-search-yet")
+    enseigne = client.enseignes.create!(name: "Enseigne No Search Yet", full_address: "1 rue no search", active: true)
+    create_weekday_opening_hours_for_enseigne(enseigne)
+    service = enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2500)
+
+    staff = enseigne.staffs.create!(name: "Emma", active: true)
+    staff.staff_availabilities.create!(day_of_week: 1, opens_at: "09:00", closes_at: "12:00")
+    StaffServiceCapability.create!(staff: staff, service: service)
+
+    get public_client_url(client.slug), params: {
+      enseigne_id: enseigne.id,
+      service_id: service.id,
+      assignment_mode: "automatic",
+      search_mode: "first_available"
+    }
+
+    assert_response :success
+    assert_select "h2", text: "6. Premier créneau disponible", count: 0
+  end
 end
