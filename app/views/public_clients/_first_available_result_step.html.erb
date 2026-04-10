@@ -1,0 +1,35 @@
+<% assignment_complete =
+     @assignment_mode == "automatic" ||
+     (@assignment_mode == "specific_staff" && @selected_staff.present?) %>
+
+<% if @selected_enseigne.present? &&
+      @selected_service.present? &&
+      assignment_complete &&
+      @search_mode == "first_available" &&
+      @first_available_search_performed %>
+  <div class="booking-section">
+    <h2 class="booking-section-title">6. Premier créneau disponible</h2>
+    <div class="booking-section-meta">
+      <strong><%= @selected_enseigne.name %></strong> —
+      <strong><%= @selected_service.name %></strong> -
+      <strong><%= @selected_service.duration_minutes %>'</strong>
+    </div>
+
+    <div class="booking-alert">
+      <% if @first_available_slot.present? %>
+
+        <p>
+          Créneau suggéré :
+          <strong><%= l(@first_available_slot.to_date, format: :long) %></strong>
+          à
+          <strong><%= @first_available_slot.strftime("%H:%M") %></strong>
+        </p>
+
+      <% else %>
+
+        <p>Aucun créneau disponible ne correspond à vos critères.</p>
+
+      <% end %>
+    </div>
+  </div>
+<% end %>
