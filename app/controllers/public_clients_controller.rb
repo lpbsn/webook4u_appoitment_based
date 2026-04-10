@@ -16,7 +16,10 @@ class PublicClientsController < ApplicationController
       staff_id_param: params[:staff_id],
       search_mode_param: params[:search_mode],
       selected_start_time_param: params[:selected_start_time],
-      date_param: params[:date]
+      date_param: params[:date],
+      first_available_selected_days_of_week_param: params[:selected_days_of_week],
+      first_available_start_time_min_param: params[:start_time_min],
+      first_available_start_time_max_param: params[:start_time_max]
     ).call
 
     @client = page.client
@@ -31,5 +34,11 @@ class PublicClientsController < ApplicationController
     @selected_start_time = page.selected_start_time
     @date = page.date
     @slots = page.slots
+
+    @first_available_selected_days_of_week = page.first_available_selected_days_of_week
+    @first_available_start_time_min = page.first_available_start_time_min
+    @first_available_start_time_max = page.first_available_start_time_max
+    @first_available_available_days_of_week = page.first_available_available_days_of_week
+    @first_available_errors = page.first_available_errors
   end
 end

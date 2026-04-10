@@ -15,6 +15,11 @@ module Bookings
       :selected_start_time,
       :date,
       :slots,
+      :first_available_selected_days_of_week,
+      :first_available_start_time_min,
+      :first_available_start_time_max,
+      :first_available_available_days_of_week,
+      :first_available_errors,
       keyword_init: true
     )
 
@@ -26,7 +31,10 @@ module Bookings
       staff_id_param:,
       search_mode_param: nil,
       selected_start_time_param: nil,
-      date_param:
+      date_param:,
+      first_available_selected_days_of_week_param: nil,
+      first_available_start_time_min_param: nil,
+      first_available_start_time_max_param: nil
     )
       @slug = slug
       @enseigne_id = enseigne_id
@@ -36,6 +44,9 @@ module Bookings
       @search_mode_param = search_mode_param
       @selected_start_time_param = selected_start_time_param
       @date_param = date_param
+      @first_available_selected_days_of_week_param = first_available_selected_days_of_week_param
+      @first_available_start_time_min_param = first_available_start_time_min_param
+      @first_available_start_time_max_param = first_available_start_time_max_param
     end
 
     def call
@@ -118,6 +129,28 @@ module Bookings
           []
         end
 
+      first_available_available_days_of_week =
+        available_days_of_week(
+          enseigne: selected_enseigne,
+          assignment_mode: assignment_mode,
+          selected_staff: selected_staff,
+          eligible_staffs: eligible_staffs
+        )
+
+      first_available_selected_days_of_week =
+        normalize_selected_days_of_week(first_available_selected_days_of_week_param)
+
+      first_available_start_time_min = first_available_start_time_min_param.presence
+      first_available_start_time_max = first_available_start_time_max_param.presence
+
+      first_available_errors =
+        first_available_errors(
+          search_mode: search_mode,
+          selected_days_of_week: first_available_selected_days_of_week,
+          start_time_min: first_available_start_time_min,
+          start_time_max: first_available_start_time_max
+        )
+
       Result.new(
         client: client,
         enseignes: enseignes,
@@ -130,7 +163,12 @@ module Bookings
         search_mode: search_mode,
         selected_start_time: selected_start_time,
         date: date,
-        slots: slots
+        slots: slots,
+        first_available_selected_days_of_week: first_available_selected_days_of_week,
+        first_available_start_time_min: first_available_start_time_min,
+        first_available_start_time_max: first_available_start_time_max,
+        first_available_available_days_of_week: first_available_available_days_of_week,
+        first_available_errors: first_available_errors
       )
     end
 
@@ -144,7 +182,56 @@ module Bookings
       :staff_id_param,
       :search_mode_param,
       :selected_start_time_param,
-      :date_param
+      :date_param,
+      :first_available_selected_days_of_week_param,
+      :first_available_start_time_min_param,
+      :first_available_start_time_max_param
     )
+
+    def normalize_selected_days_of_week(raw_value)
+      Array(raw_value)
+        .reject(&:blank?)
+        .map(&:to_i)
+        .select { |day| (0..6).include?(day) }
+        .uniq
+        .sort
+    end
+
+    def available_days_of_week(enseigne:, assignment_mode:, selected_staff:, eligible_staffs:)
+      return [] if enseigne.blank?
+
+      enseigne_days = enseigne.enseigne_opening_hours.distinct.pluck(:day_of_week)
+
+      staff_days =
+        case assignment_mode
+        when "automatic"
+          eligible_staffs.flat_map { |staff| staff.staff_availabilities.pluck(:day_of_week) }
+        when "specific_staff"
+          selected_staff.present? ? selected_staff.staff_availabilities.pluck(:day_of_week) : []
+        else
+          []
+        end
+
+      enseigne_days
+        .intersection(staff_days.uniq)
+        .sort
+    end
+
+    def first_available_errors(search_mode:, selected_days_of_week:, start_time_min:, start_time_max:)
+      return {} unless search_mode == "first_available"
+      return {} if selected_days_of_week.empty? && start_time_min.blank? && start_time_max.blank?
+
+      errors = {}
+
+      errors[:selected_days_of_week] = "Sélectionnez au moins un jour." if selected_days_of_week.empty?
+      errors[:start_time_min] = "L'heure de début minimale est obligatoire." if start_time_min.blank?
+      errors[:start_time_max] = "L'heure de début maximale est obligatoire." if start_time_max.blank?
+
+      if start_time_min.present? && start_time_max.present? && start_time_min > start_time_max
+        errors[:start_time_range] = "L'heure de début minimale doit être inférieure ou égale à l'heure de début maximale."
+      end
+
+      errors
+    end
   end
 end

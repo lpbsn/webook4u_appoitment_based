@@ -300,4 +300,93 @@ class Bookings::PublicPageTest < ActiveSupport::TestCase
     assert_nil result.assignment_mode
     assert_nil result.search_mode
   end
+
+  test "returns first available criteria state when search mode is first_available" do
+    client = Client.create!(name: "Salon", slug: "salon")
+    enseigne = client.enseignes.create!(name: "Enseigne", active: true)
+    enseigne.enseigne_opening_hours.create!(day_of_week: 1, opens_at: "09:00", closes_at: "18:00")
+
+    service = enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2500)
+
+    staff = enseigne.staffs.create!(name: "Emma", active: true)
+    staff.staff_availabilities.create!(day_of_week: 1, opens_at: "09:00", closes_at: "18:00")
+    StaffServiceCapability.create!(staff: staff, service: service)
+
+    result = Bookings::PublicPage.new(
+      slug: client.slug,
+      enseigne_id: enseigne.id,
+      service_id: service.id,
+      assignment_mode_param: "automatic",
+      staff_id_param: nil,
+      search_mode_param: "first_available",
+      selected_start_time_param: nil,
+      date_param: nil,
+      first_available_selected_days_of_week_param: [ "1" ],
+      first_available_start_time_min_param: "09:00",
+      first_available_start_time_max_param: "18:00"
+    ).call
+
+    assert_equal [ 1 ], result.first_available_selected_days_of_week
+    assert_equal "09:00", result.first_available_start_time_min
+    assert_equal "18:00", result.first_available_start_time_max
+    assert_equal [ 1 ], result.first_available_available_days_of_week
+    assert_equal({}, result.first_available_errors)
+  end
+
+  test "returns validation errors for incomplete first available criteria" do
+    client = Client.create!(name: "Salon", slug: "salon-errors")
+    enseigne = client.enseignes.create!(name: "Enseigne", active: true)
+    enseigne.enseigne_opening_hours.create!(day_of_week: 1, opens_at: "09:00", closes_at: "18:00")
+
+    service = enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2500)
+
+    staff = enseigne.staffs.create!(name: "Emma", active: true)
+    staff.staff_availabilities.create!(day_of_week: 1, opens_at: "09:00", closes_at: "18:00")
+    StaffServiceCapability.create!(staff: staff, service: service)
+
+    result = Bookings::PublicPage.new(
+      slug: client.slug,
+      enseigne_id: enseigne.id,
+      service_id: service.id,
+      assignment_mode_param: "automatic",
+      staff_id_param: nil,
+      search_mode_param: "first_available",
+      selected_start_time_param: nil,
+      date_param: nil,
+      first_available_selected_days_of_week_param: [],
+      first_available_start_time_min_param: nil,
+      first_available_start_time_max_param: "18:00"
+    ).call
+
+    assert_equal "Sélectionnez au moins un jour.", result.first_available_errors[:selected_days_of_week]
+    assert_equal "L'heure de début minimale est obligatoire.", result.first_available_errors[:start_time_min]
+  end
+
+  test "does not add first available validation errors when search mode is precise_date" do
+    client = Client.create!(name: "Salon", slug: "salon-precise-page")
+    enseigne = client.enseignes.create!(name: "Enseigne", active: true)
+    enseigne.enseigne_opening_hours.create!(day_of_week: 1, opens_at: "09:00", closes_at: "18:00")
+
+    service = enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2500)
+
+    staff = enseigne.staffs.create!(name: "Emma", active: true)
+    staff.staff_availabilities.create!(day_of_week: 1, opens_at: "09:00", closes_at: "18:00")
+    StaffServiceCapability.create!(staff: staff, service: service)
+
+    result = Bookings::PublicPage.new(
+      slug: client.slug,
+      enseigne_id: enseigne.id,
+      service_id: service.id,
+      assignment_mode_param: "automatic",
+      staff_id_param: nil,
+      search_mode_param: "precise_date",
+      selected_start_time_param: nil,
+      date_param: nil,
+      first_available_selected_days_of_week_param: [],
+      first_available_start_time_min_param: nil,
+      first_available_start_time_max_param: nil
+    ).call
+
+    assert_equal({}, result.first_available_errors)
+  end
 end

@@ -251,4 +251,173 @@ class PublicClientsControllerTest < ActionDispatch::IntegrationTest
     assert_select "h2", text: "6. Choisir un créneau", count: 0
     assert_select 'input[name="start_time"]', count: 0
   end
+
+  test "show renders first available criteria step when search mode is first_available" do
+    client = Client.create!(name: "Salon First Available", slug: "salon-first-available")
+    enseigne = client.enseignes.create!(name: "Enseigne First Available", full_address: "1 rue fa", active: true)
+    create_weekday_opening_hours_for_enseigne(enseigne)
+    service = enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2500)
+
+    staff = enseigne.staffs.create!(name: "Emma", active: true)
+    staff.staff_availabilities.create!(day_of_week: 1, opens_at: "10:00", closes_at: "18:00")
+    StaffServiceCapability.create!(staff: staff, service: service)
+
+    get public_client_url(client.slug), params: {
+      enseigne_id: enseigne.id,
+      service_id: service.id,
+      assignment_mode: "automatic",
+      search_mode: "first_available"
+    }
+
+    assert_response :success
+    assert_select "h2", text: "5. Définir vos critères"
+    assert_select 'input[name="selected_days_of_week[]"]', minimum: 1
+    assert_select 'input[name="start_time_min"]', count: 1
+    assert_select 'input[name="start_time_max"]', count: 1
+  end
+
+  test "show first available criteria step keeps enseigne service assignment and search mode context" do
+    client = Client.create!(name: "Salon Criteria Context", slug: "salon-criteria-context")
+    enseigne = client.enseignes.create!(name: "Enseigne Criteria Context", full_address: "1 rue context", active: true)
+    create_weekday_opening_hours_for_enseigne(enseigne)
+    service = enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2500)
+
+    staff = enseigne.staffs.create!(name: "Emma", active: true)
+    staff.staff_availabilities.create!(day_of_week: 1, opens_at: "10:00", closes_at: "18:00")
+    StaffServiceCapability.create!(staff: staff, service: service)
+
+    get public_client_url(client.slug), params: {
+      enseigne_id: enseigne.id,
+      service_id: service.id,
+      assignment_mode: "specific_staff",
+      staff_id: staff.id,
+      search_mode: "first_available"
+    }
+
+    assert_response :success
+    assert_select 'input[name="enseigne_id"][value=?]', enseigne.id.to_s, minimum: 1
+    assert_select 'input[name="service_id"][value=?]', service.id.to_s, minimum: 1
+    assert_select 'input[name="assignment_mode"][value="specific_staff"]', minimum: 1
+    assert_select 'input[name="staff_id"][value=?]', staff.id.to_s, minimum: 1
+    assert_select 'input[name="search_mode"][value="first_available"]', minimum: 1
+  end
+
+  test "show first available criteria step displays only days open for enseigne and selected staff scope" do
+    client = Client.create!(name: "Salon Open Days", slug: "salon-open-days")
+    enseigne = client.enseignes.create!(name: "Enseigne Open Days", full_address: "1 rue open", active: true)
+    enseigne.enseigne_opening_hours.create!(day_of_week: 1, opens_at: "09:00", closes_at: "18:00")
+    enseigne.enseigne_opening_hours.create!(day_of_week: 2, opens_at: "09:00", closes_at: "18:00")
+
+    service = enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2500)
+
+    staff = enseigne.staffs.create!(name: "Emma", active: true)
+    staff.staff_availabilities.create!(day_of_week: 1, opens_at: "10:00", closes_at: "18:00")
+    StaffServiceCapability.create!(staff: staff, service: service)
+
+    get public_client_url(client.slug), params: {
+      enseigne_id: enseigne.id,
+      service_id: service.id,
+      assignment_mode: "specific_staff",
+      staff_id: staff.id,
+      search_mode: "first_available"
+    }
+
+    assert_response :success
+    assert_select 'input[name="selected_days_of_week[]"][value="1"]', count: 1
+    assert_select 'input[name="selected_days_of_week[]"][value="2"]', count: 0
+  end
+
+  test "show first available criteria step shows validation error when no day is selected" do
+    client = Client.create!(name: "Salon No Day", slug: "salon-no-day")
+    enseigne = client.enseignes.create!(name: "Enseigne No Day", full_address: "1 rue no day", active: true)
+    create_weekday_opening_hours_for_enseigne(enseigne)
+    service = enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2500)
+
+    staff = enseigne.staffs.create!(name: "Emma", active: true)
+    staff.staff_availabilities.create!(day_of_week: 1, opens_at: "10:00", closes_at: "18:00")
+    StaffServiceCapability.create!(staff: staff, service: service)
+
+    get public_client_url(client.slug), params: {
+      enseigne_id: enseigne.id,
+      service_id: service.id,
+      assignment_mode: "automatic",
+      search_mode: "first_available",
+      start_time_min: "09:00",
+      start_time_max: "18:00"
+    }
+
+    assert_response :success
+    assert_includes response.body, "Sélectionnez au moins un jour."
+  end
+
+  test "show first available criteria step shows validation error when start_time_min is missing" do
+    client = Client.create!(name: "Salon Missing Min", slug: "salon-missing-min")
+    enseigne = client.enseignes.create!(name: "Enseigne Missing Min", full_address: "1 rue min", active: true)
+    create_weekday_opening_hours_for_enseigne(enseigne)
+    service = enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2500)
+
+    staff = enseigne.staffs.create!(name: "Emma", active: true)
+    staff.staff_availabilities.create!(day_of_week: 1, opens_at: "10:00", closes_at: "18:00")
+    StaffServiceCapability.create!(staff: staff, service: service)
+
+    get public_client_url(client.slug), params: {
+      enseigne_id: enseigne.id,
+      service_id: service.id,
+      assignment_mode: "automatic",
+      search_mode: "first_available",
+      selected_days_of_week: [ "1" ],
+      start_time_max: "18:00"
+    }
+
+    assert_response :success
+    assert_select ".booking-alert--error li", text: "L'heure de début minimale est obligatoire."
+  end
+
+  test "show first available criteria step shows validation error when start_time_max is missing" do
+    client = Client.create!(name: "Salon Missing Max", slug: "salon-missing-max")
+    enseigne = client.enseignes.create!(name: "Enseigne Missing Max", full_address: "1 rue max", active: true)
+    create_weekday_opening_hours_for_enseigne(enseigne)
+    service = enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2500)
+
+    staff = enseigne.staffs.create!(name: "Emma", active: true)
+    staff.staff_availabilities.create!(day_of_week: 1, opens_at: "10:00", closes_at: "18:00")
+    StaffServiceCapability.create!(staff: staff, service: service)
+
+    get public_client_url(client.slug), params: {
+      enseigne_id: enseigne.id,
+      service_id: service.id,
+      assignment_mode: "automatic",
+      search_mode: "first_available",
+      selected_days_of_week: [ "1" ],
+      start_time_min: "09:00"
+    }
+
+    assert_response :success
+    assert_select ".booking-alert--error li", text: "L'heure de début maximale est obligatoire."
+  end
+
+  test "show first available criteria step shows validation error when start_time_min is after start_time_max" do
+    client = Client.create!(name: "Salon Invalid Range", slug: "salon-invalid-range")
+    enseigne = client.enseignes.create!(name: "Enseigne Invalid Range", full_address: "1 rue range", active: true)
+    create_weekday_opening_hours_for_enseigne(enseigne)
+    service = enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2500)
+
+    staff = enseigne.staffs.create!(name: "Emma", active: true)
+    staff.staff_availabilities.create!(day_of_week: 1, opens_at: "10:00", closes_at: "18:00")
+    StaffServiceCapability.create!(staff: staff, service: service)
+
+    get public_client_url(client.slug), params: {
+      enseigne_id: enseigne.id,
+      service_id: service.id,
+      assignment_mode: "automatic",
+      search_mode: "first_available",
+      selected_days_of_week: [ "1" ],
+      start_time_min: "18:00",
+      start_time_max: "09:00"
+    }
+
+    assert_response :success
+    assert_select ".booking-alert--error li",
+                  text: "L'heure de début minimale doit être inférieure ou égale à l'heure de début maximale."
+  end
 end
