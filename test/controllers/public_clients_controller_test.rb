@@ -29,7 +29,8 @@ class PublicClientsControllerTest < ActionDispatch::IntegrationTest
       get public_client_url(client.slug), params: {
         enseigne_id: enseigne.id,
         service_id: service.id,
-        assignment_mode: "automatic"
+        assignment_mode: "automatic",
+        search_mode: "precise_date"
       }
 
       assert_response :success
@@ -132,5 +133,122 @@ class PublicClientsControllerTest < ActionDispatch::IntegrationTest
     assert_not_includes response.body, "Premier disponible"
     assert_select 'input[name="assignment_mode"][value="automatic"]', minimum: 1
     assert_select 'input[type="submit"][value="Tous"]', count: 1
+  end
+
+  test "show renders search mode step after assignment selection" do
+    client = Client.create!(name: "Salon Search", slug: "salon-search")
+    enseigne = client.enseignes.create!(name: "Enseigne Search", full_address: "1 rue search", active: true)
+    create_weekday_opening_hours_for_enseigne(enseigne)
+    service = enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2500)
+
+    staff = enseigne.staffs.create!(name: "Emma", active: true)
+    staff.staff_availabilities.create!(day_of_week: 1, opens_at: "10:00", closes_at: "18:00")
+    StaffServiceCapability.create!(staff: staff, service: service)
+
+    get public_client_url(client.slug), params: {
+      enseigne_id: enseigne.id,
+      service_id: service.id,
+      assignment_mode: "automatic"
+    }
+
+    assert_response :success
+    assert_select "h2", text: "4. Choisir le mode de recherche"
+    assert_select 'input[name="search_mode"][value="first_available"]', count: 1
+    assert_select 'input[name="search_mode"][value="precise_date"]', count: 1
+    assert_select 'input[type="submit"][value="Premier créneau disponible"]', count: 1
+    assert_select 'input[type="submit"][value="Date précise"]', count: 1
+  end
+
+  test "search mode step keeps enseigne service and assignment context" do
+    client = Client.create!(name: "Salon Context", slug: "salon-context")
+    enseigne = client.enseignes.create!(name: "Enseigne Context", full_address: "1 rue context", active: true)
+    create_weekday_opening_hours_for_enseigne(enseigne)
+    service = enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2500)
+
+    staff = enseigne.staffs.create!(name: "Emma", active: true)
+    staff.staff_availabilities.create!(day_of_week: 1, opens_at: "10:00", closes_at: "18:00")
+    StaffServiceCapability.create!(staff: staff, service: service)
+
+    get public_client_url(client.slug), params: {
+      enseigne_id: enseigne.id,
+      service_id: service.id,
+      assignment_mode: "specific_staff",
+      staff_id: staff.id
+    }
+
+    assert_response :success
+    assert_select 'input[name="enseigne_id"][value=?]', enseigne.id.to_s, minimum: 1
+    assert_select 'input[name="service_id"][value=?]', service.id.to_s, minimum: 1
+    assert_select 'input[name="assignment_mode"][value="specific_staff"]', minimum: 1
+    assert_select 'input[name="staff_id"][value=?]', staff.id.to_s, minimum: 1
+  end
+
+  test "show does not render date step before search mode selection" do
+    client = Client.create!(name: "Salon No Date", slug: "salon-no-date")
+    enseigne = client.enseignes.create!(name: "Enseigne No Date", full_address: "1 rue no date", active: true)
+    create_weekday_opening_hours_for_enseigne(enseigne)
+    service = enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2500)
+
+    staff = enseigne.staffs.create!(name: "Emma", active: true)
+    staff.staff_availabilities.create!(day_of_week: 1, opens_at: "10:00", closes_at: "18:00")
+    StaffServiceCapability.create!(staff: staff, service: service)
+
+    get public_client_url(client.slug), params: {
+      enseigne_id: enseigne.id,
+      service_id: service.id,
+      assignment_mode: "automatic"
+    }
+
+    assert_response :success
+    assert_select "h2", text: "5. Choisir une date", count: 0
+    assert_select 'input[name="date"]', count: 0
+  end
+
+  test "show renders date step when search mode is precise_date" do
+    client = Client.create!(name: "Salon Precise", slug: "salon-precise")
+    enseigne = client.enseignes.create!(name: "Enseigne Precise", full_address: "1 rue precise", active: true)
+    create_weekday_opening_hours_for_enseigne(enseigne)
+    service = enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2500)
+
+    staff = enseigne.staffs.create!(name: "Emma", active: true)
+    staff.staff_availabilities.create!(day_of_week: 1, opens_at: "10:00", closes_at: "18:00")
+    StaffServiceCapability.create!(staff: staff, service: service)
+
+    travel_to Time.zone.local(2026, 3, 15, 8, 0, 0) do
+      get public_client_url(client.slug), params: {
+        enseigne_id: enseigne.id,
+        service_id: service.id,
+        assignment_mode: "automatic",
+        search_mode: "precise_date"
+      }
+
+      assert_response :success
+      assert_select "h2", text: "5. Choisir une date"
+      assert_select 'input[name="search_mode"][value="precise_date"]', minimum: 1
+      assert_select 'input[name="date"][min=?]', Date.current.iso8601
+    end
+  end
+
+  test "show does not render slots step when search mode is first_available" do
+    client = Client.create!(name: "Salon First", slug: "salon-first")
+    enseigne = client.enseignes.create!(name: "Enseigne First", full_address: "1 rue first", active: true)
+    create_weekday_opening_hours_for_enseigne(enseigne)
+    service = enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2500)
+
+    staff = enseigne.staffs.create!(name: "Emma", active: true)
+    staff.staff_availabilities.create!(day_of_week: 1, opens_at: "10:00", closes_at: "18:00")
+    StaffServiceCapability.create!(staff: staff, service: service)
+
+    get public_client_url(client.slug), params: {
+      enseigne_id: enseigne.id,
+      service_id: service.id,
+      assignment_mode: "automatic",
+      search_mode: "first_available",
+      date: Date.current.iso8601
+    }
+
+    assert_response :success
+    assert_select "h2", text: "6. Choisir un créneau", count: 0
+    assert_select 'input[name="start_time"]', count: 0
   end
 end

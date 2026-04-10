@@ -2,9 +2,9 @@
      @assignment_mode == "automatic" ||
      (@assignment_mode == "specific_staff" && @selected_staff.present?) %>
 
-<% if @selected_enseigne.present? && @selected_service.present? && @date.present? && assignment_complete %>
+<% if @selected_enseigne.present? && @selected_service.present? && @date.present? && assignment_complete && @search_mode == "precise_date" %>
   <div class="booking-section">
-    <h2 class="booking-section-title">5. Choisir un créneau</h2>
+    <h2 class="booking-section-title">6. Choisir un créneau</h2>
     <p class="booking-section-meta">Sélectionnez l’horaire qui vous convient.</p>
 
     <% if @slots.any? %>

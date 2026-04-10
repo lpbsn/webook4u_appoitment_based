@@ -1,0 +1,43 @@
+<% assignment_complete =
+     @assignment_mode == "automatic" ||
+     (@assignment_mode == "specific_staff" && @selected_staff.present?) %>
+
+<% if @selected_enseigne.present? && @selected_service.present? && assignment_complete %>
+  <div class="booking-section">
+    <h2 class="booking-section-title">4. Choisir le mode de recherche</h2>
+    <div class="booking-section-meta">
+      <strong><%= @selected_enseigne.name %></strong> —
+      <strong><%= @selected_service.name %></strong> -
+      <strong><%= @selected_service.duration_minutes %>'</strong>
+    </div>
+    <p class="booking-section-meta">Choisissez comment rechercher votre rendez-vous.</p>
+
+    <div class="slot-grid slot-grid--staff-list">
+      <%= form_with url: public_client_path(@client.slug), method: :get, local: true do %>
+        <%= hidden_field_tag :enseigne_id, @selected_enseigne.id %>
+        <%= hidden_field_tag :service_id, @selected_service.id %>
+        <%= hidden_field_tag :assignment_mode, @assignment_mode %>
+        <% if @assignment_mode == "specific_staff" && @selected_staff.present? %>
+          <%= hidden_field_tag :staff_id, @selected_staff.id %>
+        <% end %>
+
+        <%= hidden_field_tag :search_mode, "first_available" %>
+        <%= submit_tag "Premier créneau disponible",
+              class: ["slot-button", ("slot-button--selected" if @search_mode == "first_available")].compact.join(" ") %>
+      <% end %>
+
+      <%= form_with url: public_client_path(@client.slug), method: :get, local: true do %>
+        <%= hidden_field_tag :enseigne_id, @selected_enseigne.id %>
+        <%= hidden_field_tag :service_id, @selected_service.id %>
+        <%= hidden_field_tag :assignment_mode, @assignment_mode %>
+        <% if @assignment_mode == "specific_staff" && @selected_staff.present? %>
+          <%= hidden_field_tag :staff_id, @selected_staff.id %>
+        <% end %>
+
+        <%= hidden_field_tag :search_mode, "precise_date" %>
+        <%= submit_tag "Date précise",
+              class: ["slot-button", ("slot-button--selected" if @search_mode == "precise_date")].compact.join(" ") %>
+      <% end %>
+    </div>
+  </div>
+<% end %>
