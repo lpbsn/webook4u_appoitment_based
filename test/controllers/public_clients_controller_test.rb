@@ -500,4 +500,68 @@ class PublicClientsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "h2", text: "6. Premier créneau disponible", count: 0
   end
+
+  test "clicking a precise_date slot is now a GET selection and does not create a pending booking" do
+    client = Client.create!(name: "Salon Select Slot", slug: "salon-select-slot")
+    enseigne = client.enseignes.create!(name: "Enseigne Select Slot", full_address: "1 rue slot", active: true)
+    create_weekday_opening_hours_for_enseigne(enseigne)
+    service = enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2500)
+
+    staff = enseigne.staffs.create!(name: "Emma", active: true)
+    staff.staff_availabilities.create!(day_of_week: 1, opens_at: "09:00", closes_at: "12:00")
+    StaffServiceCapability.create!(staff: staff, service: service)
+
+    travel_to Time.zone.local(2026, 3, 15, 8, 0, 0) do
+      selected_slot = Time.zone.local(2026, 3, 16, 9, 0, 0)
+
+      assert_no_difference("Booking.count") do
+        get public_client_url(client.slug), params: {
+          enseigne_id: enseigne.id,
+          service_id: service.id,
+          assignment_mode: "automatic",
+          search_mode: "precise_date",
+          date: "2026-03-16",
+          selected_start_time: selected_slot
+        }
+      end
+
+      assert_response :success
+      assert_select 'input[name="selected_start_time"]', minimum: 1
+      assert_select "form[action=?]", service_bookings_path(client.slug, service), minimum: 1
+      assert_includes response.body, "Confirmer ce créneau"
+    end
+  end
+
+  test "selecting the first available suggestion does not create a pending booking and shows confirmation step" do
+    client = Client.create!(name: "Salon Suggestion Select", slug: "salon-suggestion-select")
+    enseigne = client.enseignes.create!(name: "Enseigne Suggestion Select", full_address: "1 rue suggestion", active: true)
+    create_weekday_opening_hours_for_enseigne(enseigne)
+    service = enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2500)
+
+    staff = enseigne.staffs.create!(name: "Emma", active: true)
+    staff.staff_availabilities.create!(day_of_week: 1, opens_at: "09:00", closes_at: "12:00")
+    StaffServiceCapability.create!(staff: staff, service: service)
+
+    travel_to Time.zone.local(2026, 3, 15, 8, 0, 0) do
+      selected_slot = Time.zone.local(2026, 3, 16, 9, 0, 0)
+
+      assert_no_difference("Booking.count") do
+        get public_client_url(client.slug), params: {
+          enseigne_id: enseigne.id,
+          service_id: service.id,
+          assignment_mode: "automatic",
+          search_mode: "first_available",
+          selected_days_of_week: [ "1" ],
+          start_time_min: "09:00",
+          start_time_max: "18:00",
+          selected_start_time: selected_slot
+        }
+      end
+
+      assert_response :success
+      assert_select 'input[name="selected_start_time"]', minimum: 1
+      assert_select "form[action=?]", service_bookings_path(client.slug, service), minimum: 1
+      assert_includes response.body, "Confirmer ce créneau"
+    end
+  end
 end

@@ -857,4 +857,25 @@ class BookingsControllerTest < ActionDispatch::IntegrationTest
       assert_response :not_found
     end
   end
+
+  test "POST #create_pending still creates a pending booking when called from explicit confirmation step" do
+    travel_to Time.zone.local(2026, 3, 15, 8, 0, 0) do
+      slot = Time.zone.local(2026, 3, 16, 10, 0, 0)
+
+      assert_difference "Booking.count", 1 do
+        post service_bookings_path(@client.slug, @service),
+            params: {
+              start_time: slot,
+              enseigne_id: @enseigne.id,
+              assignment_mode: "automatic",
+              date: "2026-03-16"
+            }
+      end
+
+      booking = Booking.last
+      assert_redirected_to pending_booking_path(@client.slug, booking.pending_access_token)
+      assert_equal slot, booking.booking_start_time
+      assert_equal "pending", booking.booking_status
+    end
+  end
 end

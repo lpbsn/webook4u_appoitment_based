@@ -1,0 +1,30 @@
+<% assignment_complete = @assignment_mode == "automatic" || (@assignment_mode == "specific_staff" && @selected_staff.present?) %>
+
+<% if @selected_enseigne.present? &&
+      @selected_service.present? &&
+      @selected_start_time.present? &&
+      assignment_complete &&
+      @search_mode.in?(%w[precise_date first_available]) %>
+  <div class="booking-section">
+    <h2 class="booking-section-title">7. Confirmer le créneau</h2>
+    <p class="booking-section-meta">
+      Vous avez sélectionné :
+        <strong><%= Time.zone.parse(@selected_start_time.to_s).strftime("%d/%m/%Y") %></strong>
+        à
+        <strong><%= Time.zone.parse(@selected_start_time.to_s).strftime("%H:%M") %></strong>
+    </p>
+
+    <%= form_tag service_bookings_path(@client.slug, @selected_service), method: :post do %>
+      <%= hidden_field_tag :enseigne_id, @selected_enseigne.id %>
+      <%= hidden_field_tag :start_time, @selected_start_time %>
+      <%= hidden_field_tag :assignment_mode, @assignment_mode %>
+      <% if @assignment_mode == "specific_staff" && @selected_staff.present? %>
+        <%= hidden_field_tag :staff_id, @selected_staff.id %>
+      <% end %>
+      <% if @search_mode == "precise_date" && @date.present? %>
+        <%= hidden_field_tag :date, @date %>
+      <% end %>
+      <%= submit_tag "Confirmer ce créneau", class: "button button-primary" %>
+    <% end %>
+  </div>
+<% end %>
