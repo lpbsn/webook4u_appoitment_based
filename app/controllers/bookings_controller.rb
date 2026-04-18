@@ -1,8 +1,9 @@
 class BookingsController < ApplicationController
   layout "booking"
-  before_action :authenticate_user!
   before_action :load_client
   before_action :ensure_current_user_matches_client!
+  before_action :enforce_pending_creation_rate_limit!, only: %i[create_pending]
+  before_action :enforce_confirmation_rate_limit!, only: %i[create]
   before_action :load_creation_context, only: %i[create_pending]
   before_action :load_public_pending_booking, only: %i[show create]
   before_action :load_booking_by_confirmation_token, only: %i[success]
@@ -67,6 +68,7 @@ class BookingsController < ApplicationController
 
   def ensure_current_user_matches_client!
     return unless current_user
+    return unless current_user.client_user?
     return if current_user.client_id == @client.id
 
     sign_out(current_user)
@@ -121,7 +123,7 @@ class BookingsController < ApplicationController
   end
 
   def load_booking_by_confirmation_token
-    @booking = @client.bookings.find_by!(confirmation_token: params[:token], user_id: [ current_user.id, nil ])
+    @booking = @client.bookings.find_by!(confirmation_token: params[:token])
     hydrate_booking_relations
   end
 
@@ -206,5 +208,43 @@ class BookingsController < ApplicationController
     @booking.customer_first_name = current_user.first_name if @booking.customer_first_name.blank?
     @booking.customer_last_name = current_user.last_name if @booking.customer_last_name.blank?
     @booking.customer_email = current_user.email if @booking.customer_email.blank?
+  end
+
+  def enforce_pending_creation_rate_limit!
+    return if Bookings::RateLimiter.allowed?(
+      client: @client,
+      ip: request.remote_ip,
+      action: Bookings::RateLimiter::PENDING_ACTION
+    )
+
+    redirect_to public_client_path(@client.slug, pending_selection_context), alert: rate_limit_message
+  end
+
+  def enforce_confirmation_rate_limit!
+    return if Bookings::RateLimiter.allowed?(
+      client: @client,
+      ip: request.remote_ip,
+      action: Bookings::RateLimiter::CONFIRM_ACTION
+    )
+
+    render plain: rate_limit_message, status: :too_many_requests
+  end
+
+  def pending_selection_context
+    {
+      enseigne_id: params[:enseigne_id],
+      service_id: params[:service_id],
+      date: params[:date],
+      assignment_mode: params[:assignment_mode],
+      staff_id: params[:staff_id],
+      search_mode: params[:search_mode],
+      selected_days_of_week: params[:selected_days_of_week],
+      start_time_min: params[:start_time_min],
+      start_time_max: params[:start_time_max]
+    }.compact
+  end
+
+  def rate_limit_message
+    Bookings::Errors.message_for(Bookings::Errors::RATE_LIMIT_EXCEEDED)
   end
 end

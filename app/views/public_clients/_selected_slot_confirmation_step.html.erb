@@ -9,9 +9,9 @@
     <h2 class="booking-section-title">7. Confirmer le créneau</h2>
     <p class="booking-section-meta">
       Vous avez sélectionné :
-        <strong><%= Time.zone.parse(@selected_start_time.to_s).strftime("%d/%m/%Y") %></strong>
+        <strong><%= format_date_label(Time.zone.parse(@selected_start_time.to_s)) %></strong>
         à
-        <strong><%= Time.zone.parse(@selected_start_time.to_s).strftime("%H:%M") %></strong>
+        <strong><%= format_time_label(Time.zone.parse(@selected_start_time.to_s)) %></strong>
     </p>
 
     <%= form_tag service_bookings_path(@client.slug, @selected_service), method: :post do %>

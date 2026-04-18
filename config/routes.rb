@@ -5,6 +5,25 @@ Rails.application.routes.draw do
   }
   get "/up", to: "rails/health#show", as: :rails_health_check
 
+  namespace :admin do
+    root to: "bookings#index"
+    resources :bookings, only: :index
+    resources :clients, only: %i[index new create edit update]
+    resources :users, only: %i[index new create edit update] do
+      patch :toggle_active, on: :member
+    end
+  end
+
+  namespace :client do
+    root to: "bookings#index"
+    resources :bookings, only: :index
+  end
+
+  namespace :user do
+    root to: "bookings#index"
+    resources :bookings, only: :index
+  end
+
   get "/:slug", to: "public_clients#show", as: :public_client
 
   # création explicite du booking pending

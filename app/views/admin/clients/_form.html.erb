@@ -1,0 +1,27 @@
+<% if client.errors.any? %>
+  <div class="booking-alert booking-alert--error">
+    <p>Le formulaire contient des erreurs.</p>
+    <ul>
+      <% client.errors.full_messages.each do |message| %>
+        <li><%= message %></li>
+      <% end %>
+    </ul>
+  </div>
+<% end %>
+
+<%= form_with model: [:admin, client], local: true do |form| %>
+  <div class="field">
+    <%= form.label :name, "Nom du client", class: "field-label" %>
+    <%= form.text_field :name, class: "field-input", required: true %>
+  </div>
+
+  <div class="field">
+    <%= form.label :slug, "Slug", class: "field-label" %>
+    <%= form.text_field :slug, class: "field-input", required: true %>
+  </div>
+
+  <div class="booking-actions">
+    <%= form.submit submit_label, class: "btn-primary btn-primary--compact" %>
+    <%= link_to "Retour", admin_clients_path(tab: :clients), class: "booking-topbar-link" %>
+  </div>
+<% end %>

@@ -1,0 +1,111 @@
+<% content_for :booking_back_href, admin_root_path %>
+
+<div class="booking-header">
+  <h1 class="booking-header-title">Gérer les Clients</h1>
+  <p class="booking-header-subtitle">Administration des clients métier et de leurs utilisateurs</p>
+</div>
+
+<div class="booking-tabs">
+  <%= link_to(
+    "Liste des Clients",
+    admin_clients_path(tab: :clients),
+    class: ["booking-tab", (@active_tab == "clients" ? "booking-tab--active" : nil)].compact.join(" ")
+  ) %>
+  <%= link_to(
+    "Liste des User Client",
+    admin_clients_path(tab: :client_users),
+    class: ["booking-tab", (@active_tab == "client_users" ? "booking-tab--active" : nil)].compact.join(" ")
+  ) %>
+</div>
+
+<% if @active_tab == "clients" %>
+  <div class="booking-summary">
+    <div class="booking-summary-row">
+      <span class="booking-summary-label">Clients affichés</span>
+      <span class="booking-summary-value"><%= @clients.size %></span>
+    </div>
+  </div>
+
+  <div class="booking-actions">
+    <%= link_to "Nouveau Client", new_admin_client_path, class: "btn-primary btn-primary--compact" %>
+  </div>
+
+  <div class="booking-section">
+    <h2 class="booking-section-title">Liste des Clients</h2>
+    <div class="booking-table-wrapper">
+      <table class="booking-table">
+        <thead>
+          <tr>
+            <th>Nom</th>
+            <th>Slug</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @clients.each do |client| %>
+            <tr>
+              <td><%= client.name %></td>
+              <td><%= client.slug %></td>
+              <td>
+                <%= link_to "Modifier", edit_admin_client_path(client), class: "booking-topbar-link" %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+<% else %>
+  <div class="booking-summary">
+    <div class="booking-summary-row">
+      <span class="booking-summary-label">Users client affichés</span>
+      <span class="booking-summary-value"><%= @client_users.size %></span>
+    </div>
+  </div>
+
+  <div class="booking-actions">
+    <%= link_to "Nouveau User Client", new_admin_user_path, class: "btn-primary btn-primary--compact" %>
+  </div>
+
+  <div class="booking-section">
+    <h2 class="booking-section-title">Liste des User Client</h2>
+    <div class="booking-table-wrapper">
+      <table class="booking-table">
+        <thead>
+          <tr>
+            <th>Email</th>
+            <th>Nom</th>
+            <th>Client</th>
+            <th>Statut</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @client_users.each do |client_user| %>
+            <tr>
+              <td><%= client_user.email %></td>
+              <td><%= client_user.first_name %> <%= client_user.last_name %></td>
+              <td><%= client_user.client&.name || "-" %></td>
+              <td>
+                <span class="booking-status-pill">
+                  <%= client_user.active? ? "actif" : "inactif" %>
+                </span>
+              </td>
+              <td>
+                <div class="booking-actions">
+                  <%= link_to "Modifier", edit_admin_user_path(client_user), class: "booking-topbar-link" %>
+                  <%= button_to(
+                    client_user.active? ? "Désactiver" : "Activer",
+                    toggle_active_admin_user_path(client_user),
+                    method: :patch,
+                    class: "booking-topbar-button"
+                  ) %>
+                </div>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+<% end %>
