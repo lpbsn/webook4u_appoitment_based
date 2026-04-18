@@ -5,46 +5,74 @@
 
 <div class="booking-summary">
   <h2 class="booking-section-title">Votre sélection :</h2>
+
   <div class="booking-fields">
     <div class="booking-summary-row">
       <span class="booking-summary-label">Enseigne :</span>
       <span class="booking-summary-value"><%= public_client_selected_enseigne_name(@selected_enseigne) %></span>
     </div>
+
     <div class="booking-summary-row">
       <span class="booking-summary-label">Adresse :</span>
       <span class="booking-summary-value"><%= public_client_selected_enseigne_address(@selected_enseigne) %></span>
     </div>
+
     <div class="booking-summary-row">
       <span class="booking-summary-label">Prestation :</span>
       <span class="booking-summary-value"><%= public_client_selected_service_name(@selected_service) %></span>
     </div>
+
     <% if @selected_service.present? %>
       <div class="booking-summary-row">
         <span class="booking-summary-label">Prix :</span>
         <span class="booking-summary-value"><%= public_client_service_price(@selected_service) %></span>
       </div>
     <% end %>
+
     <% if @selected_service.present? %>
       <div class="booking-summary-row">
         <span class="booking-summary-label">Durée :</span>
         <span class="booking-summary-value"><%= @selected_service.duration_minutes %> min</span>
       </div>
     <% end %>
-    <% if @assignment_mode == "specific_staff" && @selected_staff.present? %>
+
+    <% assignment_label = public_client_assignment_label(@assignment_mode, @selected_staff) %>
+    <% if assignment_label.present? %>
       <div class="booking-summary-row">
         <span class="booking-summary-label">Attribution :</span>
-        <span class="booking-summary-value">
-          <%= @selected_staff.name %>
-        </span>
+        <span class="booking-summary-value"><%= assignment_label %></span>
       </div>
     <% end %>
-  </div>
-  <div class="booking-summary-row">
-      <span class="booking-summary-label">Date :</span>
-      <span class="booking-summary-value"><%= public_client_selected_date(@date) %></span>
-    </div>
+
+    <% search_mode_label = public_client_search_mode_label(@search_mode) %>
+    <% if search_mode_label.present? %>
+      <div class="booking-summary-row">
+        <span class="booking-summary-label">Mode de recherche :</span>
+        <span class="booking-summary-value"><%= search_mode_label %></span>
+      </div>
+    <% end %>
+
     <div class="booking-summary-row">
-      <span class="booking-summary-label">Créneau</span>
-      <span class="booking-summary-value">—</span>
+      <span class="booking-summary-label">Date :</span>
+      <span class="booking-summary-value">
+        <%= public_client_summary_date(
+          search_mode: @search_mode,
+          date: @date,
+          selected_start_time: @selected_start_time,
+          first_available_slot: @first_available_slot
+        ) %>
+      </span>
+    </div>
+
+    <div class="booking-summary-row">
+      <span class="booking-summary-label">Créneau :</span>
+      <span class="booking-summary-value">
+        <%= public_client_summary_slot(
+          search_mode: @search_mode,
+          selected_start_time: @selected_start_time,
+          first_available_slot: @first_available_slot
+        ) %>
+      </span>
     </div>
   </div>
+</div>

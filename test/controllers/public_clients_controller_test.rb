@@ -564,4 +564,160 @@ class PublicClientsControllerTest < ActionDispatch::IntegrationTest
       assert_includes response.body, "Confirmer ce créneau"
     end
   end
+
+  test "summary shows automatic assignment as Tous" do
+    client = Client.create!(name: "Salon Summary Tous", slug: "salon-summary-tous")
+    enseigne = client.enseignes.create!(name: "Enseigne Summary Tous", full_address: "1 rue tous", active: true)
+    create_weekday_opening_hours_for_enseigne(enseigne)
+    service = enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2500)
+  
+    staff = enseigne.staffs.create!(name: "Emma", active: true)
+    staff.staff_availabilities.create!(day_of_week: 1, opens_at: "10:00", closes_at: "18:00")
+    StaffServiceCapability.create!(staff: staff, service: service)
+  
+    get public_client_url(client.slug), params: {
+      enseigne_id: enseigne.id,
+      service_id: service.id,
+      assignment_mode: "automatic"
+    }
+  
+    assert_response :success
+    assert_includes response.body, "Attribution :"
+    assert_includes response.body, "Tous"
+  end
+
+  test "summary shows precise_date search mode label" do
+    client = Client.create!(name: "Salon Summary Precise", slug: "salon-summary-precise")
+    enseigne = client.enseignes.create!(name: "Enseigne Summary Precise", full_address: "1 rue precise", active: true)
+    create_weekday_opening_hours_for_enseigne(enseigne)
+    service = enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2500)
+  
+    staff = enseigne.staffs.create!(name: "Emma", active: true)
+    staff.staff_availabilities.create!(day_of_week: 1, opens_at: "10:00", closes_at: "18:00")
+    StaffServiceCapability.create!(staff: staff, service: service)
+  
+    get public_client_url(client.slug), params: {
+      enseigne_id: enseigne.id,
+      service_id: service.id,
+      assignment_mode: "automatic",
+      search_mode: "precise_date"
+    }
+  
+    assert_response :success
+    assert_includes response.body, "Mode de recherche :"
+    assert_includes response.body, "Date précise"
+  end
+
+  test "summary shows first_available search mode label" do
+    client = Client.create!(name: "Salon Summary First", slug: "salon-summary-first")
+    enseigne = client.enseignes.create!(name: "Enseigne Summary First", full_address: "1 rue first", active: true)
+    create_weekday_opening_hours_for_enseigne(enseigne)
+    service = enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2500)
+  
+    staff = enseigne.staffs.create!(name: "Emma", active: true)
+    staff.staff_availabilities.create!(day_of_week: 1, opens_at: "10:00", closes_at: "18:00")
+    StaffServiceCapability.create!(staff: staff, service: service)
+  
+    get public_client_url(client.slug), params: {
+      enseigne_id: enseigne.id,
+      service_id: service.id,
+      assignment_mode: "automatic",
+      search_mode: "first_available"
+    }
+  
+    assert_response :success
+    assert_includes response.body, "Mode de recherche :"
+    assert_includes response.body, "Premier créneau disponible"
+  end
+
+  test "summary shows selected precise_date slot in date and slot rows" do
+    client = Client.create!(name: "Salon Summary Slot", slug: "salon-summary-slot")
+    enseigne = client.enseignes.create!(name: "Enseigne Summary Slot", full_address: "1 rue slot", active: true)
+    create_weekday_opening_hours_for_enseigne(enseigne)
+    service = enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2500)
+  
+    staff = enseigne.staffs.create!(name: "Emma", active: true)
+    staff.staff_availabilities.create!(day_of_week: 1, opens_at: "10:00", closes_at: "18:00")
+    StaffServiceCapability.create!(staff: staff, service: service)
+  
+    selected_start_time = Time.zone.local(2026, 3, 16, 10, 30, 0)
+  
+    travel_to Time.zone.local(2026, 3, 15, 8, 0, 0) do
+      get public_client_url(client.slug), params: {
+        enseigne_id: enseigne.id,
+        service_id: service.id,
+        assignment_mode: "automatic",
+        search_mode: "precise_date",
+        date: "2026-03-16",
+        selected_start_time: selected_start_time
+      }
+  
+      assert_response :success
+      assert_includes response.body, "Mode de recherche :"
+      assert_includes response.body, "Date précise"
+      assert_includes response.body, "16/03/2026"
+      assert_includes response.body, "10:30"
+    end
+  end
+
+  test "summary shows first available suggestion when no selected slot exists" do
+    client = Client.create!(name: "Salon Summary Suggestion", slug: "salon-summary-suggestion")
+    enseigne = client.enseignes.create!(name: "Enseigne Summary Suggestion", full_address: "1 rue suggestion", active: true)
+    create_weekday_opening_hours_for_enseigne(enseigne)
+    service = enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2500)
+  
+    staff = enseigne.staffs.create!(name: "Emma", active: true)
+    staff.staff_availabilities.create!(day_of_week: 1, opens_at: "10:00", closes_at: "18:00")
+    StaffServiceCapability.create!(staff: staff, service: service)
+  
+    travel_to Time.zone.local(2026, 3, 15, 8, 0, 0) do
+      get public_client_url(client.slug), params: {
+        enseigne_id: enseigne.id,
+        service_id: service.id,
+        assignment_mode: "automatic",
+        search_mode: "first_available",
+        selected_days_of_week: [1],
+        start_time_min: "10:00",
+        start_time_max: "12:00"
+      }
+  
+      assert_response :success
+      assert_includes response.body, "Mode de recherche :"
+      assert_includes response.body, "Premier créneau disponible"
+      assert_includes response.body, "16/03/2026"
+      assert_includes response.body, "10:00"
+    end
+  end
+
+  test "summary prioritizes selected_start_time over first available suggestion" do
+    client = Client.create!(name: "Salon Summary Priority", slug: "salon-summary-priority")
+    enseigne = client.enseignes.create!(name: "Enseigne Summary Priority", full_address: "1 rue priority", active: true)
+    create_weekday_opening_hours_for_enseigne(enseigne)
+    service = enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2500)
+  
+    staff = enseigne.staffs.create!(name: "Emma", active: true)
+    staff.staff_availabilities.create!(day_of_week: 1, opens_at: "10:00", closes_at: "18:00")
+    StaffServiceCapability.create!(staff: staff, service: service)
+  
+    selected_start_time = Time.zone.local(2026, 3, 16, 11, 0, 0)
+  
+    travel_to Time.zone.local(2026, 3, 15, 8, 0, 0) do
+      get public_client_url(client.slug), params: {
+        enseigne_id: enseigne.id,
+        service_id: service.id,
+        assignment_mode: "automatic",
+        search_mode: "first_available",
+        selected_days_of_week: [ 1 ],
+        start_time_min: "10:00",
+        start_time_max: "12:00",
+        selected_start_time: selected_start_time
+      }
+  
+      assert_response :success
+      assert_includes response.body, "Mode de recherche :"
+      assert_includes response.body, "Premier créneau disponible"
+      assert_includes response.body, "16/03/2026"
+      assert_includes response.body, "11:00"
+    end
+  end
 end
