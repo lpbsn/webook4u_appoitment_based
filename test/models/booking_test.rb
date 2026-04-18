@@ -565,6 +565,12 @@ class BookingTest < ActiveSupport::TestCase
     )
   end
 
+  test "failed status is reserved and never used by transient booking errors" do
+    transient_error_codes = Bookings::Errors::MESSAGES.keys
+
+    assert_not_includes transient_error_codes, :failed
+  end
+
   test "assignment modes remain limited to automatic and specific_staff" do
     assert_equal(
       {

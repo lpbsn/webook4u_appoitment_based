@@ -240,9 +240,9 @@ Le projet couvre aujourd'hui :
 - selection d'une date
 - affichage des creneaux disponibles
 - creation d'une reservation temporaire (`pending`)
-- authentification utilisateur requise pour consulter un `pending`
+- consultation anonyme d'un `pending` via `pending_access_token` valide
 - confirmation de reservation
-- authentification utilisateur requise pour confirmer un `pending`
+- confirmation anonyme d'un `pending` via `pending_access_token` valide
 - page de succes
 
 Hors perimetre actuel :
@@ -254,7 +254,6 @@ Hors perimetre actuel :
 - back-office client
 - gestion metier liee aux echecs de paiement
 - exploitation reelle du statut `failed`
-- confirmation anonyme finale d'un booking
 - fonctionnement 100% base sur les horaires par enseigne
 
 Regles metier actuelles :
@@ -262,3 +261,14 @@ Regles metier actuelles :
 - les services sont portes par l'enseigne (`Service` appartient a `Enseigne`)
 - la seule source d'horaires d'ouverture runtime est `enseigne_opening_hours` (pas de fallback `client_opening_hours`)
 - la ressource reservable explicite est le `Staff` (compatibilite staff/service explicite, pas de ressource implicite par enseigne)
+
+## Checklist PR booking (invariants sensibles)
+
+Applique cette checklist pour toute PR touchant booking lifecycle, disponibilite, contraintes SQL ou flux public:
+
+- verifier `db/structure.sql` en source de verite (pas `db/schema.rb`)
+- expliciter les invariants impactes et mettre a jour `docs/architecture/booking_invariant_registry.md`
+- executer les tests cibles (`test/services/bookings/`, `test/integration/`, `test/models/*infrastructure*_test.rb`)
+- executer `bin/check` localement
+- executer `bin/ci` avant merge sur changements sensibles
+- documenter le risque residuel et les decisions non couvertes

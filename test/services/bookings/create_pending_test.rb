@@ -388,7 +388,7 @@ class Bookings::CreatePendingTest < ActiveSupport::TestCase
 
   test "fails when new pending overlaps confirmed booking with different start_time" do
     travel_to Time.zone.local(2026, 3, 15, 8, 0, 0) do
-      confirmed_start = Time.zone.local(2026, 3, 16, 10, 0, 0)
+      confirmed_start = Time.zone.local(2026, 3, 16, 10, 15, 0)
       confirmed_end   = confirmed_start + 30.minutes
 
       @client.bookings.create!(
@@ -403,7 +403,7 @@ class Bookings::CreatePendingTest < ActiveSupport::TestCase
         customer_email: "leo@example.com"
       )
 
-      overlapping_start = Time.zone.local(2026, 3, 16, 10, 15, 0)
+      overlapping_start = Time.zone.local(2026, 3, 16, 10, 30, 0)
 
       result = Bookings::CreatePending.new(
         client: @client,

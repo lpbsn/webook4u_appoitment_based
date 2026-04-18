@@ -74,6 +74,19 @@ class Bookings::CreatePendingStaffRevalidationTest < ActiveSupport::TestCase
     end
   end
 
+  test "returns slot not bookable when slot does not match the schedule grid" do
+    travel_to Time.zone.local(2026, 3, 16, 14, 10, 0) do
+      misaligned_slot = Time.zone.local(2026, 3, 16, 14, 30, 0)
+
+      result = build_revalidation(booking_start_time: misaligned_slot).call
+
+      assert_not result.bookable?
+      assert_not result.creatable?
+      assert_not result.matches_schedule_grid?
+      assert_equal Bookings::Errors::SLOT_NOT_BOOKABLE, result.error_code
+    end
+  end
+
   test "expired pending booking does not block revalidation on staff" do
     travel_to Time.zone.local(2026, 3, 15, 8, 0, 0) do
       slot = Time.zone.local(2026, 3, 16, 11, 30, 0)
