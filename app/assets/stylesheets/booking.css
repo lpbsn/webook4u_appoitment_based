@@ -126,9 +126,10 @@ body.booking-body {
 
 .booking-multi-day-row {
   display: grid;
-  grid-template-columns: minmax(120px, 180px) 1fr 1fr;
+  grid-template-columns: minmax(120px, 180px) max-content max-content;
   align-items: center;
-  gap: 8px;
+  column-gap: 14px;
+  row-gap: 8px;
 }
 
 .booking-multi-day-row--disabled {
@@ -323,6 +324,11 @@ body.booking-body {
   margin-bottom: 16px;
 }
 
+.field--compact {
+  width: 420px;
+  max-width: 100%;
+}
+
 .field-label {
   display: block;
   margin-bottom: 4px;
@@ -332,7 +338,9 @@ body.booking-body {
 }
 
 .field-input {
+  display: block;
   width: 100%;
+  box-sizing: border-box;
   padding: 10px 12px;
   border-radius: 8px;
   border: 1px solid #D1D5DB;
@@ -342,6 +350,21 @@ body.booking-body {
 
 .booking-date-input {
   max-width: 260px;
+}
+
+.field-input--short {
+  max-width: none;
+}
+
+select.field-input--short-select {
+  display: block;
+  width: 100%;
+  max-width: none;
+}
+
+.field-input--time {
+  width: 150px;
+  min-width: 150px;
 }
 
 .field-input:focus-visible {

@@ -64,14 +64,16 @@
     <%= form_with url: admin_clients_path, method: :post, local: true do %>
       <%= hidden_field_tag :creation_step, 1 %>
 
-      <div class="field">
-        <%= label_tag "client_name", "Nom du client", class: "field-label" %>
-        <%= text_field_tag "client[name]", @client_form.name, class: "field-input", required: true, id: "client_name" %>
-      </div>
+      <div class="booking-dynamic-block">
+        <div class="field field--compact">
+          <%= label_tag "client_name", "Nom du client", class: "field-label" %>
+          <%= text_field_tag "client[name]", @client_form.name, class: "field-input field-input--short", required: true, id: "client_name" %>
+        </div>
 
-      <div class="field">
-        <%= label_tag "client_slug", "Slug", class: "field-label" %>
-        <%= text_field_tag "client[slug]", @client_form.slug, class: "field-input", required: true, id: "client_slug" %>
+        <div class="field field--compact">
+          <%= label_tag "client_slug", "Slug", class: "field-label" %>
+          <%= text_field_tag "client[slug]", @client_form.slug, class: "field-input field-input--short", required: true, id: "client_slug" %>
+        </div>
       </div>
 
       <div class="booking-actions">
@@ -95,21 +97,21 @@
                       title="Supprimer cette enseigne">🗑</button>
             </div>
 
-            <div class="field">
+            <div class="field field--compact">
               <%= label_tag "enseignes_#{idx}_name", "Nom de l'enseigne", class: "field-label" %>
-              <%= text_field_tag "enseignes[#{idx}][name]", enseigne["name"], class: "field-input", required: true, id: "enseignes_#{idx}_name" %>
+              <%= text_field_tag "enseignes[#{idx}][name]", enseigne["name"], class: "field-input field-input--short", required: true, id: "enseignes_#{idx}_name" %>
             </div>
 
-            <div class="field">
+            <div class="field field--compact">
               <%= label_tag "enseignes_#{idx}_full_address", "Adresse complète", class: "field-label" %>
-              <%= text_field_tag "enseignes[#{idx}][full_address]", enseigne["full_address"], class: "field-input", required: true, id: "enseignes_#{idx}_full_address" %>
+              <%= text_field_tag "enseignes[#{idx}][full_address]", enseigne["full_address"], class: "field-input field-input--short", required: true, id: "enseignes_#{idx}_full_address" %>
             </div>
 
-            <div class="field">
+            <div class="field field--compact">
               <%= label_tag "enseignes_#{idx}_active", "Enseigne active", class: "field-label" %>
               <%= select_tag "enseignes[#{idx}][active]",
                 options_for_select([["Oui", "true"], ["Non", "false"]], (enseigne["active"].nil? ? "true" : enseigne["active"].to_s)),
-                class: "field-input",
+                class: "field-input field-input--short field-input--short-select",
                 required: true,
                 id: "enseignes_#{idx}_active" %>
             </div>
@@ -124,8 +126,8 @@
                     <%= day_of_week_label(day) %>
                   </label>
                   <%= hidden_field_tag "enseignes[#{idx}][opening_hours][#{day}][day_of_week]", day %>
-                  <%= time_field_tag "enseignes[#{idx}][opening_hours][#{day}][opens_at]", selected_hour&.dig("opens_at") || "09:00", class: "field-input booking-time-inline", disabled: selected_hour.blank? %>
-                  <%= time_field_tag "enseignes[#{idx}][opening_hours][#{day}][closes_at]", selected_hour&.dig("closes_at") || "18:00", class: "field-input booking-time-inline", disabled: selected_hour.blank? %>
+                  <%= time_field_tag "enseignes[#{idx}][opening_hours][#{day}][opens_at]", selected_hour&.dig("opens_at") || "09:00", class: "field-input field-input--time booking-time-inline", disabled: selected_hour.blank? %>
+                  <%= time_field_tag "enseignes[#{idx}][opening_hours][#{day}][closes_at]", selected_hour&.dig("closes_at") || "18:00", class: "field-input field-input--time booking-time-inline", disabled: selected_hour.blank? %>
                 </div>
               <% end %>
             </div>
@@ -144,19 +146,19 @@
                     title="Supprimer cette enseigne">🗑</button>
           </div>
 
-          <div class="field">
+          <div class="field field--compact">
             <label class="field-label" for="enseignes___INDEX___name">Nom de l'enseigne</label>
-            <input class="field-input" id="enseignes___INDEX___name" name="enseignes[__INDEX__][name]" required="required" type="text">
+            <input class="field-input field-input--short" id="enseignes___INDEX___name" name="enseignes[__INDEX__][name]" required="required" type="text">
           </div>
 
-          <div class="field">
+          <div class="field field--compact">
             <label class="field-label" for="enseignes___INDEX___full_address">Adresse complète</label>
-            <input class="field-input" id="enseignes___INDEX___full_address" name="enseignes[__INDEX__][full_address]" required="required" type="text">
+            <input class="field-input field-input--short" id="enseignes___INDEX___full_address" name="enseignes[__INDEX__][full_address]" required="required" type="text">
           </div>
 
-          <div class="field">
+          <div class="field field--compact">
             <label class="field-label" for="enseignes___INDEX___active">Enseigne active</label>
-            <select class="field-input" id="enseignes___INDEX___active" name="enseignes[__INDEX__][active]" required="required">
+            <select class="field-input field-input--short field-input--short-select" id="enseignes___INDEX___active" name="enseignes[__INDEX__][active]" required="required">
               <option selected="selected" value="true">Oui</option>
               <option value="false">Non</option>
             </select>
@@ -171,8 +173,8 @@
                   <%= day_of_week_label(day) %>
                 </label>
                 <input name="enseignes[__INDEX__][opening_hours][<%= day %>][day_of_week]" type="hidden" value="<%= day %>">
-                <input class="field-input booking-time-inline" name="enseignes[__INDEX__][opening_hours][<%= day %>][opens_at]" type="time" value="09:00" disabled>
-                <input class="field-input booking-time-inline" name="enseignes[__INDEX__][opening_hours][<%= day %>][closes_at]" type="time" value="18:00" disabled>
+                <input class="field-input field-input--time booking-time-inline" name="enseignes[__INDEX__][opening_hours][<%= day %>][opens_at]" type="time" value="09:00" disabled>
+                <input class="field-input field-input--time booking-time-inline" name="enseignes[__INDEX__][opening_hours][<%= day %>][closes_at]" type="time" value="18:00" disabled>
               </div>
             <% end %>
           </div>
@@ -203,19 +205,21 @@
     <%= form_with url: admin_clients_path, method: :post, local: true do %>
       <%= hidden_field_tag :creation_step, 3 %>
 
-      <div class="field">
-        <%= label_tag "service_name", "Nom du service", class: "field-label" %>
-        <%= text_field_tag "service[name]", @service_form.name, class: "field-input", required: true, id: "service_name" %>
-      </div>
+      <div class="booking-dynamic-block">
+        <div class="field field--compact">
+          <%= label_tag "service_name", "Nom du service", class: "field-label" %>
+          <%= text_field_tag "service[name]", @service_form.name, class: "field-input field-input--short", required: true, id: "service_name" %>
+        </div>
 
-      <div class="field">
-        <%= label_tag "service_duration_minutes", "Durée (minutes)", class: "field-label" %>
-        <%= number_field_tag "service[duration_minutes]", @service_form.duration_minutes, class: "field-input", min: 1, required: true, id: "service_duration_minutes" %>
-      </div>
+        <div class="field field--compact">
+          <%= label_tag "service_duration_minutes", "Durée (minutes)", class: "field-label" %>
+          <%= number_field_tag "service[duration_minutes]", @service_form.duration_minutes, class: "field-input field-input--short", min: 1, required: true, id: "service_duration_minutes" %>
+        </div>
 
-      <div class="field">
-        <%= label_tag "service_price_cents", "Prix (centimes)", class: "field-label" %>
-        <%= number_field_tag "service[price_cents]", @service_form.price_cents, class: "field-input", min: 0, required: true, id: "service_price_cents" %>
+        <div class="field field--compact">
+          <%= label_tag "service_price_cents", "Prix (centimes)", class: "field-label" %>
+          <%= number_field_tag "service[price_cents]", @service_form.price_cents, class: "field-input field-input--short", min: 0, required: true, id: "service_price_cents" %>
+        </div>
       </div>
 
       <div class="booking-actions">
@@ -273,25 +277,25 @@
                       title="Supprimer ce staff">🗑</button>
             </div>
 
-            <div class="field">
+            <div class="field field--compact">
               <%= label_tag "staffs_#{idx}_name", "Nom du staff", class: "field-label" %>
-              <%= text_field_tag "staffs[#{idx}][name]", staff["name"], class: "field-input", required: true, id: "staffs_#{idx}_name" %>
+              <%= text_field_tag "staffs[#{idx}][name]", staff["name"], class: "field-input field-input--short", required: true, id: "staffs_#{idx}_name" %>
             </div>
 
-            <div class="field">
+            <div class="field field--compact">
               <%= label_tag "staffs_#{idx}_active", "Staff actif", class: "field-label" %>
               <%= select_tag "staffs[#{idx}][active]",
                 options_for_select([["Oui", "true"], ["Non", "false"]], (staff["active"].nil? ? "true" : staff["active"].to_s)),
-                class: "field-input",
+                class: "field-input field-input--short field-input--short-select",
                 required: true,
                 id: "staffs_#{idx}_active" %>
             </div>
 
-            <div class="field">
+            <div class="field field--compact">
               <%= label_tag "staffs_#{idx}_enseigne_index", "Enseigne de rattachement", class: "field-label" %>
               <%= select_tag "staffs[#{idx}][enseigne_index]",
                 options_for_select(Array(@draft["enseignes"]).each_with_index.map { |enseigne, i| ["#{i + 1}. #{enseigne["name"]}", i] }, staff["enseigne_index"]),
-                class: "field-input",
+                class: "field-input field-input--short field-input--short-select",
                 required: true,
                 id: "staffs_#{idx}_enseigne_index" %>
             </div>
@@ -306,8 +310,8 @@
                     <%= day_of_week_label(day) %>
                   </label>
                   <%= hidden_field_tag "staffs[#{idx}][availabilities][#{day}][day_of_week]", day %>
-                  <%= time_field_tag "staffs[#{idx}][availabilities][#{day}][opens_at]", selected_availability&.dig("opens_at") || "09:00", class: "field-input booking-time-inline", disabled: selected_availability.blank? %>
-                  <%= time_field_tag "staffs[#{idx}][availabilities][#{day}][closes_at]", selected_availability&.dig("closes_at") || "18:00", class: "field-input booking-time-inline", disabled: selected_availability.blank? %>
+                  <%= time_field_tag "staffs[#{idx}][availabilities][#{day}][opens_at]", selected_availability&.dig("opens_at") || "09:00", class: "field-input field-input--time booking-time-inline", disabled: selected_availability.blank? %>
+                  <%= time_field_tag "staffs[#{idx}][availabilities][#{day}][closes_at]", selected_availability&.dig("closes_at") || "18:00", class: "field-input field-input--time booking-time-inline", disabled: selected_availability.blank? %>
                 </div>
               <% end %>
             </div>
@@ -326,22 +330,22 @@
                     title="Supprimer ce staff">🗑</button>
           </div>
 
-          <div class="field">
+          <div class="field field--compact">
             <label class="field-label" for="staffs___INDEX___name">Nom du staff</label>
-            <input class="field-input" id="staffs___INDEX___name" name="staffs[__INDEX__][name]" required="required" type="text">
+            <input class="field-input field-input--short" id="staffs___INDEX___name" name="staffs[__INDEX__][name]" required="required" type="text">
           </div>
 
-          <div class="field">
+          <div class="field field--compact">
             <label class="field-label" for="staffs___INDEX___active">Staff actif</label>
-            <select class="field-input" id="staffs___INDEX___active" name="staffs[__INDEX__][active]" required="required">
+            <select class="field-input field-input--short field-input--short-select" id="staffs___INDEX___active" name="staffs[__INDEX__][active]" required="required">
               <option selected="selected" value="true">Oui</option>
               <option value="false">Non</option>
             </select>
           </div>
 
-          <div class="field">
+          <div class="field field--compact">
             <label class="field-label" for="staffs___INDEX___enseigne_index">Enseigne de rattachement</label>
-            <select class="field-input" id="staffs___INDEX___enseigne_index" name="staffs[__INDEX__][enseigne_index]" required="required">
+            <select class="field-input field-input--short field-input--short-select" id="staffs___INDEX___enseigne_index" name="staffs[__INDEX__][enseigne_index]" required="required">
               <% Array(@draft["enseignes"]).each_with_index do |enseigne, i| %>
                 <option value="<%= i %>"><%= "#{i + 1}. #{enseigne["name"]}" %></option>
               <% end %>
@@ -357,8 +361,8 @@
                   <%= day_of_week_label(day) %>
                 </label>
                 <input name="staffs[__INDEX__][availabilities][<%= day %>][day_of_week]" type="hidden" value="<%= day %>">
-                <input class="field-input booking-time-inline" name="staffs[__INDEX__][availabilities][<%= day %>][opens_at]" type="time" value="09:00" disabled>
-                <input class="field-input booking-time-inline" name="staffs[__INDEX__][availabilities][<%= day %>][closes_at]" type="time" value="18:00" disabled>
+                <input class="field-input field-input--time booking-time-inline" name="staffs[__INDEX__][availabilities][<%= day %>][opens_at]" type="time" value="09:00" disabled>
+                <input class="field-input field-input--time booking-time-inline" name="staffs[__INDEX__][availabilities][<%= day %>][closes_at]" type="time" value="18:00" disabled>
               </div>
             <% end %>
           </div>
