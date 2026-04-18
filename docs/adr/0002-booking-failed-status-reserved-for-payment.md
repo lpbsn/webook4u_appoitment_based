@@ -16,6 +16,7 @@ Sans contrat explicite, le statut `failed` peut etre detourne pour representer d
 - `failed` est reserve aux echecs du workflow paiement.
 - Tant que le flux paiement n'est pas livre, `failed` est **inatteignable** par les services runtime.
 - Les erreurs transitoires create/confirm restent exprimees via `Bookings::Errors` et non par un changement de statut persiste.
+- Le seam de transition vers `failed` est borne a `Bookings::PaymentFailureTransition`, sous garde `Bookings::TransitionToFailedFromPayment`.
 
 ## Consequences
 

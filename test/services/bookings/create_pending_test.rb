@@ -480,6 +480,38 @@ class Bookings::CreatePendingTest < ActiveSupport::TestCase
     end
   end
 
+  test "only first create_pending call can reserve a shared staff slot" do
+    travel_to Time.zone.local(2026, 3, 15, 8, 0, 0) do
+      slot = Time.zone.local(2026, 3, 16, 12, 30, 0)
+
+      first_attempt = Bookings::CreatePending.new(
+        client: @client,
+        enseigne: @enseigne,
+        service: @service,
+        booking_start_time: slot
+      ).call
+
+      second_attempt = Bookings::CreatePending.new(
+        client: @client,
+        enseigne: @enseigne,
+        service: @service,
+        booking_start_time: slot
+      ).call
+
+      assert first_attempt.success?
+      assert_not second_attempt.success?
+      assert_equal Bookings::Errors::SLOT_UNAVAILABLE, second_attempt.error_code
+
+      active_pending = Booking.active_pending.where(
+        client: @client,
+        service: @service,
+        staff: @staff,
+        booking_start_time: slot
+      )
+      assert_equal 1, active_pending.count
+    end
+  end
+
   test "allows slot when previous pending booking is expired" do
     travel_to Time.zone.local(2026, 3, 15, 8, 0, 0) do
       slot = Time.zone.local(2026, 3, 16, 13, 0, 0)

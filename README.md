@@ -146,11 +146,37 @@ bin/rails test
 `bin/check` reste volontairement un alias court de test local.
 Il ne fait ni preflight d'environnement, ni `db:prepare`, ni auto-reparation.
 
+Checks complets alignes CI pour changements sensibles :
+
+```bash
+bin/ci
+```
+
 Lancer un fichier de test precis :
 
 ```bash
 bin/rails test test/integration/booking_flow_test.rb
 ```
+
+## Contrat runtime rate limiting
+
+Le flux public booking applique un rate limiting par `client + IP` pour :
+
+- creation de `pending`
+- confirmation de booking
+
+Variables d'environnement supportees :
+
+- `BOOKINGS_PENDING_RATE_LIMIT` (defaut: `5`)
+- `BOOKINGS_CONFIRM_RATE_LIMIT` (defaut: `8`)
+- `BOOKINGS_RATE_LIMIT_WINDOW_SECONDS` (defaut: `600`)
+
+Prerequis d'exploitation multi-instance :
+
+- utiliser un cache **partage** entre instances applicatives
+- eviter un cache strictement local de process pour les garanties anti-abus distribuees
+
+La production utilise `:solid_cache_store` (`config/environments/production.rb`), ce qui sert de reference pour ce prerequis.
 
 ## Documentation
 

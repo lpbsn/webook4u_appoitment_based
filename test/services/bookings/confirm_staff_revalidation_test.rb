@@ -9,6 +9,8 @@ class Bookings::ConfirmStaffRevalidationTest < ActiveSupport::TestCase
     @service = @enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2500)
     @staff = @enseigne.staffs.create!(name: "Staff A", active: true)
     @other_staff = @enseigne.staffs.create!(name: "Staff B", active: true)
+    StaffServiceCapability.create!(staff: @staff, service: @service)
+    StaffServiceCapability.create!(staff: @other_staff, service: @service)
   end
 
   test "returns confirmable for pending non expired booking with assigned staff and no blocking booking" do
@@ -116,15 +118,27 @@ class Bookings::ConfirmStaffRevalidationTest < ActiveSupport::TestCase
     end
   end
 
-  test "does not re-evaluate active or capability for already assigned staff" do
+  test "returns slot unavailable when assigned staff becomes inactive before confirmation" do
     travel_to Time.zone.local(2026, 3, 15, 8, 0, 0) do
       @staff.update!(active: false)
       booking = build_pending_booking(staff: @staff, starts_at: Time.zone.local(2026, 3, 16, 12, 30, 0))
 
       result = Bookings::ConfirmStaffRevalidation.new(booking: booking).call
 
-      assert result.confirmable?
-      assert_nil result.error_code
+      assert_not result.confirmable?
+      assert_equal Bookings::Errors::SLOT_UNAVAILABLE, result.error_code
+    end
+  end
+
+  test "returns slot unavailable when assigned staff no longer has capability for service" do
+    travel_to Time.zone.local(2026, 3, 15, 8, 0, 0) do
+      StaffServiceCapability.where(staff: @staff, service: @service).delete_all
+      booking = build_pending_booking(staff: @staff, starts_at: Time.zone.local(2026, 3, 16, 13, 0, 0))
+
+      result = Bookings::ConfirmStaffRevalidation.new(booking: booking).call
+
+      assert_not result.confirmable?
+      assert_equal Bookings::Errors::SLOT_UNAVAILABLE, result.error_code
     end
   end
 

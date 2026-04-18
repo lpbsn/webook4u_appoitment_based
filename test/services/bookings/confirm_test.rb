@@ -24,6 +24,8 @@ class Bookings::ConfirmTest < ActiveSupport::TestCase
     @staff = @enseigne.staffs.create!(name: "Staff principal", active: true)
     @backup_staff = @enseigne.staffs.create!(name: "Staff backup", active: true)
     @other_enseigne_staff = @other_enseigne.staffs.create!(name: "Staff secondaire", active: true)
+    StaffServiceCapability.create!(staff: @staff, service: @service)
+    StaffServiceCapability.create!(staff: @backup_staff, service: @service)
   end
 
   test "confirms a valid pending booking" do
@@ -274,6 +276,64 @@ class Bookings::ConfirmTest < ActiveSupport::TestCase
       booking.reload
       assert_equal "pending", booking.booking_status
       assert_nil booking.staff_id
+    end
+  end
+
+  test "fails when assigned staff becomes inactive before confirmation" do
+    travel_to Time.zone.local(2026, 3, 15, 8, 0, 0) do
+      booking = @client.bookings.create!(
+        enseigne: @enseigne,
+        service: @service,
+        staff: @staff,
+        booking_start_time: Time.zone.local(2026, 3, 16, 13, 30, 0),
+        booking_end_time: Time.zone.local(2026, 3, 16, 14, 0, 0),
+        booking_status: :pending,
+        booking_expires_at: BookingRules.pending_expires_at
+      )
+      @staff.update!(active: false)
+
+      result = Bookings::Confirm.new(
+        booking: booking,
+        booking_params: {
+          customer_first_name: "Léonard",
+          customer_last_name: "Boisson",
+          customer_email: "leo@example.com"
+        }
+      ).call
+
+      assert_not result.success?
+      assert_equal Bookings::Errors::SLOT_UNAVAILABLE, result.error_code
+      booking.reload
+      assert_equal "pending", booking.booking_status
+    end
+  end
+
+  test "fails when assigned staff no longer has service capability before confirmation" do
+    travel_to Time.zone.local(2026, 3, 15, 8, 0, 0) do
+      booking = @client.bookings.create!(
+        enseigne: @enseigne,
+        service: @service,
+        staff: @staff,
+        booking_start_time: Time.zone.local(2026, 3, 16, 14, 0, 0),
+        booking_end_time: Time.zone.local(2026, 3, 16, 14, 30, 0),
+        booking_status: :pending,
+        booking_expires_at: BookingRules.pending_expires_at
+      )
+      StaffServiceCapability.where(staff: @staff, service: @service).delete_all
+
+      result = Bookings::Confirm.new(
+        booking: booking,
+        booking_params: {
+          customer_first_name: "Léonard",
+          customer_last_name: "Boisson",
+          customer_email: "leo@example.com"
+        }
+      ).call
+
+      assert_not result.success?
+      assert_equal Bookings::Errors::SLOT_UNAVAILABLE, result.error_code
+      booking.reload
+      assert_equal "pending", booking.booking_status
     end
   end
 
