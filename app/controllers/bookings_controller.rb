@@ -158,13 +158,13 @@ class BookingsController < ApplicationController
       staff_id: @staff_id,
       search_mode: @search_mode
     }
-  
+
     if @search_mode == "first_available"
       redirect_params[:selected_days_of_week] = @selected_days_of_week
       redirect_params[:start_time_min] = @start_time_min
       redirect_params[:start_time_max] = @start_time_max
     end
-  
+
     redirect_to public_client_path(@client.slug, redirect_params), alert: message
   end
 
@@ -187,15 +187,15 @@ class BookingsController < ApplicationController
   def search_mode_param
     params[:search_mode].presence
   end
-  
+
   def selected_days_of_week_param
     Array(params[:selected_days_of_week]).reject(&:blank?)
   end
-  
+
   def start_time_min_param
     params[:start_time_min].presence
   end
-  
+
   def start_time_max_param
     params[:start_time_max].presence
   end
