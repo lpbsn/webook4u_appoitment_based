@@ -47,7 +47,7 @@ class UserSessionContextTest < ActionDispatch::IntegrationTest
     assert_response :unprocessable_content
   end
 
-  test "client user sign in without client context fails with generic auth error" do
+  test "client user sign in without client context redirects to client homepage" do
     client = Client.create!(name: "Client A", slug: "client-a")
 
     User.create!(
@@ -66,33 +66,10 @@ class UserSessionContextTest < ActionDispatch::IntegrationTest
       }
     }
 
-    assert_response :unprocessable_content
-    assert_includes response.body, "Invalid email or password."
+    assert_redirected_to client_root_path
   end
 
-  test "client user and unknown email receive same error without client context" do
-    client = Client.create!(name: "Client A", slug: "client-a-enum")
-
-    User.create!(
-      client: client,
-      role: :client_user,
-      first_name: "Jean",
-      last_name: "Dupont",
-      email: "known-client-user@example.com",
-      password: "password"
-    )
-
-    post user_session_path, params: {
-      user: {
-        email: "known-client-user@example.com",
-        password: "password"
-      }
-    }
-
-    assert_response :unprocessable_content
-    known_body = response.body.dup
-    assert_includes known_body, "Invalid email or password."
-
+  test "unknown email without client context returns generic auth error" do
     post user_session_path, params: {
       user: {
         email: "unknown-user@example.com",
@@ -101,8 +78,7 @@ class UserSessionContextTest < ActionDispatch::IntegrationTest
     }
 
     assert_response :unprocessable_content
-    unknown_body = response.body
-    assert_includes unknown_body, "Invalid email or password."
+    assert_includes response.body, "Invalid email or password."
   end
 
   test "sign in page renders without client context instead of redirecting in a loop" do

@@ -29,12 +29,6 @@ class Users::SessionsController < Devise::SessionsController
   protected
 
   def after_sign_in_path_for(resource)
-    if current_auth_client.blank? && resource.client_user?
-      sign_out(resource)
-      flash[:alert] = I18n.t("devise.failure.invalid", authentication_keys: "Email")
-      return new_user_session_path
-    end
-
     session.delete(:after_auth_redirect_to)
     role_home_path_for(resource)
   end
