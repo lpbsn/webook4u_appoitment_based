@@ -448,6 +448,9 @@ class PublicClientsControllerTest < ActionDispatch::IntegrationTest
       assert_select "h2", text: "6. Premier créneau disponible"
       assert_includes response.body, "Créneau suggéré :"
       assert_includes response.body, "09:00"
+      assert_select "form[action=?]", service_bookings_path(client.slug, service), count: 1
+      assert_select 'input[name="start_time"]', count: 1
+      assert_select 'input[type="submit"][value="Continuer avec ce créneau"]', count: 1
     end
   end
 
@@ -532,7 +535,7 @@ class PublicClientsControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
-  test "selecting the first available suggestion does not create a pending booking and shows confirmation step" do
+  test "first available suggestion renders a direct pending creation action without confirmation step" do
     client = Client.create!(name: "Salon Suggestion Select", slug: "salon-suggestion-select")
     enseigne = client.enseignes.create!(name: "Enseigne Suggestion Select", full_address: "1 rue suggestion", active: true)
     create_weekday_opening_hours_for_enseigne(enseigne)
@@ -543,8 +546,6 @@ class PublicClientsControllerTest < ActionDispatch::IntegrationTest
     StaffServiceCapability.create!(staff: staff, service: service)
 
     travel_to Time.zone.local(2026, 3, 15, 8, 0, 0) do
-      selected_slot = Time.zone.local(2026, 3, 16, 9, 0, 0)
-
       assert_no_difference("Booking.count") do
         get public_client_url(client.slug), params: {
           enseigne_id: enseigne.id,
@@ -553,15 +554,16 @@ class PublicClientsControllerTest < ActionDispatch::IntegrationTest
           search_mode: "first_available",
           selected_days_of_week: [ "1" ],
           start_time_min: "09:00",
-          start_time_max: "18:00",
-          selected_start_time: selected_slot
+          start_time_max: "18:00"
         }
       end
 
       assert_response :success
-      assert_select 'input[name="selected_start_time"]', minimum: 1
-      assert_select "form[action=?]", service_bookings_path(client.slug, service), minimum: 1
-      assert_includes response.body, "Confirmer ce créneau"
+      assert_select "form[action=?]", service_bookings_path(client.slug, service), count: 1
+      assert_select 'input[name="selected_start_time"]', count: 0
+      assert_select 'input[name="start_time"]', count: 1
+      assert_includes response.body, "Continuer avec ce créneau"
+      assert_not_includes response.body, "Confirmer ce créneau"
     end
   end
 

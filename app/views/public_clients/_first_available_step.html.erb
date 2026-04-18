@@ -36,10 +36,11 @@
 
       <div class="field">
         <span class="field-label">Jours souhaités</span>
-        <div class="slot-grid slot-grid--staff-list">
+        <div class="slot-grid slot-grid--staff-list first-available-days">
           <% @first_available_available_days_of_week.each do |day_of_week| %>
             <% checkbox_id = "selected_days_of_week_#{day_of_week}" %>
-            <label for="<%= checkbox_id %>" class="slot-button">
+            <label for="<%= checkbox_id %>"
+                   class="<%= ['slot-button', 'slot-button--staff', 'first-available-day', ('slot-button--selected' if @first_available_selected_days_of_week.include?(day_of_week))].compact.join(' ') %>">
               <%= check_box_tag "selected_days_of_week[]",
                                 day_of_week,
                                 @first_available_selected_days_of_week.include?(day_of_week),
@@ -50,23 +51,27 @@
         </div>
       </div>
 
-      <div class="field">
-        <label class="field-label" for="start_time_min">Heure de début minimale</label>
-        <%= time_field_tag :start_time_min,
-                           @first_available_start_time_min,
-                           required: false,
-                           class: "field-input" %>
+      <div class="first-available-time-range">
+        <div class="field">
+          <label class="field-label" for="start_time_min">Heure de début minimale</label>
+          <%= time_field_tag :start_time_min,
+                             @first_available_start_time_min,
+                             required: false,
+                             class: "field-input" %>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="start_time_max">Heure de début maximale</label>
+          <%= time_field_tag :start_time_max,
+                             @first_available_start_time_max,
+                             required: false,
+                             class: "field-input" %>
+        </div>
       </div>
 
-      <div class="field">
-        <label class="field-label" for="start_time_max">Heure de début maximale</label>
-        <%= time_field_tag :start_time_max,
-                           @first_available_start_time_max,
-                           required: false,
-                           class: "field-input" %>
+      <div class="booking-actions booking-actions--center">
+        <%= submit_tag "Rechercher", class: "btn-primary btn-primary--compact" %>
       </div>
-
-      <%= submit_tag "Rechercher", class: "btn-primary" %>
     <% end %>
   </div>
 <% end %>

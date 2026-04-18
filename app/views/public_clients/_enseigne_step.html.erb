@@ -9,7 +9,7 @@
 
         <%= form_with url: public_client_path(@client.slug), method: :get, local: true do %>
           <%= hidden_field_tag :enseigne_id, enseigne.id %>
-          <%= submit_tag "#{enseigne.name}#{enseigne.full_address.present? ? " - #{enseigne.full_address}" : ""}", class: ["slot-button", ("slot-button--selected" if selected)].compact.join(" ") %>
+          <%= submit_tag enseigne.name, class: ["slot-button", ("slot-button--selected" if selected)].compact.join(" ") %>
         <% end %>
       <% end %>
     </div>

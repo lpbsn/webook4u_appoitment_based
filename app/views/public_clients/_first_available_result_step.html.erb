@@ -22,9 +22,9 @@
           <strong><%= @first_available_slot.strftime("%H:%M") %></strong>
         </p>
 
-        <%= form_tag public_client_path(@client.slug), method: :get do %>
+        <%= form_tag service_bookings_path(@client.slug, @selected_service), method: :post do %>
           <%= hidden_field_tag :enseigne_id, @selected_enseigne.id %>
-          <%= hidden_field_tag :service_id, @selected_service.id %>
+          <%= hidden_field_tag :start_time, @first_available_slot %>
           <%= hidden_field_tag :assignment_mode, @assignment_mode %>
           <% if @assignment_mode == "specific_staff" && @selected_staff.present? %>
             <%= hidden_field_tag :staff_id, @selected_staff.id %>
@@ -35,8 +35,9 @@
           <% end %>
           <%= hidden_field_tag :start_time_min, @first_available_start_time_min %>
           <%= hidden_field_tag :start_time_max, @first_available_start_time_max %>
-          <%= hidden_field_tag :selected_start_time, @first_available_slot %>
-          <%= submit_tag "Choisir ce créneau", class: "button button-primary" %>
+          <div class="booking-actions booking-actions--center">
+            <%= submit_tag "Continuer avec ce créneau", class: "btn-primary btn-primary--compact" %>
+          </div>
         <% end %>
       <% else %>
         <p>Aucun créneau disponible ne correspond à vos critères.</p>
