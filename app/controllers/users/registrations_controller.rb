@@ -1,24 +1,17 @@
 class Users::RegistrationsController < Devise::RegistrationsController
   layout "booking"
   before_action :store_redirect_to_in_session, only: %i[new create]
-  before_action :require_auth_client!, only: %i[new create]
 
   protected
 
   def build_resource(hash = {})
     super
-    resource.client = current_auth_client
+    resource.role = :user
+    resource.client ||= current_auth_client
   end
 
   def after_sign_up_path_for(resource)
-    session.delete(:after_auth_redirect_to).presence || super
-  end
-
-  private
-
-  def require_auth_client!
-    return if current_auth_client.present?
-
-    redirect_to new_user_session_path, alert: "Inscription impossible hors contexte client."
+    session.delete(:after_auth_redirect_to)
+    role_home_path_for(resource)
   end
 end

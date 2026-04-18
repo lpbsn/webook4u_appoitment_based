@@ -1,0 +1,54 @@
+<% if client_user.errors.any? %>
+  <div class="booking-alert booking-alert--error">
+    <p>Le formulaire contient des erreurs.</p>
+    <ul>
+      <% client_user.errors.full_messages.each do |message| %>
+        <li><%= message %></li>
+      <% end %>
+    </ul>
+  </div>
+<% end %>
+
+<%= form_with model: [:admin, client_user], local: true do |form| %>
+  <div class="field">
+    <%= form.label :client_id, "Client", class: "field-label" %>
+    <%= form.collection_select :client_id, clients, :id, :name, {}, class: "field-input" %>
+  </div>
+
+  <div class="field">
+    <%= form.label :first_name, "Prénom", class: "field-label" %>
+    <%= form.text_field :first_name, class: "field-input", required: true %>
+  </div>
+
+  <div class="field">
+    <%= form.label :last_name, "Nom", class: "field-label" %>
+    <%= form.text_field :last_name, class: "field-input", required: true %>
+  </div>
+
+  <div class="field">
+    <%= form.label :email, "Email", class: "field-label" %>
+    <%= form.email_field :email, class: "field-input", required: true %>
+  </div>
+
+  <div class="field">
+    <%= form.label :password, "Mot de passe", class: "field-label" %>
+    <%= form.password_field :password, class: "field-input", autocomplete: "new-password" %>
+  </div>
+
+  <div class="field">
+    <%= form.label :password_confirmation, "Confirmation mot de passe", class: "field-label" %>
+    <%= form.password_field :password_confirmation, class: "field-input", autocomplete: "new-password" %>
+  </div>
+
+  <div class="field">
+    <label class="booking-checkbox">
+      <%= form.check_box :active %>
+      Compte actif
+    </label>
+  </div>
+
+  <div class="booking-actions">
+    <%= form.submit submit_label, class: "btn-primary btn-primary--compact" %>
+    <%= link_to "Retour", admin_clients_path(tab: :client_users), class: "booking-topbar-link" %>
+  </div>
+<% end %>

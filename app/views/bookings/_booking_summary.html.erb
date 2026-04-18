@@ -4,6 +4,6 @@
     <p><strong>Enseigne :</strong> <%= booking_enseigne_name(@booking) %></p>
     <p><strong>Adresse :</strong> <%= booking_enseigne_address(@booking) %></p>
     <p><strong>Prestation :</strong> <%= @service.name %></p>
-    <p><strong>Créneau choisi :</strong> <%= @booking_start_time.strftime("%d/%m/%Y à %H:%M") %></p>
+    <p><strong>Créneau choisi :</strong> <%= format_datetime_label(@booking_start_time) %></p>
   </div>
 </div>

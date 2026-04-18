@@ -1,0 +1,10 @@
+<% content_for :booking_back_href, admin_clients_path %>
+
+<div class="booking-header">
+  <h1 class="booking-header-title">Nouveau ClientUser</h1>
+  <p class="booking-header-subtitle">Créer un compte rattaché à un client métier</p>
+</div>
+
+<div class="booking-section">
+  <%= render "form", client_user: @client_user, clients: @clients, submit_label: "Créer le compte client" %>
+</div>

@@ -1,0 +1,474 @@
+<% content_for :booking_back_href, admin_clients_path %>
+
+<div class="booking-header">
+  <h1 class="booking-header-title">Nouveau Client — Création guidée</h1>
+  <p class="booking-header-subtitle">Étape <%= @step %>/4</p>
+</div>
+
+<div class="booking-section">
+  <div class="booking-wizard-progress" aria-label="Progression du wizard">
+    <% (1..4).each do |wizard_step| %>
+      <% segment_class =
+        if wizard_step_completed?(wizard_step)
+          "booking-wizard-progress-segment booking-wizard-progress-segment--done"
+        elsif wizard_step == @step
+          "booking-wizard-progress-segment booking-wizard-progress-segment--current"
+        else
+          "booking-wizard-progress-segment"
+        end %>
+      <span class="<%= segment_class %>"></span>
+    <% end %>
+  </div>
+
+  <div class="booking-tabs">
+    <% [1, 2, 3, 4].each do |wizard_step| %>
+      <% tab_classes = ["booking-tab"] %>
+      <% tab_classes << "booking-tab--active" if @step == wizard_step %>
+      <% tab_classes << "booking-tab--done" if wizard_step_completed?(wizard_step) %>
+      <span class="<%= tab_classes.join(' ') %>">
+        Étape <%= wizard_step %>
+        <% if wizard_step_completed?(wizard_step) %>
+          <span class="booking-tab-state">validée</span>
+        <% elsif @step == wizard_step %>
+          <span class="booking-tab-state">en cours</span>
+        <% end %>
+      </span>
+    <% end %>
+  </div>
+</div>
+
+<% if @step_errors.present? %>
+  <div class="booking-alert booking-alert--error">
+    <p>Le formulaire contient des erreurs.</p>
+    <ul>
+      <% @step_errors.each do |message| %>
+        <li><%= message %></li>
+      <% end %>
+    </ul>
+  </div>
+<% end %>
+
+<div class="booking-section">
+  <% if @step == 1 %>
+    <% if @client_form.errors.any? %>
+      <div class="booking-alert booking-alert--error">
+        <p>Le formulaire contient des erreurs.</p>
+        <ul>
+          <% @client_form.errors.full_messages.each do |message| %>
+            <li><%= message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <%= form_with url: admin_clients_path, method: :post, local: true do %>
+      <%= hidden_field_tag :creation_step, 1 %>
+
+      <div class="field">
+        <%= label_tag "client_name", "Nom du client", class: "field-label" %>
+        <%= text_field_tag "client[name]", @client_form.name, class: "field-input", required: true, id: "client_name" %>
+      </div>
+
+      <div class="field">
+        <%= label_tag "client_slug", "Slug", class: "field-label" %>
+        <%= text_field_tag "client[slug]", @client_form.slug, class: "field-input", required: true, id: "client_slug" %>
+      </div>
+
+      <div class="booking-actions">
+        <%= submit_tag "Suivant", class: "btn-primary btn-primary--compact" %>
+      </div>
+    <% end %>
+  <% elsif @step == 2 %>
+    <%= form_with url: admin_clients_path, method: :post, local: true do %>
+      <%= hidden_field_tag :creation_step, 2 %>
+
+      <div id="enseigne-fields-container">
+        <% @enseignes_draft_entries.each do |enseigne| %>
+          <% idx = enseigne["ui_index"] %>
+          <div class="booking-dynamic-block">
+            <div class="booking-dynamic-block-header">
+              <h3 class="booking-section-title">Enseigne <%= idx + 1 %></h3>
+              <button type="button"
+                      class="booking-trash-button <%= @enseignes_draft_entries.size > 1 ? "" : "booking-trash-button--hidden" %>"
+                      data-remove-block
+                      aria-label="Supprimer cette enseigne"
+                      title="Supprimer cette enseigne">🗑</button>
+            </div>
+
+            <div class="field">
+              <%= label_tag "enseignes_#{idx}_name", "Nom de l'enseigne", class: "field-label" %>
+              <%= text_field_tag "enseignes[#{idx}][name]", enseigne["name"], class: "field-input", required: true, id: "enseignes_#{idx}_name" %>
+            </div>
+
+            <div class="field">
+              <%= label_tag "enseignes_#{idx}_full_address", "Adresse complète", class: "field-label" %>
+              <%= text_field_tag "enseignes[#{idx}][full_address]", enseigne["full_address"], class: "field-input", required: true, id: "enseignes_#{idx}_full_address" %>
+            </div>
+
+            <div class="field">
+              <%= label_tag "enseignes_#{idx}_active", "Enseigne active", class: "field-label" %>
+              <%= select_tag "enseignes[#{idx}][active]",
+                options_for_select([["Oui", "true"], ["Non", "false"]], (enseigne["active"].nil? ? "true" : enseigne["active"].to_s)),
+                class: "field-input",
+                required: true,
+                id: "enseignes_#{idx}_active" %>
+            </div>
+
+            <h4 class="booking-section-title">Horaires d'ouverture (sélectionner les jours)</h4>
+            <div class="booking-multi-day-grid">
+              <% [1, 2, 3, 4, 5, 6, 0].each do |day| %>
+                <% selected_hour = (enseigne["opening_hours"] || []).find { |h| h["day_of_week"].to_i == day } %>
+                <div class="booking-multi-day-row <%= "booking-multi-day-row--disabled" unless selected_hour.present? %>">
+                  <label class="booking-checkbox">
+                    <%= check_box_tag "enseignes[#{idx}][opening_hours][#{day}][selected]", "1", selected_hour.present? %>
+                    <%= day_of_week_label(day) %>
+                  </label>
+                  <%= hidden_field_tag "enseignes[#{idx}][opening_hours][#{day}][day_of_week]", day %>
+                  <%= time_field_tag "enseignes[#{idx}][opening_hours][#{day}][opens_at]", selected_hour&.dig("opens_at") || "09:00", class: "field-input booking-time-inline", disabled: selected_hour.blank? %>
+                  <%= time_field_tag "enseignes[#{idx}][opening_hours][#{day}][closes_at]", selected_hour&.dig("closes_at") || "18:00", class: "field-input booking-time-inline", disabled: selected_hour.blank? %>
+                </div>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+      </div>
+
+      <template id="enseigne-block-template">
+        <div class="booking-dynamic-block">
+          <div class="booking-dynamic-block-header">
+            <h3 class="booking-section-title">Enseigne __INDEX_LABEL__</h3>
+            <button type="button"
+                    class="booking-trash-button"
+                    data-remove-block
+                    aria-label="Supprimer cette enseigne"
+                    title="Supprimer cette enseigne">🗑</button>
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="enseignes___INDEX___name">Nom de l'enseigne</label>
+            <input class="field-input" id="enseignes___INDEX___name" name="enseignes[__INDEX__][name]" required="required" type="text">
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="enseignes___INDEX___full_address">Adresse complète</label>
+            <input class="field-input" id="enseignes___INDEX___full_address" name="enseignes[__INDEX__][full_address]" required="required" type="text">
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="enseignes___INDEX___active">Enseigne active</label>
+            <select class="field-input" id="enseignes___INDEX___active" name="enseignes[__INDEX__][active]" required="required">
+              <option selected="selected" value="true">Oui</option>
+              <option value="false">Non</option>
+            </select>
+          </div>
+
+          <h4 class="booking-section-title">Horaires d'ouverture (sélectionner les jours)</h4>
+          <div class="booking-multi-day-grid">
+            <% [1, 2, 3, 4, 5, 6, 0].each do |day| %>
+              <div class="booking-multi-day-row booking-multi-day-row--disabled">
+                <label class="booking-checkbox">
+                  <input name="enseignes[__INDEX__][opening_hours][<%= day %>][selected]" type="checkbox" value="1">
+                  <%= day_of_week_label(day) %>
+                </label>
+                <input name="enseignes[__INDEX__][opening_hours][<%= day %>][day_of_week]" type="hidden" value="<%= day %>">
+                <input class="field-input booking-time-inline" name="enseignes[__INDEX__][opening_hours][<%= day %>][opens_at]" type="time" value="09:00" disabled>
+                <input class="field-input booking-time-inline" name="enseignes[__INDEX__][opening_hours][<%= day %>][closes_at]" type="time" value="18:00" disabled>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </template>
+
+      <div class="booking-actions">
+        <button type="button" class="booking-topbar-button" id="add-enseigne-button">+ Enseigne</button>
+      </div>
+
+      <div class="booking-actions">
+        <%= link_to "Précédent", new_admin_client_path(step: 1), class: "booking-topbar-link" %>
+        <%= submit_tag "Suivant", class: "btn-primary btn-primary--compact" %>
+      </div>
+    <% end %>
+  <% elsif @step == 3 %>
+    <% if @service_form.errors.any? %>
+      <div class="booking-alert booking-alert--error">
+        <p>Le formulaire contient des erreurs.</p>
+        <ul>
+          <% @service_form.errors.full_messages.each do |message| %>
+            <li><%= message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <%= form_with url: admin_clients_path, method: :post, local: true do %>
+      <%= hidden_field_tag :creation_step, 3 %>
+
+      <div class="field">
+        <%= label_tag "service_name", "Nom du service", class: "field-label" %>
+        <%= text_field_tag "service[name]", @service_form.name, class: "field-input", required: true, id: "service_name" %>
+      </div>
+
+      <div class="field">
+        <%= label_tag "service_duration_minutes", "Durée (minutes)", class: "field-label" %>
+        <%= number_field_tag "service[duration_minutes]", @service_form.duration_minutes, class: "field-input", min: 1, required: true, id: "service_duration_minutes" %>
+      </div>
+
+      <div class="field">
+        <%= label_tag "service_price_cents", "Prix (centimes)", class: "field-label" %>
+        <%= number_field_tag "service[price_cents]", @service_form.price_cents, class: "field-input", min: 0, required: true, id: "service_price_cents" %>
+      </div>
+
+      <div class="booking-actions">
+        <%= link_to "Précédent", new_admin_client_path(step: 2), class: "booking-topbar-link" %>
+        <%= submit_tag "Suivant", class: "btn-primary btn-primary--compact" %>
+      </div>
+    <% end %>
+  <% else %>
+    <% if @staff_form.errors.any? %>
+      <div class="booking-alert booking-alert--error">
+        <p>Le formulaire contient des erreurs.</p>
+        <ul>
+          <% @staff_form.errors.full_messages.each do |message| %>
+            <li><%= message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <div class="booking-summary">
+      <h2 class="booking-section-title">Récapitulatif avant création définitive</h2>
+      <div class="booking-summary-row">
+        <span class="booking-summary-label">Client</span>
+        <span class="booking-summary-value"><%= @draft.dig("client", "name") %> (<%= @draft.dig("client", "slug") %>)</span>
+      </div>
+      <% Array(@draft["enseignes"]).each_with_index do |enseigne, index| %>
+        <div class="booking-summary-row">
+          <span class="booking-summary-label">Enseigne <%= index + 1 %></span>
+          <span class="booking-summary-value"><%= enseigne["name"] %> — <%= enseigne["full_address"] %></span>
+        </div>
+      <% end %>
+      <div class="booking-summary-row">
+        <span class="booking-summary-label">Service</span>
+        <span class="booking-summary-value">
+          <%= @draft.dig("service_template", "name") %>,
+          <%= @draft.dig("service_template", "duration_minutes") %> min,
+          <%= @draft.dig("service_template", "price_cents") %> centimes
+        </span>
+      </div>
+    </div>
+
+    <%= form_with url: admin_clients_path, method: :post, local: true do %>
+      <%= hidden_field_tag :creation_step, 4 %>
+
+      <div id="staff-fields-container">
+        <% @staffs_draft_entries.each do |staff| %>
+          <% idx = staff["ui_index"] %>
+          <div class="booking-dynamic-block">
+            <div class="booking-dynamic-block-header">
+              <h3 class="booking-section-title">Staff <%= idx + 1 %></h3>
+              <button type="button"
+                      class="booking-trash-button <%= @staffs_draft_entries.size > 1 ? "" : "booking-trash-button--hidden" %>"
+                      data-remove-block
+                      aria-label="Supprimer ce staff"
+                      title="Supprimer ce staff">🗑</button>
+            </div>
+
+            <div class="field">
+              <%= label_tag "staffs_#{idx}_name", "Nom du staff", class: "field-label" %>
+              <%= text_field_tag "staffs[#{idx}][name]", staff["name"], class: "field-input", required: true, id: "staffs_#{idx}_name" %>
+            </div>
+
+            <div class="field">
+              <%= label_tag "staffs_#{idx}_active", "Staff actif", class: "field-label" %>
+              <%= select_tag "staffs[#{idx}][active]",
+                options_for_select([["Oui", "true"], ["Non", "false"]], (staff["active"].nil? ? "true" : staff["active"].to_s)),
+                class: "field-input",
+                required: true,
+                id: "staffs_#{idx}_active" %>
+            </div>
+
+            <div class="field">
+              <%= label_tag "staffs_#{idx}_enseigne_index", "Enseigne de rattachement", class: "field-label" %>
+              <%= select_tag "staffs[#{idx}][enseigne_index]",
+                options_for_select(Array(@draft["enseignes"]).each_with_index.map { |enseigne, i| ["#{i + 1}. #{enseigne["name"]}", i] }, staff["enseigne_index"]),
+                class: "field-input",
+                required: true,
+                id: "staffs_#{idx}_enseigne_index" %>
+            </div>
+
+            <h4 class="booking-section-title">Disponibilités du staff (sélectionner les jours)</h4>
+            <div class="booking-multi-day-grid">
+              <% [1, 2, 3, 4, 5, 6, 0].each do |day| %>
+                <% selected_availability = (staff["availabilities"] || []).find { |a| a["day_of_week"].to_i == day } %>
+                <div class="booking-multi-day-row <%= "booking-multi-day-row--disabled" unless selected_availability.present? %>">
+                  <label class="booking-checkbox">
+                    <%= check_box_tag "staffs[#{idx}][availabilities][#{day}][selected]", "1", selected_availability.present? %>
+                    <%= day_of_week_label(day) %>
+                  </label>
+                  <%= hidden_field_tag "staffs[#{idx}][availabilities][#{day}][day_of_week]", day %>
+                  <%= time_field_tag "staffs[#{idx}][availabilities][#{day}][opens_at]", selected_availability&.dig("opens_at") || "09:00", class: "field-input booking-time-inline", disabled: selected_availability.blank? %>
+                  <%= time_field_tag "staffs[#{idx}][availabilities][#{day}][closes_at]", selected_availability&.dig("closes_at") || "18:00", class: "field-input booking-time-inline", disabled: selected_availability.blank? %>
+                </div>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+      </div>
+
+      <template id="staff-block-template">
+        <div class="booking-dynamic-block">
+          <div class="booking-dynamic-block-header">
+            <h3 class="booking-section-title">Staff __INDEX_LABEL__</h3>
+            <button type="button"
+                    class="booking-trash-button"
+                    data-remove-block
+                    aria-label="Supprimer ce staff"
+                    title="Supprimer ce staff">🗑</button>
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="staffs___INDEX___name">Nom du staff</label>
+            <input class="field-input" id="staffs___INDEX___name" name="staffs[__INDEX__][name]" required="required" type="text">
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="staffs___INDEX___active">Staff actif</label>
+            <select class="field-input" id="staffs___INDEX___active" name="staffs[__INDEX__][active]" required="required">
+              <option selected="selected" value="true">Oui</option>
+              <option value="false">Non</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="staffs___INDEX___enseigne_index">Enseigne de rattachement</label>
+            <select class="field-input" id="staffs___INDEX___enseigne_index" name="staffs[__INDEX__][enseigne_index]" required="required">
+              <% Array(@draft["enseignes"]).each_with_index do |enseigne, i| %>
+                <option value="<%= i %>"><%= "#{i + 1}. #{enseigne["name"]}" %></option>
+              <% end %>
+            </select>
+          </div>
+
+          <h4 class="booking-section-title">Disponibilités du staff (sélectionner les jours)</h4>
+          <div class="booking-multi-day-grid">
+            <% [1, 2, 3, 4, 5, 6, 0].each do |day| %>
+              <div class="booking-multi-day-row booking-multi-day-row--disabled">
+                <label class="booking-checkbox">
+                  <input name="staffs[__INDEX__][availabilities][<%= day %>][selected]" type="checkbox" value="1">
+                  <%= day_of_week_label(day) %>
+                </label>
+                <input name="staffs[__INDEX__][availabilities][<%= day %>][day_of_week]" type="hidden" value="<%= day %>">
+                <input class="field-input booking-time-inline" name="staffs[__INDEX__][availabilities][<%= day %>][opens_at]" type="time" value="09:00" disabled>
+                <input class="field-input booking-time-inline" name="staffs[__INDEX__][availabilities][<%= day %>][closes_at]" type="time" value="18:00" disabled>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </template>
+
+      <div class="booking-actions">
+        <button type="button" class="booking-topbar-button" id="add-staff-button">+ Staff</button>
+      </div>
+
+      <div class="booking-actions">
+        <%= link_to "Précédent", new_admin_client_path(step: 3), class: "booking-topbar-link" %>
+        <%= submit_tag "Créer le Client", class: "btn-primary btn-primary--compact" %>
+      </div>
+    <% end %>
+  <% end %>
+</div>
+
+<script>
+  document.addEventListener("turbo:load", function () {
+    function syncTrashButtons(container) {
+      var blocks = container.querySelectorAll(".booking-dynamic-block");
+      var hideTrash = blocks.length <= 1;
+
+      blocks.forEach(function (block) {
+        var trashButton = block.querySelector("[data-remove-block]");
+        if (!trashButton) return;
+
+        if (hideTrash) {
+          trashButton.classList.add("booking-trash-button--hidden");
+        } else {
+          trashButton.classList.remove("booking-trash-button--hidden");
+        }
+      });
+    }
+
+    function syncDayRows(container) {
+      var dayRows = container.querySelectorAll(".booking-multi-day-row");
+      dayRows.forEach(function (row) {
+        var checkbox = row.querySelector("input[type='checkbox'][name$='[selected]']");
+        if (!checkbox) return;
+
+        var enabled = checkbox.checked;
+        var timeFields = row.querySelectorAll("input[type='time']");
+
+        timeFields.forEach(function (field) {
+          field.disabled = !enabled;
+        });
+
+        if (enabled) {
+          row.classList.remove("booking-multi-day-row--disabled");
+        } else {
+          row.classList.add("booking-multi-day-row--disabled");
+        }
+      });
+    }
+
+    function bindDynamicBlockManager(config) {
+      var addButton = document.getElementById(config.addButtonId);
+      var container = document.getElementById(config.containerId);
+      var template = document.getElementById(config.templateId);
+      if (!addButton || !container || !template) return;
+
+      if (!addButton.dataset.listenerBound) {
+        addButton.addEventListener("click", function () {
+          var currentCount = container.querySelectorAll(".booking-dynamic-block").length;
+          var html = template.innerHTML
+            .replaceAll("__INDEX__", String(currentCount))
+            .replaceAll("__INDEX_LABEL__", String(currentCount + 1));
+          container.insertAdjacentHTML("beforeend", html);
+          syncTrashButtons(container);
+          syncDayRows(container);
+        });
+        addButton.dataset.listenerBound = "1";
+      }
+
+      if (!container.dataset.listenerBound) {
+        container.addEventListener("click", function (event) {
+          var removeButton = event.target.closest("[data-remove-block]");
+          if (!removeButton) return;
+
+          var targetBlock = removeButton.closest(".booking-dynamic-block");
+          if (!targetBlock) return;
+
+          targetBlock.remove();
+          syncTrashButtons(container);
+          syncDayRows(container);
+        });
+
+        container.addEventListener("change", function (event) {
+          if (!event.target.matches("input[type='checkbox'][name$='[selected]']")) return;
+          syncDayRows(container);
+        });
+        container.dataset.listenerBound = "1";
+      }
+
+      syncTrashButtons(container);
+      syncDayRows(container);
+    }
+
+    bindDynamicBlockManager({
+      addButtonId: "add-enseigne-button",
+      containerId: "enseigne-fields-container",
+      templateId: "enseigne-block-template"
+    });
+
+    bindDynamicBlockManager({
+      addButtonId: "add-staff-button",
+      containerId: "staff-fields-container",
+      templateId: "staff-block-template"
+    });
+  });
+</script>

@@ -31,12 +31,18 @@ class BookingFlowTest < ActionDispatch::IntegrationTest
   test "complete booking flow from public page to confirmation and success" do
     travel_to Time.zone.local(2026, 3, 15, 8, 0, 0) do
       # 1. Accès à la page publique du client
-      get public_client_path(@client.slug)
+      get public_client_path(@client.slug, booking_entry: "1")
       assert_response :success
 
       # 2. Sélection service + date pour afficher les créneaux (16 mars 2026 = lundi)
       date_param = "2026-03-16"
-      get public_client_path(@client.slug, enseigne_id: @enseigne.id, service_id: @service.id, date: date_param)
+      get public_client_path(
+        @client.slug,
+        booking_entry: "1",
+        enseigne_id: @enseigne.id,
+        service_id: @service.id,
+        date: date_param
+      )
       assert_response :success
 
       # 3. Création explicite du pending via POST (créneau 10h00 = valide dans la grille)
@@ -101,15 +107,21 @@ class BookingFlowTest < ActionDispatch::IntegrationTest
     ServiceAssignmentCursor.find_or_create_by!(service: other_service)
 
     travel_to Time.zone.local(2026, 3, 15, 8, 0, 0) do
-      get public_client_path(@client.slug)
+      get public_client_path(@client.slug, booking_entry: "1")
       assert_response :success
       assert_select "h2", text: "1. Choisir une enseigne"
 
-      get public_client_path(@client.slug, enseigne_id: other_enseigne.id)
+      get public_client_path(@client.slug, booking_entry: "1", enseigne_id: other_enseigne.id)
       assert_response :success
       assert_includes response.body, other_enseigne.name
 
-      get public_client_path(@client.slug, enseigne_id: other_enseigne.id, service_id: other_service.id, date: "2026-03-16")
+      get public_client_path(
+        @client.slug,
+        booking_entry: "1",
+        enseigne_id: other_enseigne.id,
+        service_id: other_service.id,
+        date: "2026-03-16"
+      )
       assert_response :success
 
       slot = Time.zone.local(2026, 3, 16, 10, 0, 0)

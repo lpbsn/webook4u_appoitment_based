@@ -1,7 +1,6 @@
 class Users::SessionsController < Devise::SessionsController
   layout "booking"
   before_action :store_redirect_to_in_session, only: %i[new create]
-  before_action :ensure_auth_client!, only: %i[create]
   before_action :show_missing_context_alert, only: %i[new]
 
   def create
@@ -30,18 +29,20 @@ class Users::SessionsController < Devise::SessionsController
   protected
 
   def after_sign_in_path_for(resource)
-    session.delete(:after_auth_redirect_to).presence || super
+    if current_auth_client.blank? && resource.client_user?
+      sign_out(resource)
+      flash[:alert] = I18n.t("devise.failure.invalid", authentication_keys: "Email")
+      return new_user_session_path
+    end
+
+    session.delete(:after_auth_redirect_to)
+    role_home_path_for(resource)
   end
 
   private
 
-  def ensure_auth_client!
-    return if current_auth_client.present?
-
-    redirect_to new_user_session_path, alert: "You must sign in from a client context."
-  end
-
   def show_missing_context_alert
+    return if auth_redirect_path.blank?
     return if current_auth_client.present?
     return if flash[:alert].present?
 

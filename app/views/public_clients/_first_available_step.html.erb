@@ -45,7 +45,7 @@
                                 day_of_week,
                                 @first_available_selected_days_of_week.include?(day_of_week),
                                 id: checkbox_id %>
-              <span><%= Date::DAYNAMES[day_of_week] %></span>
+              <span><%= day_of_week_label(day_of_week) %></span>
             </label>
           <% end %>
         </div>

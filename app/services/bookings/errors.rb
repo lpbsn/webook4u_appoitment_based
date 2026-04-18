@@ -12,6 +12,7 @@ module Bookings
     SESSION_EXPIRED           = :session_expired
     FORM_INVALID              = :form_invalid
     SLOT_TAKEN_DURING_CONFIRM = :slot_taken_during_confirm
+    RATE_LIMIT_EXCEEDED       = :rate_limit_exceeded
 
     MESSAGES = {
       INVALID_SLOT => "Le créneau sélectionné est invalide.",
@@ -21,7 +22,8 @@ module Bookings
       NOT_PENDING => "Cette réservation ne peut plus être confirmée. Veuillez recommencer votre sélection.",
       SESSION_EXPIRED => "Votre session a expiré. Veuillez renouveler votre réservation.",
       FORM_INVALID => "Le formulaire contient des erreurs.",
-      SLOT_TAKEN_DURING_CONFIRM => "Le créneau sélectionné vient d'être réservé par un autre utilisateur."
+      SLOT_TAKEN_DURING_CONFIRM => "Le créneau sélectionné vient d'être réservé par un autre utilisateur.",
+      RATE_LIMIT_EXCEEDED => "Trop de tentatives. Réessayez dans quelques minutes."
     }.freeze
 
     SLOT_CONFLICT_CONSTRAINTS = [

@@ -542,7 +542,12 @@ CREATE TABLE public.users (
     updated_at timestamp(6) without time zone NOT NULL,
     last_name character varying,
     first_name character varying,
-    client_id bigint NOT NULL
+    client_id bigint,
+    role character varying DEFAULT 'user'::character varying NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    CONSTRAINT users_admin_without_client CHECK ((((role)::text <> 'admin'::text) OR (client_id IS NULL))),
+    CONSTRAINT users_client_user_requires_client CHECK ((((role)::text <> 'client_user'::text) OR (client_id IS NOT NULL))),
+    CONSTRAINT users_role_allowed_values CHECK (((role)::text = ANY ((ARRAY['admin'::character varying, 'client_user'::character varying, 'user'::character varying])::text[])))
 );
 
 
@@ -967,10 +972,10 @@ CREATE INDEX index_users_on_client_id ON public.users USING btree (client_id);
 
 
 --
--- Name: index_users_on_client_id_and_email; Type: INDEX; Schema: public; Owner: -
+-- Name: index_users_on_email; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX index_users_on_client_id_and_email ON public.users USING btree (client_id, email);
+CREATE UNIQUE INDEX index_users_on_email ON public.users USING btree (email);
 
 
 --
@@ -1144,6 +1149,7 @@ ALTER TABLE ONLY public.bookings
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260418120000'),
 ('20260408105352'),
 ('20260407134147'),
 ('20260403120000'),

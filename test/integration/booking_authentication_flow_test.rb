@@ -6,6 +6,10 @@ class BookingAuthenticationFlowTest < ActionDispatch::IntegrationTest
     @enseigne = enseignes(:one)
     @service = services(:one)
     @user = users(:one)
+    @staff = @enseigne.staffs.create!(name: "Staff auth flow", active: true)
+    @staff.staff_availabilities.create!(day_of_week: 1, opens_at: "09:00", closes_at: "18:00")
+    StaffServiceCapability.create!(staff: @staff, service: @service)
+    ServiceAssignmentCursor.find_or_create_by!(service: @service)
 
     start_time = Time.zone.now.change(sec: 0) + 1.day
 
@@ -13,6 +17,7 @@ class BookingAuthenticationFlowTest < ActionDispatch::IntegrationTest
       client: @client,
       enseigne: @enseigne,
       service: @service,
+      staff: @staff,
       user: nil,
       booking_start_time: start_time,
       booking_end_time: start_time + @service.duration_minutes.minutes,
@@ -22,22 +27,27 @@ class BookingAuthenticationFlowTest < ActionDispatch::IntegrationTest
     )
   end
 
-  test "non authenticated user is redirected back to pending booking after sign in" do
+  test "non authenticated user can access pending booking page directly" do
     get pending_booking_path(@client.slug, @booking.pending_access_token)
-    assert_redirected_to new_user_session_path
-
-    follow_redirect!
     assert_response :success
-    assert_includes response.body, "You need to sign in or sign up before continuing."
+    assert_includes response.body, "Valider la réservation"
+  end
 
-    get new_user_session_path(
-      redirect_to: pending_booking_path(@client.slug, @booking.pending_access_token)
-    )
-    assert_response :success
-    assert_select "a[href=?]", new_user_registration_path(
-      redirect_to: pending_booking_path(@client.slug, @booking.pending_access_token)
-    )
+  test "non authenticated user can confirm a pending booking" do
+    post confirm_booking_path(@client.slug, @booking.pending_access_token), params: {
+      booking: {
+        customer_first_name: "Jane",
+        customer_last_name: "Doe",
+        customer_email: "jane.booking@example.com"
+      }
+    }
 
+    @booking.reload
+    assert_equal "confirmed", @booking.booking_status
+    assert_redirected_to booking_success_path(@client.slug, @booking.confirmation_token)
+  end
+
+  test "signed in user from another client is still signed out on mismatched client context" do
     post user_session_path, params: {
       user: {
         email: @user.email,
@@ -45,78 +55,8 @@ class BookingAuthenticationFlowTest < ActionDispatch::IntegrationTest
       },
       redirect_to: pending_booking_path(@client.slug, @booking.pending_access_token)
     }
+    assert_redirected_to client_root_path
 
-    assert_redirected_to pending_booking_path(@client.slug, @booking.pending_access_token)
-
-    follow_redirect!
-    assert_response :success
-    assert_match @user.email, response.body
-  end
-
-  test "non authenticated user is redirected back to pending booking after sign up" do
-    get new_user_registration_path(
-      redirect_to: pending_booking_path(@client.slug, @booking.pending_access_token)
-    )
-    assert_response :success
-
-    post user_registration_path, params: {
-      user: {
-        last_name: "Doe",
-        first_name: "Jane",
-        email: "jane.booking@example.com",
-        password: "password123",
-        password_confirmation: "password123"
-      },
-      redirect_to: pending_booking_path(@client.slug, @booking.pending_access_token)
-    }
-
-    assert_redirected_to pending_booking_path(@client.slug, @booking.pending_access_token)
-
-    follow_redirect!
-    assert_response :success
-    assert_match "jane.booking@example.com", response.body
-  end
-
-  test "signed in user who signs out from pending booking is redirected back to pending booking after signing in again" do
-    post user_session_path, params: {
-      user: {
-        email: @user.email,
-        password: "password123"
-      },
-      redirect_to: pending_booking_path(@client.slug, @booking.pending_access_token)
-    }
-    assert_redirected_to pending_booking_path(@client.slug, @booking.pending_access_token)
-
-    follow_redirect!
-    assert_response :success
-
-    delete destroy_user_session_path, params: {
-      redirect_to: pending_booking_path(@client.slug, @booking.pending_access_token)
-    }
-
-    assert_redirected_to new_user_session_path(
-      redirect_to: pending_booking_path(@client.slug, @booking.pending_access_token)
-    )
-
-    follow_redirect!
-    assert_response :success
-
-    post user_session_path, params: {
-      user: {
-        email: @user.email,
-        password: "password123"
-      },
-      redirect_to: pending_booking_path(@client.slug, @booking.pending_access_token)
-    }
-
-    assert_redirected_to pending_booking_path(@client.slug, @booking.pending_access_token)
-
-    follow_redirect!
-    assert_response :success
-    assert_match @user.email, response.body
-  end
-
-  test "signed in user from another client is signed out and redirected to contextualized sign in" do
     other_client = clients(:two)
     other_enseigne = enseignes(:two)
     other_service = services(:two)
@@ -134,15 +74,6 @@ class BookingAuthenticationFlowTest < ActionDispatch::IntegrationTest
       booking_expires_at: 5.minutes.from_now,
       pending_access_token: SecureRandom.uuid
     )
-
-    post user_session_path, params: {
-      user: {
-        email: @user.email,
-        password: "password123"
-      },
-      redirect_to: pending_booking_path(@client.slug, @booking.pending_access_token)
-    }
-    assert_redirected_to pending_booking_path(@client.slug, @booking.pending_access_token)
 
     get pending_booking_path(other_client.slug, other_booking.pending_access_token)
 

@@ -1,7 +1,7 @@
 require "test_helper"
 
 class UserRegistrationContextTest < ActionDispatch::IntegrationTest
-  test "sign up from booking context creates user on current client" do
+  test "sign up from booking context creates user on current client and redirects to role dashboard" do
     client = clients(:one)
 
     assert_difference("User.count", 1) do
@@ -19,11 +19,12 @@ class UserRegistrationContextTest < ActionDispatch::IntegrationTest
 
     user = User.order(:created_at).last
     assert_equal client.id, user.client_id
-    assert_redirected_to "/#{client.slug}/bookings/pending-token"
+    assert_equal "user", user.role
+    assert_redirected_to user_root_path
   end
 
-  test "sign up without client context does not create user" do
-    assert_no_difference("User.count") do
+  test "sign up without client context creates a global user account" do
+    assert_difference("User.count", 1) do
       post user_registration_path, params: {
         user: {
           last_name: "Choupapi",
@@ -35,7 +36,9 @@ class UserRegistrationContextTest < ActionDispatch::IntegrationTest
       }
     end
 
-    assert_redirected_to new_user_session_path
-    assert_equal "Inscription impossible hors contexte client.", flash[:alert]
+    user = User.order(:created_at).last
+    assert_nil user.client_id
+    assert_equal "user", user.role
+    assert_redirected_to user_root_path
   end
 end
