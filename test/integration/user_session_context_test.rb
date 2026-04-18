@@ -75,6 +75,8 @@ class UserSessionContextTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_includes response.body, "You must sign in from a client context."
+    assert_select ".booking-header-title", text: "Se connecter"
+    assert_select "input.field-input", minimum: 2
   end
 
   test "sign up without client context redirects to sign in page" do
@@ -93,11 +95,14 @@ class UserSessionContextTest < ActionDispatch::IntegrationTest
     get new_user_session_path(redirect_to: "/#{client.slug}/bookings/pending-token")
     assert_response :success
 
+    assert_select ".booking-header-title", text: "Se connecter"
     assert_select "a[href=?]", new_user_registration_path(redirect_to: "/#{client.slug}/bookings/pending-token")
 
     get new_user_registration_path(redirect_to: "/#{client.slug}/bookings/pending-token")
     assert_response :success
 
+    assert_select ".booking-header-title", text: "Créer un compte"
+    assert_select "input.field-input", minimum: 5
     assert_select "a[href=?]", new_user_session_path(redirect_to: "/#{client.slug}/bookings/pending-token")
   end
 end

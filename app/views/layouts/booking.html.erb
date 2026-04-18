@@ -6,27 +6,40 @@
 
   <body class="booking-body">
     <div class="booking-page">
-      <div style="max-width: 640px; width: 100%; margin: 0 auto 12px auto; display: flex; justify-content: flex-end; gap: 8px;">
-        <% if user_signed_in? %>
-          <span><%= current_user.email %></span>
-          <%= button_to "Se déconnecter", destroy_user_session_path(redirect_to: request.fullpath), method: :delete %>
-        <% else %>
-          <%= link_to "Créer un compte", new_user_registration_path(redirect_to: request.fullpath) %>
-          <%= link_to "Se connecter", new_user_session_path(redirect_to: request.fullpath) %>
-        <% end %>
-      </div>
+      <% unless content_for?(:hide_booking_auth_bar) %>
+        <div class="booking-topbar">
+          <% if user_signed_in? %>
+            <span><%= current_user.email %></span>
+            <%= button_to "Se déconnecter",
+                          destroy_user_session_path(redirect_to: request.fullpath),
+                          method: :delete,
+                          class: "booking-topbar-button" %>
+          <% else %>
+            <%= link_to "Créer un compte",
+                        new_user_registration_path(redirect_to: request.fullpath),
+                        class: "booking-topbar-link" %>
+            <%= link_to "Se connecter",
+                        new_user_session_path(redirect_to: request.fullpath),
+                        class: "booking-topbar-link" %>
+          <% end %>
+        </div>
+      <% end %>
 
       <div class="booking-card <%= content_for?(:booking_card_modifier) ? yield(:booking_card_modifier) : '' %>">
+        <% if notice.present? %>
+          <div class="booking-alert booking-alert--notice">
+            <p><%= notice %></p>
+          </div>
+        <% end %>
+
+        <% if alert.present? %>
+          <div class="booking-alert booking-alert--error">
+            <p><%= alert %></p>
+          </div>
+        <% end %>
+
         <%= yield %>
       </div>
     </div>
-
-    <% if notice.present? %>
-      <p><%= notice %></p>
-    <% end %>
-
-    <% if alert.present? %>
-      <p><%= alert %></p>
-    <% end %>
   </body>
 </html>
