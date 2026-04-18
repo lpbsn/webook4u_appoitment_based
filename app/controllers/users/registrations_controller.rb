@@ -18,6 +18,6 @@ class Users::RegistrationsController < Devise::RegistrationsController
   def require_auth_client!
     return if current_auth_client.present?
 
-    redirect_to "/", alert: "Inscription impossible hors contexte client."
+    redirect_to new_user_session_path, alert: "Inscription impossible hors contexte client."
   end
 end

@@ -154,9 +154,9 @@ bin/rails test test/integration/booking_flow_test.rb
 
 ## Documentation
 
-- [docs/README.md](/Users/leobsn/Desktop/webook4u_appoitment_based/docs/README.md) : index de la documentation active
-- [docs/EDB-Webook4U-Appointment-Based-V1.md](/Users/leobsn/Desktop/webook4u_appoitment_based/docs/EDB-Webook4U-Appointment-Based-V1.md) : cible produit V1
-- [docs/archive/README.md](/Users/leobsn/Desktop/webook4u_appoitment_based/docs/archive/README.md) : documents intermediaires archives (non normatifs)
+- [docs/README.md](docs/README.md) : index de la documentation active et du périmètre runtime réellement livré
+- [docs/EDB-Webook4U-Appointment-Based-V1.md](docs/EDB-Webook4U-Appointment-Based-V1.md) : cible produit V1
+- [docs/archive/README.md](docs/archive/README.md) : documents intermédiaires archivés (non normatifs)
 
 ## Base de donnees locale
 
@@ -213,6 +213,22 @@ Ces elements existent dans le repo mais ne sont pas necessaires a ton usage quot
 - `config/deploy.yml` et `bin/kamal` pour le deploy
 - la section `production` de `config/database.yml` pour une future mise en prod
 
+## Statut production
+
+Decision actuelle :
+
+- le repository reste `local-first`
+- la production est hors perimetre court terme
+- Docker, Kamal et la configuration `production` doivent etre lus comme du scaffolding futur, pas comme une promesse de readiness
+
+Concretement, ne considere pas le projet comme pret au deploy tant que les points suivants ne sont pas traites explicitement :
+
+- SSL / `force_ssl` / `assume_ssl`
+- politique CSP
+- `hosts` autorises
+- stockage de production durable
+- secrets et procedure de deploy verifies
+
 ## Perimetre actuel
 
 Le projet couvre aujourd'hui :
@@ -220,17 +236,25 @@ Le projet couvre aujourd'hui :
 - page publique de reservation par `slug`
 - selection d'une enseigne
 - selection d'une prestation
+- choix du mode d'assignation entre `automatic` et `specific_staff`
 - selection d'une date
 - affichage des creneaux disponibles
 - creation d'une reservation temporaire (`pending`)
+- authentification utilisateur requise pour consulter un `pending`
 - confirmation de reservation
+- authentification utilisateur requise pour confirmer un `pending`
 - page de succes
 
 Hors perimetre actuel :
 
 - paiement
+- `PaymentSession`
+- theming client livre au runtime
+- back-office admin Webook4U
+- back-office client
 - gestion metier liee aux echecs de paiement
 - exploitation reelle du statut `failed`
+- confirmation anonyme finale d'un booking
 - fonctionnement 100% base sur les horaires par enseigne
 
 Regles metier actuelles :

@@ -1,6 +1,7 @@
 class Users::SessionsController < Devise::SessionsController
   before_action :store_redirect_to_in_session, only: %i[new create]
-  before_action :ensure_auth_client!, only: %i[new create]
+  before_action :ensure_auth_client!, only: %i[create]
+  before_action :show_missing_context_alert, only: %i[new]
 
   def create
     Current.set(auth_client: current_auth_client) do
@@ -37,5 +38,12 @@ class Users::SessionsController < Devise::SessionsController
     return if current_auth_client.present?
 
     redirect_to new_user_session_path, alert: "You must sign in from a client context."
+  end
+
+  def show_missing_context_alert
+    return if current_auth_client.present?
+    return if flash[:alert].present?
+
+    flash.now[:alert] = "You must sign in from a client context."
   end
 end
