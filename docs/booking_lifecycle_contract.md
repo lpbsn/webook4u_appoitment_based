@@ -36,6 +36,8 @@ Verrouiller un contrat technique explicite entre documentation, code applicatif,
 ### Seam d'integration paiement (sans changement runtime)
 
 - Le point d'extension futur doit vivre dans un service dedie de session paiement.
+- Le seam runtime reserve est `Bookings::PaymentFailureTransition`.
+- La regle d'entree est encapsulee par `Bookings::TransitionToFailedFromPayment`.
 - La transition vers `failed` devra etre pilotee uniquement depuis ce seam paiement.
 - Tant que ce seam n'est pas implemente, `pending -> confirmed` reste le seul chemin applicatif de confirmation.
 
@@ -60,6 +62,7 @@ Verrouiller un contrat technique explicite entre documentation, code applicatif,
 
 - **Confirmed overlap**: interdit au niveau DB via exclusion constraint.
 - **Pending overlap**: protege au niveau applicatif (locks + revalidation metier), pas de contrainte DB temporelle active-pending.
+- **Confirm staff revalidation**: le staff assigne doit rester `active`, appartenir a la meme enseigne, et conserver sa capability sur le service confirme.
 - Ordre attendu des locks pour les flux transactionnels:
   1. lock rotation service
   2. lock staff

@@ -56,6 +56,7 @@ Associer chaque zone de risque critique a des preuves techniques obligatoires, a
 - Required tests:
   - `test/services/bookings/booking_duplicates_flow_test.rb`
   - `test/services/bookings/slot_lock_test.rb`
+  - `test/services/bookings/create_pending_test.rb`
   - `test/services/bookings/confirm_test.rb`
 - Required checks:
   - `bin/check`
@@ -79,6 +80,8 @@ Associer chaque zone de risque critique a des preuves techniques obligatoires, a
 - Required tests:
   - `test/services/bookings/confirm_test.rb`
   - `test/models/booking_test.rb`
+  - `test/services/bookings/non_payment_status_guard_test.rb`
+  - `test/services/bookings/payment_failure_transition_test.rb`
 - Required checks:
   - `bin/check`
   - `bin/ci`

@@ -27,8 +27,10 @@ module Bookings
 
     def assigned_staff_valid?
       return false if assigned_staff.blank?
+      return false unless assigned_staff.active?
+      return false unless assigned_staff.enseigne_id == booking.enseigne_id
 
-      assigned_staff.enseigne_id == booking.enseigne_id
+      StaffServiceCapability.exists?(staff_id: assigned_staff.id, service_id: booking.service_id)
     end
 
     def blocked_slot?

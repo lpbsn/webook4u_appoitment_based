@@ -8,6 +8,11 @@ module Bookings
     DEFAULT_PENDING_LIMIT = 5
     DEFAULT_CONFIRM_LIMIT = 8
     DEFAULT_WINDOW_SECONDS = 10.minutes.to_i
+    NON_SHARED_CACHE_STORES = [
+      ActiveSupport::Cache::MemoryStore,
+      ActiveSupport::Cache::FileStore,
+      ActiveSupport::Cache::NullStore
+    ].freeze
 
     def self.allowed?(client:, ip:, action:)
       new(client: client, ip: ip, action: action).allowed?
@@ -17,6 +22,18 @@ module Bookings
       @fallback_lock ||= Mutex.new
     end
 
+    def self.warning_lock
+      @warning_lock ||= Mutex.new
+    end
+
+    def self.warned_cache_store_classes
+      @warned_cache_store_classes ||= {}
+    end
+
+    def self.shared_cache_store?
+      NON_SHARED_CACHE_STORES.none? { |store_class| Rails.cache.is_a?(store_class) }
+    end
+
     def initialize(client:, ip:, action:)
       @client = client
       @ip = ip.presence || "unknown"
@@ -24,6 +41,7 @@ module Bookings
     end
 
     def allowed?
+      warn_if_non_shared_cache_store
       limit = limit_for_action
       return false if limit <= 0
 
@@ -73,6 +91,22 @@ module Bookings
       Integer(raw_value)
     rescue ArgumentError
       fallback
+    end
+
+    def warn_if_non_shared_cache_store
+      return if self.class.shared_cache_store?
+
+      cache_store_class = Rails.cache.class.name
+
+      self.class.warning_lock.synchronize do
+        return if self.class.warned_cache_store_classes[cache_store_class]
+
+        self.class.warned_cache_store_classes[cache_store_class] = true
+        Rails.logger.warn(
+          "Bookings::RateLimiter is using #{cache_store_class}; " \
+          "this cache store is local to a process and does not provide multi-instance protection."
+        )
+      end
     end
   end
 end
