@@ -75,7 +75,7 @@ class Admin::ClientsController < Admin::BaseController
 
   def process_step_2!
     enseignes = step_2_enseignes_params
-    validate_step_2_requirements!(enseignes)
+    @step_errors = wizard_support.validate_enseignes(enseignes)
 
     if @step_errors.empty?
       @draft["enseignes"] = enseignes
@@ -89,7 +89,10 @@ class Admin::ClientsController < Admin::BaseController
 
   def process_step_3!
     @service_form = Service.new(step_3_service_params)
-    validate_step_3_requirements!
+    @step_errors = wizard_support.validate_service_template(
+      service_form: @service_form,
+      service_params: step_3_service_params
+    )
 
     if @service_form.errors.empty? && @step_errors.empty?
       @draft["service_template"] = step_3_service_params
@@ -103,136 +106,16 @@ class Admin::ClientsController < Admin::BaseController
 
   def process_step_4!
     staffs = step_4_staffs_params
-    validate_step_4_requirements!(staffs)
+    @step_errors = wizard_support.validate_staffs(staffs)
 
     if @step_errors.empty?
       @draft["staffs"] = staffs
       persist_wizard_draft!
-      create_client_from_wizard_draft!
+      wizard_support.create_client_from_wizard_draft!(draft: @draft)
       reset_wizard_draft!
       redirect_to admin_clients_path(tab: :clients), notice: "Client créé avec son onboarding complet."
     else
       render_wizard_step(4)
-    end
-  end
-
-  def create_client_from_wizard_draft!
-    ActiveRecord::Base.transaction do
-      client = Client.create!(@draft.fetch("client"))
-
-      enseignes = @draft.fetch("enseignes").map do |enseigne_payload|
-        opening_hours = enseigne_payload.delete("opening_hours")
-        enseigne = client.enseignes.create!(enseigne_payload)
-        opening_hours.each { |opening_hour| enseigne.enseigne_opening_hours.create!(opening_hour) }
-        enseigne
-      end
-
-      services_by_enseigne = {}
-      enseignes.each do |enseigne|
-        service = enseigne.services.create!(@draft.fetch("service_template"))
-        ServiceAssignmentCursor.find_or_create_by!(service: service)
-        services_by_enseigne[enseigne.id] = service
-      end
-
-      @draft.fetch("staffs").each do |staff_payload|
-        availabilities = staff_payload.delete("availabilities")
-        enseigne_index = staff_payload.delete("enseigne_index")
-        enseigne = enseignes.fetch(enseigne_index)
-
-        staff = enseigne.staffs.create!(staff_payload)
-        availabilities.each { |availability| staff.staff_availabilities.create!(availability) }
-        StaffServiceCapability.find_or_create_by!(staff: staff, service: services_by_enseigne.fetch(enseigne.id))
-      end
-    end
-  end
-
-  def validate_step_2_requirements!(enseignes)
-    if enseignes.blank?
-      @step_errors << "Ajoutez au moins une enseigne."
-      return
-    end
-
-    enseignes.each_with_index do |enseigne, index|
-      if enseigne["name"].blank?
-        @step_errors << "Enseigne ##{index + 1}: le nom est obligatoire."
-      end
-      if enseigne["full_address"].blank?
-        @step_errors << "Enseigne ##{index + 1}: l'adresse est obligatoire."
-      end
-
-      opening_hours = enseigne["opening_hours"] || []
-      if opening_hours.blank?
-        @step_errors << "Enseigne ##{index + 1}: sélectionnez au moins un jour d'ouverture."
-        next
-      end
-
-      opening_hours.each do |opening_hour|
-        day = day_label(opening_hour["day_of_week"])
-        if opening_hour["opens_at"].blank? || opening_hour["closes_at"].blank?
-          @step_errors << "Enseigne ##{index + 1} (#{day}): renseignez 'ouvre à' et 'ferme à'."
-          next
-        end
-
-        opens_value = Time.zone.parse(opening_hour["opens_at"].to_s)
-        closes_value = Time.zone.parse(opening_hour["closes_at"].to_s)
-        if opens_value.nil? || closes_value.nil?
-          @step_errors << "Enseigne ##{index + 1} (#{day}): horaires invalides."
-          next
-        end
-
-        unless opens_value < closes_value
-          @step_errors << "Enseigne ##{index + 1} (#{day}): l'heure d'ouverture doit être avant l'heure de fermeture."
-        end
-      end
-    end
-  end
-
-  def validate_step_3_requirements!
-    duration = step_3_service_params["duration_minutes"].to_i
-    price = step_3_service_params["price_cents"].to_i
-
-    @step_errors << "La durée du service doit être strictement positive." unless duration.positive?
-    @step_errors << "Le prix doit être positif ou nul." unless price >= 0
-  end
-
-  def validate_step_4_requirements!(staffs)
-    if staffs.blank?
-      @step_errors << "Ajoutez au moins un staff."
-      return
-    end
-
-    staffs.each_with_index do |staff, index|
-      if staff["name"].blank?
-        @step_errors << "Staff ##{index + 1}: le nom est obligatoire."
-      end
-      if staff["enseigne_index"].nil?
-        @step_errors << "Staff ##{index + 1}: sélectionnez une enseigne."
-      end
-
-      availabilities = staff["availabilities"] || []
-      if availabilities.blank?
-        @step_errors << "Staff ##{index + 1}: sélectionnez au moins un jour de disponibilité."
-        next
-      end
-
-      availabilities.each do |availability|
-        day = day_label(availability["day_of_week"])
-        if availability["opens_at"].blank? || availability["closes_at"].blank?
-          @step_errors << "Staff ##{index + 1} (#{day}): renseignez 'ouvre à' et 'ferme à'."
-          next
-        end
-
-        opens_value = Time.zone.parse(availability["opens_at"].to_s)
-        closes_value = Time.zone.parse(availability["closes_at"].to_s)
-        if opens_value.nil? || closes_value.nil?
-          @step_errors << "Staff ##{index + 1} (#{day}): horaires invalides."
-          next
-        end
-
-        unless opens_value < closes_value
-          @step_errors << "Staff ##{index + 1} (#{day}): l'heure de début doit être avant l'heure de fin."
-        end
-      end
     end
   end
 
@@ -421,15 +304,7 @@ class Admin::ClientsController < Admin::BaseController
     "clients"
   end
 
-  def day_label(raw_day)
-    {
-      0 => "Dimanche",
-      1 => "Lundi",
-      2 => "Mardi",
-      3 => "Mercredi",
-      4 => "Jeudi",
-      5 => "Vendredi",
-      6 => "Samedi"
-    }[raw_day.to_i] || "-"
+  def wizard_support
+    @wizard_support ||= Admin::ClientOnboardingWizardSupport.new
   end
 end

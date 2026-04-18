@@ -30,9 +30,10 @@ module Bookings
       return failure(Errors::SLOT_UNAVAILABLE, matches_schedule_grid: false) unless eligible_staff_candidate?
 
       schedule_grid_match = matches_schedule_grid?
-      return failure(Errors::SLOT_UNAVAILABLE, matches_schedule_grid: schedule_grid_match) if blocked_slot?
+      return failure(Errors::SLOT_NOT_BOOKABLE, matches_schedule_grid: false) unless schedule_grid_match
+      return failure(Errors::SLOT_UNAVAILABLE, matches_schedule_grid: true) if blocked_slot?
 
-      success(matches_schedule_grid: schedule_grid_match)
+      success(matches_schedule_grid: true)
     end
 
     private

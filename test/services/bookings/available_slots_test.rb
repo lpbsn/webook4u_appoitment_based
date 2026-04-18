@@ -411,6 +411,71 @@ class Bookings::AvailableSlotsTest < ActiveSupport::TestCase
     end
   end
 
+  test "visible slot is creatable by staff revalidation when no race occurs" do
+    travel_to Time.zone.local(2026, 3, 15, 8, 0, 0) do
+      monday = Date.new(2026, 3, 16)
+
+      slots = Bookings::AvailableSlots.new(
+        client: @client,
+        enseigne: @enseigne,
+        service: @service,
+        date: monday
+      ).call
+
+      slot = Time.zone.local(2026, 3, 16, 10, 0, 0)
+      assert_includes slots, slot
+
+      decision = Bookings::CreatePendingStaffRevalidation.new(
+        client: @client,
+        enseigne: @enseigne,
+        service: @service,
+        staff: @staff,
+        booking_start_time: slot
+      ).call
+
+      assert decision.creatable?
+      assert_nil decision.error_code
+    end
+  end
+
+  test "visible slot can become unavailable under race after a blocking booking is created" do
+    travel_to Time.zone.local(2026, 3, 15, 8, 0, 0) do
+      monday = Date.new(2026, 3, 16)
+      slot = Time.zone.local(2026, 3, 16, 10, 30, 0)
+
+      initial_slots = Bookings::AvailableSlots.new(
+        client: @client,
+        enseigne: @enseigne,
+        service: @service,
+        date: monday
+      ).call
+      assert_includes initial_slots, slot
+
+      @client.bookings.create!(
+        enseigne: @enseigne,
+        service: @service,
+        staff: @staff,
+        booking_start_time: slot,
+        booking_end_time: slot + 30.minutes,
+        booking_status: :confirmed,
+        customer_first_name: "Race",
+        customer_last_name: "Winner",
+        customer_email: "race.winner@example.com"
+      )
+
+      decision = Bookings::CreatePendingStaffRevalidation.new(
+        client: @client,
+        enseigne: @enseigne,
+        service: @service,
+        staff: @staff,
+        booking_start_time: slot
+      ).call
+
+      assert_not decision.creatable?
+      assert_equal Bookings::Errors::SLOT_UNAVAILABLE, decision.error_code
+    end
+  end
+
   test "does not duplicate slots when day has multiple disjoint opening intervals" do
     @enseigne.enseigne_opening_hours.where(day_of_week: 1).delete_all
     @enseigne.enseigne_opening_hours.create!(day_of_week: 1, opens_at: "09:00", closes_at: "12:00")

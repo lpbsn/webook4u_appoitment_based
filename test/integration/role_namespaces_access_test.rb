@@ -105,6 +105,28 @@ class RoleNamespacesAccessTest < ActionDispatch::IntegrationTest
     assert_includes response.body, "href=\"#{user_root_path}\""
   end
 
+  test "public pending token flow stays outside role namespaces" do
+    pending_booking = Booking.create!(
+      client: @client_one,
+      enseigne: @enseigne_one,
+      service: @service_one,
+      staff: @staff_one,
+      user: nil,
+      booking_start_time: Time.zone.now.change(sec: 0) + 1.day,
+      booking_end_time: Time.zone.now.change(sec: 0) + 1.day + 30.minutes,
+      booking_status: :pending,
+      booking_expires_at: 5.minutes.from_now,
+      pending_access_token: SecureRandom.urlsafe_base64(24)
+    )
+
+    get pending_booking_path(@client_one.slug, pending_booking.pending_access_token)
+    assert_response :success
+
+    sign_in @client_user
+    get pending_booking_path(@client_one.slug, pending_booking.pending_access_token)
+    assert_response :success
+  end
+
   private
 
   def create_confirmed_bookings

@@ -23,12 +23,32 @@ Le runtime actuellement livré dans ce repository couvre :
 
 Pour le périmètre V1 actuellement livré dans ce repository :
 
-- la consultation d'un booking `pending` requiert une authentification utilisateur
-- la confirmation finale d'un booking `pending` requiert une authentification utilisateur
+- la consultation d'un booking `pending` est anonyme et autorisée par possession d'un `pending_access_token` valide
+- la confirmation finale d'un booking `pending` est anonyme et autorisée par possession d'un `pending_access_token` valide
 - la navigation publique avant création du `pending` reste accessible sans authentification
-- aucun flux invité de confirmation finale n'est livré à ce stade
+- le token `pending_access_token` agit comme capacité d'accès temporaire, avec expiration courte et protections anti-abus (rate limiting)
 
-Cette règle décrit le contrat runtime actuel. Si le produit doit évoluer vers une confirmation anonyme, cela devra faire l'objet d'une décision produit et d'un changement explicite du code et des tests.
+Cette règle décrit le contrat runtime actuel. Si le produit doit évoluer vers une confirmation authentifiée, cela devra faire l'objet d'une décision produit et d'un changement explicite du code et des tests.
+
+## Contrat lifecycle booking
+
+Le cycle runtime actuellement livré est volontairement restreint :
+
+- transitions actives :
+  - `pending` -> `confirmed`
+  - `pending` expiré (expiration logique, sans transition de statut)
+- statut réservé :
+  - `failed` est réservé aux échecs de paiement et doit rester inatteignable tant que le flux paiement n'est pas livré
+
+## Artefacts techniques de référence
+
+- [booking_lifecycle_contract.md](./booking_lifecycle_contract.md) : contrat technique lifecycle/auth/round-robin
+- [adr/0001-booking-pending-auth-model.md](./adr/0001-booking-pending-auth-model.md) : ADR auth pending anonyme par token
+- [adr/0002-booking-failed-status-reserved-for-payment.md](./adr/0002-booking-failed-status-reserved-for-payment.md) : ADR statut `failed` réservé au paiement
+- [architecture/booking_domain_map.md](./architecture/booking_domain_map.md) : cartographie architecture et points de couplage
+- [architecture/booking_invariant_registry.md](./architecture/booking_invariant_registry.md) : registre d'invariants DB/modèle/service/tests
+- [technical_backlog/booking_risk_reduction_backlog.md](./technical_backlog/booking_risk_reduction_backlog.md) : backlog technique ordonné et preuves attendues
+- [quality/booking_proof_gates.md](./quality/booking_proof_gates.md) : quality gates et preuves CI par zone de risque
 
 ## Capacités cibles non livrées à ce stade
 

@@ -761,6 +761,37 @@ class Bookings::ConfirmTest < ActiveSupport::TestCase
 
       booking.reload
       assert_equal "pending", booking.booking_status
+      assert_not_equal "failed", booking.booking_status
+    end
+  end
+
+  test "confirmation runtime never transitions a pending booking to failed on business errors" do
+    travel_to Time.zone.local(2026, 3, 15, 8, 0, 0) do
+      booking = @client.bookings.create!(
+        enseigne: @enseigne,
+        service: @service,
+        staff: @staff,
+        booking_start_time: Time.zone.local(2026, 3, 16, 14, 30, 0),
+        booking_end_time: Time.zone.local(2026, 3, 16, 15, 0, 0),
+        booking_status: :pending,
+        booking_expires_at: BookingRules.pending_expires_at
+      )
+
+      result = Bookings::Confirm.new(
+        booking: booking,
+        booking_params: {
+          customer_first_name: "",
+          customer_last_name: "",
+          customer_email: "invalid-email"
+        }
+      ).call
+
+      assert_not result.success?
+      assert_equal Bookings::Errors::FORM_INVALID, result.error_code
+
+      booking.reload
+      assert_equal "pending", booking.booking_status
+      assert_not_equal "failed", booking.booking_status
     end
   end
 

@@ -47,6 +47,25 @@ class BookingAuthenticationFlowTest < ActionDispatch::IntegrationTest
     assert_redirected_to booking_success_path(@client.slug, @booking.confirmation_token)
   end
 
+  test "invalid pending token does not redirect anonymous visitor to authentication" do
+    get pending_booking_path(@client.slug, "unknown-token")
+
+    assert_response :not_found
+  end
+
+  test "expired pending token redirects anonymously to public flow with session expired alert" do
+    @booking.update!(booking_expires_at: 1.minute.ago)
+
+    get pending_booking_path(@client.slug, @booking.pending_access_token)
+
+    assert_redirected_to public_client_path(
+      @client.slug,
+      enseigne_id: @booking.enseigne_id,
+      service_id: @booking.service_id,
+      date: @booking.booking_start_time.to_date
+    )
+  end
+
   test "signed in user from another client is still signed out on mismatched client context" do
     post user_session_path, params: {
       user: {
