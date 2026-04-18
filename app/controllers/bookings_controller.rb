@@ -81,6 +81,10 @@ class BookingsController < ApplicationController
     @booking_date = redirect_date(@booking_start_time)
     @assignment_mode = assignment_mode_param
     @staff_id = staff_id_param
+    @search_mode = search_mode_param
+    @selected_days_of_week = selected_days_of_week_param
+    @start_time_min = start_time_min_param
+    @start_time_max = start_time_max_param
   end
 
   def load_public_pending_booking
@@ -146,15 +150,22 @@ class BookingsController < ApplicationController
   end
 
   def redirect_to_pending_selection(message)
-    redirect_to public_client_path(
-      @client.slug,
+    redirect_params = {
       enseigne_id: @enseigne.id,
       service_id: @service.id,
       date: @booking_date,
       assignment_mode: @assignment_mode,
-      staff_id: @staff_id
-    ),
-                alert: message
+      staff_id: @staff_id,
+      search_mode: @search_mode
+    }
+  
+    if @search_mode == "first_available"
+      redirect_params[:selected_days_of_week] = @selected_days_of_week
+      redirect_params[:start_time_min] = @start_time_min
+      redirect_params[:start_time_max] = @start_time_max
+    end
+  
+    redirect_to public_client_path(@client.slug, redirect_params), alert: message
   end
 
   def redirect_enseigne_id(enseigne)
@@ -171,6 +182,22 @@ class BookingsController < ApplicationController
 
   def staff_id_param
     params[:staff_id].presence
+  end
+
+  def search_mode_param
+    params[:search_mode].presence
+  end
+  
+  def selected_days_of_week_param
+    Array(params[:selected_days_of_week]).reject(&:blank?)
+  end
+  
+  def start_time_min_param
+    params[:start_time_min].presence
+  end
+  
+  def start_time_max_param
+    params[:start_time_max].presence
   end
 
   def prefill_booking_customer_from_current_user

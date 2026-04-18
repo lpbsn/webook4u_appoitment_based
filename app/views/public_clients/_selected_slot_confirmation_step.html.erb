@@ -24,6 +24,16 @@
       <% if @search_mode == "precise_date" && @date.present? %>
         <%= hidden_field_tag :date, @date %>
       <% end %>
+      
+      <%= hidden_field_tag :search_mode, @search_mode %>
+      
+      <% if @search_mode == "first_available" %>
+        <% Array(@first_available_selected_days_of_week).each do |day| %>
+          <%= hidden_field_tag "selected_days_of_week[]", day %>
+        <% end %>
+        <%= hidden_field_tag :start_time_min, @first_available_start_time_min %>
+        <%= hidden_field_tag :start_time_max, @first_available_start_time_max %>
+      <% end %>
       <%= submit_tag "Confirmer ce créneau", class: "button button-primary" %>
     <% end %>
   </div>
