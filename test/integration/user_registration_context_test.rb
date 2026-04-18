@@ -35,7 +35,7 @@ class UserRegistrationContextTest < ActionDispatch::IntegrationTest
       }
     end
 
-    assert_redirected_to "/"
+    assert_redirected_to new_user_session_path
     assert_equal "Inscription impossible hors contexte client.", flash[:alert]
   end
 end

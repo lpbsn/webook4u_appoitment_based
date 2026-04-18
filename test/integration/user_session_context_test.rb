@@ -64,6 +64,27 @@ class UserSessionContextTest < ActionDispatch::IntegrationTest
     }
 
     assert_redirected_to new_user_session_path
+
+    follow_redirect!
+    assert_response :success
+    assert_includes response.body, "You must sign in from a client context."
+  end
+
+  test "sign in page renders without client context instead of redirecting in a loop" do
+    get new_user_session_path
+
+    assert_response :success
+    assert_includes response.body, "You must sign in from a client context."
+  end
+
+  test "sign up without client context redirects to sign in page" do
+    get new_user_registration_path
+
+    assert_redirected_to new_user_session_path
+
+    follow_redirect!
+    assert_response :success
+    assert_includes response.body, "Inscription impossible hors contexte client."
   end
 
   test "auth links preserve booking redirect_to across sign in and sign up pages" do

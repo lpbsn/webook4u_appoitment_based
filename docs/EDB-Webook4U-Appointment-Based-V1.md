@@ -14,6 +14,9 @@ Son objectif est de :
 Ce document décrit la cible produit de la V1.
 Il ne décrit pas uniquement l'état actuel du repository.
 
+Pour l'état runtime effectivement livré dans ce repository, se référer à `README.md` et `docs/README.md`.
+Les éléments décrits ici ne doivent pas être interprétés comme déjà implémentés s'ils ne sont pas présents dans le code et les tests.
+
 ## 2. Contexte et opportunité
 
 Le porteur du projet développe des sites vitrines Webflow pour des clients de proximité comme :

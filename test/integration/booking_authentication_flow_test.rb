@@ -26,10 +26,17 @@ class BookingAuthenticationFlowTest < ActionDispatch::IntegrationTest
     get pending_booking_path(@client.slug, @booking.pending_access_token)
     assert_redirected_to new_user_session_path
 
+    follow_redirect!
+    assert_response :success
+    assert_includes response.body, "You need to sign in or sign up before continuing."
+
     get new_user_session_path(
       redirect_to: pending_booking_path(@client.slug, @booking.pending_access_token)
     )
     assert_response :success
+    assert_select "a[href=?]", new_user_registration_path(
+      redirect_to: pending_booking_path(@client.slug, @booking.pending_access_token)
+    )
 
     post user_session_path, params: {
       user: {
@@ -140,6 +147,13 @@ class BookingAuthenticationFlowTest < ActionDispatch::IntegrationTest
     get pending_booking_path(other_client.slug, other_booking.pending_access_token)
 
     assert_redirected_to new_user_session_path(
+      redirect_to: pending_booking_path(other_client.slug, other_booking.pending_access_token)
+    )
+
+    follow_redirect!
+    assert_response :success
+    assert_includes response.body, "Your session does not match this booking context. Please sign in again."
+    assert_select "a[href=?]", new_user_registration_path(
       redirect_to: pending_booking_path(other_client.slug, other_booking.pending_access_token)
     )
   end
