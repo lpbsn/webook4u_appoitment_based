@@ -60,4 +60,22 @@ class UserTest < ActiveSupport::TestCase
       assert_equal user, found
     end
   end
+
+  test "find_for_authentication returns client user without client context" do
+    client = Client.create!(name: "Client A", slug: "client-a-auth")
+    user = User.create!(
+      role: :client_user,
+      active: true,
+      client: client,
+      first_name: "Client",
+      last_name: "User",
+      email: "client-auth-user@example.com",
+      password: "password123"
+    )
+
+    Current.set(auth_client: nil) do
+      found = User.find_for_authentication(email: user.email)
+      assert_equal user, found
+    end
+  end
 end

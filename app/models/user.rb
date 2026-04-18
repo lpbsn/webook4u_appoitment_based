@@ -36,9 +36,10 @@ class User < ApplicationRecord
       ).first
     else
       scope.where(
-        "(role = :admin AND client_id IS NULL) OR role = :user",
+        "(role = :admin AND client_id IS NULL) OR role IN (:user, :client_user)",
         admin: roles.fetch(:admin),
-        user: roles.fetch(:user)
+        user: roles.fetch(:user),
+        client_user: roles.fetch(:client_user)
       ).first
     end
   end
