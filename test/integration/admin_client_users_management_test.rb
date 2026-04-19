@@ -189,4 +189,38 @@ class AdminClientUsersManagementTest < ActionDispatch::IntegrationTest
     assert_includes response.body, "class=\"booking-back-link\""
     assert_includes response.body, "href=\"#{admin_clients_path}\""
   end
+  test "wizard step 4 shows enseigne address formatted without country" do
+    sign_in @admin
+
+    post admin_clients_path, params: {
+      creation_step: 1,
+      client: {
+        name: "Client Trois",
+        slug: "client-trois"
+      }
+    }
+    assert_redirected_to new_admin_client_path(step: 2)
+
+    post admin_clients_path, params: {
+      creation_step: 2,
+      enseignes: {
+        "0" => {
+          name: "Enseigne Trois",
+          address: "3 rue des tests",
+          postal_code: "75001",
+          city: "Paris",
+          country: "France",
+          active: "true",
+          opening_hours: {
+            "1" => {
+              selected: "1",
+              day_of_week: "1",
+              opens_at: "09:00",
+              closes_at: "18:00"
+            }
+          }
+        }
+      }
+    }
+  end
 end
