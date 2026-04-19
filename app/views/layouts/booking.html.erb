@@ -5,7 +5,7 @@
   </head>
 
   <body class="booking-body">
-    <div class="booking-page">
+    <div class="booking-page <%= content_for?(:booking_page_modifier) ? yield(:booking_page_modifier) : '' %>">
       <% unless content_for?(:hide_booking_auth_bar) %>
         <div class="booking-topbar">
           <% if user_signed_in? %>
