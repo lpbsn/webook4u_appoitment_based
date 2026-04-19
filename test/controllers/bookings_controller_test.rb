@@ -15,7 +15,10 @@ class BookingsControllerTest < ActionDispatch::IntegrationTest
 
     @enseigne = @client.enseignes.create!(
       name: "Enseigne principale",
-      full_address: "1 rue de Paris"
+      address: "1 rue de Paris",
+      postal_code: "00000",
+      city: "Ville",
+      country: "France"
     )
 
     @service = @enseigne.services.create!(
@@ -65,7 +68,7 @@ class BookingsControllerTest < ActionDispatch::IntegrationTest
       assert_equal "pending", booking.booking_status
       assert_equal slot, booking.booking_start_time
       assert_includes response.body, @enseigne.name
-      assert_includes response.body, @enseigne.full_address
+      assert_includes response.body, @enseigne.formatted_address
       assert_includes response.body, "Valider la réservation"
     end
   end
@@ -156,7 +159,7 @@ class BookingsControllerTest < ActionDispatch::IntegrationTest
 
       assert_response :success
       assert_includes response.body, @enseigne.name
-      assert_includes response.body, @enseigne.full_address
+      assert_includes response.body, @enseigne.formatted_address
       assert_includes response.body, "Valider la réservation"
     end
   end
@@ -863,7 +866,7 @@ class BookingsControllerTest < ActionDispatch::IntegrationTest
 
       assert_response :success
       assert_includes response.body, @enseigne.name
-      assert_includes response.body, @enseigne.full_address
+      assert_includes response.body, @enseigne.formatted_address
       assert_includes response.body, "l**@example.com"
       assert_not_includes response.body, "leo@example.com"
       assert_equal "strict-origin", response.headers["Referrer-Policy"]
@@ -918,7 +921,7 @@ class BookingsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "POST #create_pending returns 404 for inactive enseigne" do
-    inactive_enseigne = @client.enseignes.create!(name: "Inactive", full_address: "2 rue de Paris", active: false)
+    inactive_enseigne = @client.enseignes.create!(name: "Inactive", address: "2 rue de Paris", postal_code: "00000", city: "Ville", country: "France", active: false)
 
     travel_to Time.zone.local(2026, 3, 15, 8, 0, 0) do
       slot = Time.zone.local(2026, 3, 16, 10, 0, 0)
@@ -929,7 +932,7 @@ class BookingsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "POST #create_pending returns 404 when service does not belong to selected enseigne" do
-    other_enseigne = @client.enseignes.create!(name: "Enseigne secondaire", full_address: "3 rue de Paris", active: true)
+    other_enseigne = @client.enseignes.create!(name: "Enseigne secondaire", address: "3 rue de Paris", postal_code: "00000", city: "Ville", country: "France", active: true)
     other_service = other_enseigne.services.create!(name: "Coloration", duration_minutes: 45, price_cents: 5000)
 
     travel_to Time.zone.local(2026, 3, 15, 8, 0, 0) do

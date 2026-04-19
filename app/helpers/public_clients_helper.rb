@@ -4,7 +4,7 @@ module PublicClientsHelper
   end
 
   def public_client_selected_enseigne_address(selected_enseigne)
-    selected_enseigne&.full_address.presence || "—"
+    selected_enseigne&.formatted_address.presence || "—"
   end
 
   def public_client_selected_service_name(selected_service)

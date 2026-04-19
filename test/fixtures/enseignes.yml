@@ -3,9 +3,17 @@
 one:
   client: one
   name: Enseigne One
+  address: 1 rue de Paris
+  postal_code: "75001"
+  city: Paris
+  country: France
   active: true
 
 two:
   client: two
   name: Enseigne Two
+  address: 2 rue de Lyon
+  postal_code: "69001"
+  city: Lyon
+  country: France
   active: true

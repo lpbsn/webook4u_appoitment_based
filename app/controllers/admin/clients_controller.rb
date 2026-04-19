@@ -214,7 +214,10 @@ class Admin::ClientsController < Admin::BaseController
     {
       "ui_index" => index,
       "name" => "",
-      "full_address" => "",
+      "address" => "",
+      "postal_code" => "",
+      "city" => "",
+      "country" => "",
       "active" => true,
       "opening_hours" => []
     }
@@ -253,7 +256,10 @@ class Admin::ClientsController < Admin::BaseController
 
       {
         "name" => enseigne["name"],
-        "full_address" => enseigne["full_address"],
+        "address" => enseigne["address"],
+        "postal_code" => enseigne["postal_code"],
+        "city" => enseigne["city"],
+        "country" => enseigne["country"],
         "active" => ActiveModel::Type::Boolean.new.cast(enseigne["active"]),
         "opening_hours" => opening_hours
       }

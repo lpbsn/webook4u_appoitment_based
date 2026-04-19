@@ -68,7 +68,10 @@ class AdminClientUsersManagementTest < ActionDispatch::IntegrationTest
       enseignes: {
         "0" => {
           name: "Enseigne Trois",
-          full_address: "3 rue des tests",
+          address: "3 rue des tests",
+          postal_code: "75001",
+          city: "Paris",
+          country: "France",
           active: "true",
           opening_hours: {
             "1" => {
@@ -133,7 +136,10 @@ class AdminClientUsersManagementTest < ActionDispatch::IntegrationTest
       enseignes: {
         "0" => {
           name: "Enseigne Blocage",
-          full_address: "",
+          address: "",
+          postal_code: "",
+          city: "",
+          country: "",
           active: "true",
           opening_hours: {}
         }
@@ -182,5 +188,57 @@ class AdminClientUsersManagementTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_includes response.body, "class=\"booking-back-link\""
     assert_includes response.body, "href=\"#{admin_clients_path}\""
+  end
+  test "wizard step 4 shows enseigne address formatted without country" do
+    sign_in @admin
+
+    post admin_clients_path, params: {
+      creation_step: 1,
+      client: {
+        name: "Client Trois",
+        slug: "client-trois"
+      }
+    }
+    assert_redirected_to new_admin_client_path(step: 2)
+
+    post admin_clients_path, params: {
+      creation_step: 2,
+      enseignes: {
+        "0" => {
+          name: "Enseigne Trois",
+          address: "3 rue des tests",
+          postal_code: "75001",
+          city: "Paris",
+          country: "France",
+          active: "true",
+          opening_hours: {
+            "1" => {
+              selected: "1",
+              day_of_week: "1",
+              opens_at: "09:00",
+              closes_at: "18:00"
+            }
+          }
+        }
+      }
+    }
+
+    assert_redirected_to new_admin_client_path(step: 3)
+
+    post admin_clients_path, params: {
+      creation_step: 3,
+      service: {
+        name: "Coupe Trois",
+        duration_minutes: "45",
+        price_cents: "3500"
+      }
+    }
+
+    assert_redirected_to new_admin_client_path(step: 4)
+
+    get new_admin_client_path(step: 4)
+    assert_response :success
+    assert_includes response.body, "3 rue des tests, 75001 Paris"
+    assert_not_includes response.body, "France"
   end
 end

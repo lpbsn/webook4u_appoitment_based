@@ -256,7 +256,6 @@ CREATE TABLE public.enseignes (
     id bigint NOT NULL,
     client_id bigint NOT NULL,
     name character varying NOT NULL,
-    full_address character varying,
     active boolean DEFAULT true NOT NULL,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
@@ -1153,6 +1152,8 @@ ALTER TABLE ONLY public.bookings
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260419121000'),
+('20260419120000'),
 ('20260419075356'),
 ('20260418120000'),
 ('20260408105352'),

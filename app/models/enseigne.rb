@@ -8,4 +8,11 @@ class Enseigne < ApplicationRecord
   scope :active, -> { where(active: true) }
 
   validates :name, presence: true
+
+  def formatted_address
+    street = address.to_s.strip.presence
+    postal_city = [ postal_code.to_s.strip.presence, city.to_s.strip.presence ].compact.join(" ").presence
+
+    [ street, postal_city ].compact.join(", ").presence
+  end
 end

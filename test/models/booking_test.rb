@@ -11,11 +11,17 @@ class BookingTest < ActiveSupport::TestCase
 
     @enseigne = @client.enseignes.create!(
       name: "Enseigne principale",
-      full_address: "1 rue de Paris"
+      address: "1 rue de Paris",
+      postal_code: "00000",
+      city: "Ville",
+      country: "France"
     )
     @other_enseigne = @client.enseignes.create!(
       name: "Enseigne secondaire",
-      full_address: "2 rue de Paris"
+      address: "2 rue de Paris",
+      postal_code: "00000",
+      city: "Ville",
+      country: "France"
     )
 
     @service = @enseigne.services.create!(
@@ -414,7 +420,10 @@ class BookingTest < ActiveSupport::TestCase
     )
     other_enseigne = other_client.enseignes.create!(
       name: "Enseigne autre client",
-      full_address: "3 rue de Paris"
+      address: "3 rue de Paris",
+      postal_code: "00000",
+      city: "Ville",
+      country: "France"
     )
 
     other_service = other_enseigne.services.create!(
@@ -440,7 +449,10 @@ class BookingTest < ActiveSupport::TestCase
   test "staff must belong to the same enseigne when present" do
     other_enseigne = @client.enseignes.create!(
       name: "Enseigne staff externe",
-      full_address: "4 rue de Paris"
+      address: "4 rue de Paris",
+      postal_code: "00000",
+      city: "Ville",
+      country: "France"
     )
     other_staff = other_enseigne.staffs.create!(name: "Staff externe")
 
@@ -944,7 +956,10 @@ class BookingTest < ActiveSupport::TestCase
     now = Time.current
     other_enseigne = @client.enseignes.create!(
       name: "Enseigne staff DB mismatch",
-      full_address: "5 rue de Paris"
+      address: "5 rue de Paris",
+      postal_code: "00000",
+      city: "Ville",
+      country: "France"
     )
     other_staff = other_enseigne.staffs.create!(name: "Staff DB mismatch")
 
@@ -1450,7 +1465,7 @@ class BookingTest < ActiveSupport::TestCase
   test "database rejects insert when service belongs to another client" do
     now = Time.current
     other_client = Client.create!(name: "Other client", slug: "other-client-cross-table-service")
-    other_enseigne = other_client.enseignes.create!(name: "Other enseigne", full_address: "1 rue du test")
+    other_enseigne = other_client.enseignes.create!(name: "Other enseigne", address: "1 rue du test", postal_code: "00000", city: "Ville", country: "France")
     other_service = other_enseigne.services.create!(name: "Other service", duration_minutes: 30, price_cents: 1200)
 
     error = assert_raises ActiveRecord::StatementInvalid do
@@ -1476,7 +1491,7 @@ class BookingTest < ActiveSupport::TestCase
   test "database rejects insert when enseigne belongs to another client" do
     now = Time.current
     other_client = Client.create!(name: "Other client", slug: "other-client-cross-table-enseigne")
-    other_enseigne = other_client.enseignes.create!(name: "Other enseigne", full_address: "2 rue du test")
+    other_enseigne = other_client.enseignes.create!(name: "Other enseigne", address: "2 rue du test", postal_code: "00000", city: "Ville", country: "France")
 
     error = assert_raises ActiveRecord::StatementInvalid do
       Booking.insert_all!([
@@ -1501,7 +1516,7 @@ class BookingTest < ActiveSupport::TestCase
   test "database rejects insert when service and enseigne match each other but not client_id" do
     now = Time.current
     other_client = Client.create!(name: "Other client", slug: "other-client-cross-table-both")
-    other_enseigne = other_client.enseignes.create!(name: "Other enseigne", full_address: "3 rue du test")
+    other_enseigne = other_client.enseignes.create!(name: "Other enseigne", address: "3 rue du test", postal_code: "00000", city: "Ville", country: "France")
     other_service = other_enseigne.services.create!(name: "Other service", duration_minutes: 30, price_cents: 1200)
 
     error = assert_raises ActiveRecord::StatementInvalid do
@@ -1534,7 +1549,7 @@ class BookingTest < ActiveSupport::TestCase
       booking_expires_at: BookingRules.pending_expires_at
     )
     other_client = Client.create!(name: "Other client", slug: "other-client-update-service")
-    other_enseigne = other_client.enseignes.create!(name: "Other enseigne", full_address: "5 rue du test")
+    other_enseigne = other_client.enseignes.create!(name: "Other enseigne", address: "5 rue du test", postal_code: "00000", city: "Ville", country: "France")
     other_service = other_enseigne.services.create!(name: "Other service", duration_minutes: 30, price_cents: 1200)
 
     error = assert_raises ActiveRecord::StatementInvalid do
@@ -1554,7 +1569,7 @@ class BookingTest < ActiveSupport::TestCase
       booking_expires_at: BookingRules.pending_expires_at
     )
     other_client = Client.create!(name: "Other client", slug: "other-client-update-enseigne")
-    other_enseigne = other_client.enseignes.create!(name: "Other enseigne", full_address: "4 rue du test")
+    other_enseigne = other_client.enseignes.create!(name: "Other enseigne", address: "4 rue du test", postal_code: "00000", city: "Ville", country: "France")
 
     error = assert_raises ActiveRecord::StatementInvalid do
       Booking.where(id: booking.id).update_all(enseigne_id: other_enseigne.id)

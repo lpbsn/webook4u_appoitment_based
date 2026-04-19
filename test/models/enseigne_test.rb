@@ -6,7 +6,14 @@ class EnseigneTest < ActiveSupport::TestCase
   end
 
   test "valid enseigne saves without errors" do
-    enseigne = Enseigne.new(client: @client, name: "Enseigne A", full_address: "1 rue de Paris")
+    enseigne = Enseigne.new(
+      client: @client,
+      name: "Enseigne A",
+      address: "1 rue de Paris",
+      postal_code: "75001",
+      city: "Paris",
+      country: "France"
+    )
 
     assert enseigne.valid?
   end
@@ -22,6 +29,22 @@ class EnseigneTest < ActiveSupport::TestCase
     enseigne = Enseigne.new(client: nil, name: "Enseigne A")
 
     assert_not enseigne.valid?
+  end
+
+  test "formatted_address uses structured fields" do
+    enseigne = Enseigne.new(
+      address: "10 rue de Paris",
+      postal_code: "75001",
+      city: "Paris"
+    )
+
+    assert_equal "10 rue de Paris, 75001 Paris", enseigne.formatted_address
+  end
+
+  test "formatted_address omits missing chunks without extra separators" do
+    assert_equal "10 rue de Paris", Enseigne.new(address: "10 rue de Paris").formatted_address
+    assert_equal "75001 Paris", Enseigne.new(postal_code: "75001", city: "Paris").formatted_address
+    assert_equal "Paris", Enseigne.new(city: "Paris").formatted_address
   end
 
   test "destroying enseigne with bookings raises a restriction error" do

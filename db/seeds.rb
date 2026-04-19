@@ -43,24 +43,36 @@ if Rails.env.development?
     salon => [
       {
         name: "PARIS 16 Salon",
-        full_address: "108 Rue de la Tour, 75116 Paris",
+        address: "108 Rue de la Tour",
+        postal_code: "75116",
+        city: "Paris",
+        country: "France",
         active: true
       }
     ],
     coach => [
       {
         name: "LYON 06 Coach",
-        full_address: "110 Rue Garibaldi, 69006 Lyon, France",
+        address: "110 Rue Garibaldi",
+        postal_code: "69006",
+        city: "Lyon",
+        country: "France",
         active: true
       },
       {
         name: "VALENCE SUD Coach",
-        full_address: "79 Rue Barthélémy de Laffemas, 26000 Valence, France",
+        address: "79 Rue Barthélémy de Laffemas",
+        postal_code: "26000",
+        city: "Valence",
+        country: "France",
         active: true
       },
       {
         name: "LYON 08 Coach",
-        full_address: "2 Av. Paul Santy, 69008 Lyon, France",
+        address: "2 Av. Paul Santy",
+        postal_code: "69008",
+        city: "Lyon",
+        country: "France",
         active: false
       }
     ]
@@ -68,7 +80,10 @@ if Rails.env.development?
     enseignes.each do |attrs|
       enseigne = client.enseignes.find_or_initialize_by(name: attrs[:name])
       enseigne.assign_attributes(
-        full_address: attrs[:full_address],
+        address: attrs[:address],
+        postal_code: attrs[:postal_code],
+        city: attrs[:city],
+        country: attrs[:country],
         active: attrs[:active]
       )
       enseigne.save! if enseigne.new_record? || enseigne.changed?
