@@ -21,7 +21,10 @@ module Admin
 
       enseignes.each_with_index do |enseigne, index|
         errors << "Enseigne ##{index + 1}: le nom est obligatoire." if enseigne["name"].blank?
-        errors << "Enseigne ##{index + 1}: l'adresse est obligatoire." if enseigne["full_address"].blank?
+        errors << "Enseigne ##{index + 1}: l'adresse est obligatoire." if enseigne["address"].blank?
+        errors << "Enseigne ##{index + 1}: le code postal est obligatoire." if enseigne["postal_code"].blank?
+        errors << "Enseigne ##{index + 1}: la ville est obligatoire." if enseigne["city"].blank?
+        errors << "Enseigne ##{index + 1}: le pays est obligatoire." if enseigne["country"].blank?
 
         opening_hours = enseigne["opening_hours"] || []
         if opening_hours.blank?

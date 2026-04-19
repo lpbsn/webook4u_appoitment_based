@@ -68,7 +68,10 @@ class AdminClientUsersManagementTest < ActionDispatch::IntegrationTest
       enseignes: {
         "0" => {
           name: "Enseigne Trois",
-          full_address: "3 rue des tests",
+          address: "3 rue des tests",
+          postal_code: "75001",
+          city: "Paris",
+          country: "France",
           active: "true",
           opening_hours: {
             "1" => {
@@ -133,7 +136,10 @@ class AdminClientUsersManagementTest < ActionDispatch::IntegrationTest
       enseignes: {
         "0" => {
           name: "Enseigne Blocage",
-          full_address: "",
+          address: "",
+          postal_code: "",
+          city: "",
+          country: "",
           active: "true",
           opening_hours: {}
         }

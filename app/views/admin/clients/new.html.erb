@@ -383,7 +383,7 @@
             <label class="field-label" for="staffs___INDEX___enseigne_index">Enseigne de rattachement</label>
             <select class="field-input field-input--short field-input--short-select" id="staffs___INDEX___enseigne_index" name="staffs[__INDEX__][enseigne_index]" required>
               <% Array(@draft["enseignes"]).each_with_index do |enseigne, i| %>
-                <option value="<%= i %>"><%= %></o %>. <%= > %></option>
+                <option value="<%= i %>"><%= i + 1 %>. <%= enseigne["name"] %></option>
               <% end %>
             </select>
           </div>
