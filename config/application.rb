@@ -23,6 +23,7 @@ module Webook4u
     # in config/environments, which are processed later.
     #
     config.time_zone = "Europe/Paris"
+    config.i18n.default_locale = :fr
     # config.eager_load_paths << Rails.root.join("extras")
   end
 end

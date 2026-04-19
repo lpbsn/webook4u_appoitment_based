@@ -40,6 +40,6 @@ class Users::SessionsController < Devise::SessionsController
     return if current_auth_client.present?
     return if flash[:alert].present?
 
-    flash.now[:alert] = "You must sign in from a client context."
+    flash.now[:alert] = "Vous devez vous connecter depuis un contexte client."
   end
 end

@@ -1,0 +1,109 @@
+fr:
+  date:
+    abbr_day_names:
+      - dim.
+      - lun.
+      - mar.
+      - mer.
+      - jeu.
+      - ven.
+      - sam.
+    abbr_month_names:
+      -
+      - janv.
+      - févr.
+      - mars
+      - avr.
+      - mai
+      - juin
+      - juil.
+      - août
+      - sept.
+      - oct.
+      - nov.
+      - déc.
+    day_names:
+      - dimanche
+      - lundi
+      - mardi
+      - mercredi
+      - jeudi
+      - vendredi
+      - samedi
+    formats:
+      default: "%d/%m/%Y"
+      long: "%-d %B %Y"
+      short: "%d %b"
+    month_names:
+      -
+      - janvier
+      - février
+      - mars
+      - avril
+      - mai
+      - juin
+      - juillet
+      - août
+      - septembre
+      - octobre
+      - novembre
+      - décembre
+    order:
+      - :day
+      - :month
+      - :year
+  time:
+    am: "am"
+    formats:
+      default: "%d/%m/%Y %H:%M"
+      long: "%-d %B %Y à %H:%M"
+      short: "%d %b %H:%M"
+    pm: "pm"
+  activerecord:
+    attributes:
+      user:
+        active: "Actif"
+        client: "Client"
+        email: "Email"
+        first_name: "Prénom"
+        last_name: "Nom"
+        password: "Mot de passe"
+        password_confirmation: "Confirmation du mot de passe"
+        remember_me: "Rester connecté"
+        role: "Rôle"
+    models:
+      user: "utilisateur"
+  errors:
+    format: "%{attribute} %{message}"
+    messages:
+      accepted: "doit être accepté"
+      blank: "doit être renseigné"
+      confirmation: "ne correspond pas"
+      empty: "doit être renseigné"
+      equal_to: "doit être égal à %{count}"
+      even: "doit être pair"
+      exclusion: "n'est pas disponible"
+      greater_than: "doit être supérieur à %{count}"
+      greater_than_or_equal_to: "doit être supérieur ou égal à %{count}"
+      inclusion: "n'est pas inclus dans la liste"
+      invalid: "n'est pas valide"
+      less_than: "doit être inférieur à %{count}"
+      less_than_or_equal_to: "doit être inférieur ou égal à %{count}"
+      model_invalid: "Validation échouée : %{errors}"
+      not_a_number: "n'est pas un nombre"
+      not_an_integer: "doit être un nombre entier"
+      odd: "doit être impair"
+      other_than: "doit être différent de %{count}"
+      present: "doit être vide"
+      required: "doit exister"
+      taken: "est déjà utilisé"
+      too_long:
+        one: "est trop long (1 caractère maximum)"
+        other: "est trop long (%{count} caractères maximum)"
+      too_short:
+        one: "est trop court (1 caractère minimum)"
+        other: "est trop court (%{count} caractères minimum)"
+      wrong_length:
+        one: "ne fait pas la bonne longueur (1 caractère attendu)"
+        other: "ne fait pas la bonne longueur (%{count} caractères attendus)"
+  hello: "Bonjour"

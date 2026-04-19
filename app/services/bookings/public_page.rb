@@ -2,6 +2,8 @@
 
 module Bookings
   class PublicPage
+    PreciseDateDay = Struct.new(:date, :slots, keyword_init: true)
+
     Result = Struct.new(
       :client,
       :enseignes,
@@ -15,6 +17,7 @@ module Bookings
       :selected_start_time,
       :date,
       :slots,
+      :precise_date_days,
       :first_available_selected_days_of_week,
       :first_available_start_time_min,
       :first_available_start_time_max,
@@ -107,29 +110,18 @@ module Bookings
           Input.safe_date(date_param)
         end
 
-      slots =
-        if selected_enseigne.present? && selected_service.present? && date.present?
-          if assignment_mode == "automatic"
-            AvailableSlots.new(
-              client: client,
-              enseigne: selected_enseigne,
-              service: selected_service,
-              date: date
-            ).call
-          elsif assignment_mode == "specific_staff" && selected_staff.present?
-            AvailableSlots.new(
-              client: client,
-              enseigne: selected_enseigne,
-              service: selected_service,
-              date: date,
-              staff: selected_staff
-            ).call
-          else
-            []
-          end
-        else
-          []
-        end
+      precise_date_days =
+        precise_date_days(
+          client: client,
+          selected_enseigne: selected_enseigne,
+          selected_service: selected_service,
+          assignment_mode: assignment_mode,
+          selected_staff: selected_staff,
+          date: date,
+          search_mode: search_mode
+        )
+
+      slots = date.present? ? precise_date_days.find { |day| day.date == date }&.slots.to_a : []
 
       first_available_available_days_of_week =
         available_days_of_week(
@@ -193,6 +185,7 @@ module Bookings
         selected_start_time: selected_start_time,
         date: date,
         slots: slots,
+        precise_date_days: precise_date_days,
         first_available_selected_days_of_week: first_available_selected_days_of_week,
         first_available_start_time_min: first_available_start_time_min,
         first_available_start_time_max: first_available_start_time_max,
@@ -226,6 +219,53 @@ module Bookings
         .select { |day| (0..6).include?(day) }
         .uniq
         .sort
+    end
+
+    def precise_date_days(client:, selected_enseigne:, selected_service:, assignment_mode:, selected_staff:, date:, search_mode:)
+      return [] unless search_mode == "precise_date"
+      return [] if selected_enseigne.blank? || selected_service.blank?
+      return [] unless assignment_mode == "automatic" || (assignment_mode == "specific_staff" && selected_staff.present?)
+
+      planning_start_date = date || BookingRules.business_today
+      max_planning_date = BookingRules.business_today + BookingRules.max_future_days.days
+
+      7.times.filter_map do |day_offset|
+        current_date = planning_start_date + day_offset.days
+        next if current_date > max_planning_date
+
+        PreciseDateDay.new(
+          date: current_date,
+          slots: slots_for_precise_date(
+            client: client,
+            selected_enseigne: selected_enseigne,
+            selected_service: selected_service,
+            assignment_mode: assignment_mode,
+            selected_staff: selected_staff,
+            date: current_date
+          )
+        )
+      end
+    end
+
+    def slots_for_precise_date(client:, selected_enseigne:, selected_service:, assignment_mode:, selected_staff:, date:)
+      if assignment_mode == "automatic"
+        AvailableSlots.new(
+          client: client,
+          enseigne: selected_enseigne,
+          service: selected_service,
+          date: date
+        ).call
+      elsif assignment_mode == "specific_staff" && selected_staff.present?
+        AvailableSlots.new(
+          client: client,
+          enseigne: selected_enseigne,
+          service: selected_service,
+          date: date,
+          staff: selected_staff
+        ).call
+      else
+        []
+      end
     end
 
     def available_days_of_week(enseigne:, assignment_mode:, selected_staff:, eligible_staffs:)

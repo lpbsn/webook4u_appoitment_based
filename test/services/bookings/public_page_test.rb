@@ -98,6 +98,26 @@ class Bookings::PublicPageTest < ActiveSupport::TestCase
     end
   end
 
+  test "returns precise date planning days with slots when precise date mode is selected" do
+    travel_to Time.zone.local(2026, 3, 15, 8, 0, 0) do
+      result = Bookings::PublicPage.new(
+        slug: @client.slug,
+        enseigne_id: @enseigne.id.to_s,
+        service_id: @service.id.to_s,
+        assignment_mode_param: "automatic",
+        staff_id_param: nil,
+        search_mode_param: "precise_date",
+        selected_start_time_param: nil,
+        date_param: nil
+      ).call
+
+      assert_equal Date.new(2026, 3, 15), result.precise_date_days.first.date
+      assert_equal 7, result.precise_date_days.size
+      assert result.precise_date_days.any? { |day| day.date == Date.new(2026, 3, 16) && day.slots.any? },
+        "Expected planning to expose Monday slots"
+    end
+  end
+
   test "returns empty slots when selected service has no eligible active staff" do
     service_without_capability = @enseigne.services.create!(
       name: "Brushing",

@@ -148,7 +148,7 @@ CREATE TABLE public.bookings (
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
     assignment_mode character varying DEFAULT 'automatic'::character varying NOT NULL,
-    CONSTRAINT bookings_assignment_mode_allowed_values CHECK (((assignment_mode)::text = ANY (ARRAY[('automatic'::character varying)::text, ('specific_staff'::character varying)::text]))),
+    CONSTRAINT bookings_assignment_mode_allowed_values CHECK (((assignment_mode)::text = ANY ((ARRAY['automatic'::character varying, 'specific_staff'::character varying])::text[]))),
     CONSTRAINT bookings_confirmed_requires_confirmation_token CHECK ((((booking_status)::text <> 'confirmed'::text) OR (NULLIF(btrim((confirmation_token)::text), ''::text) IS NOT NULL))),
     CONSTRAINT bookings_confirmed_requires_customer_email CHECK ((((booking_status)::text <> 'confirmed'::text) OR (NULLIF(btrim((customer_email)::text), ''::text) IS NOT NULL))),
     CONSTRAINT bookings_confirmed_requires_customer_first_name CHECK ((((booking_status)::text <> 'confirmed'::text) OR (NULLIF(btrim((customer_first_name)::text), ''::text) IS NOT NULL))),
@@ -157,7 +157,7 @@ CREATE TABLE public.bookings (
     CONSTRAINT bookings_end_time_after_start_time CHECK ((booking_end_time > booking_start_time)),
     CONSTRAINT bookings_pending_requires_booking_expires_at CHECK ((((booking_status)::text <> 'pending'::text) OR (booking_expires_at IS NOT NULL))),
     CONSTRAINT bookings_pending_requires_pending_access_token CHECK ((((booking_status)::text <> 'pending'::text) OR (NULLIF(btrim((pending_access_token)::text), ''::text) IS NOT NULL))),
-    CONSTRAINT bookings_status_allowed_values CHECK (((booking_status)::text = ANY (ARRAY[('pending'::character varying)::text, ('confirmed'::character varying)::text, ('failed'::character varying)::text])))
+    CONSTRAINT bookings_status_allowed_values CHECK (((booking_status)::text = ANY ((ARRAY['pending'::character varying, 'confirmed'::character varying, 'failed'::character varying])::text[])))
 );
 
 
@@ -543,8 +543,8 @@ CREATE TABLE public.users (
     remember_created_at timestamp(6) without time zone,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
-    last_name character varying,
-    first_name character varying,
+    last_name character varying NOT NULL,
+    first_name character varying NOT NULL,
     client_id bigint,
     role character varying DEFAULT 'user'::character varying NOT NULL,
     active boolean DEFAULT true NOT NULL,
