@@ -35,6 +35,7 @@ class PublicClientsController < ApplicationController
     @selected_start_time = page.selected_start_time
     @date = page.date
     @slots = page.slots
+    @precise_date_days = page.precise_date_days
 
     @first_available_selected_days_of_week = page.first_available_selected_days_of_week
     @first_available_start_time_min = page.first_available_start_time_min

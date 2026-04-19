@@ -36,7 +36,7 @@ class PublicClientsControllerTest < ActionDispatch::IntegrationTest
     assert_response :not_found
   end
 
-  test "date input has min set to today to prevent past date selection" do
+  test "precise date planning starts today and does not offer previous week" do
     client = Client.create!(name: "Salon Min", slug: "salon-min")
     enseigne = client.enseignes.create!(name: "Enseigne Min", address: "1 rue min", postal_code: "00000", city: "Ville", country: "France", active: true)
     create_weekday_opening_hours_for_enseigne(enseigne)
@@ -56,13 +56,13 @@ class PublicClientsControllerTest < ActionDispatch::IntegrationTest
 
       assert_response :success
       assert_select 'input[name="enseigne_id"][value=?]', enseigne.id.to_s
-      assert_select 'input[name="date"][min=?]', Date.current.iso8601
+      assert_select ".booking-planning"
+      assert_select ".booking-planning-nav-button--disabled", text: "Semaine précédente"
+      assert_select 'input[name="date"][value=?]', Date.current.iso8601, count: 0
     end
   end
 
-  # We assert no start_time input (slot choice) instead of recap copy ("Date :", "—") so the test is stable if labels change.
-  # When date is beyond max_future_days, safe_date is nil so the slots step is not rendered.
-  test "rejects date beyond max_future_days and does not show slots" do
+  test "rejects date beyond max_future_days and falls back to current planning window" do
     client = Client.create!(name: "Salon", slug: "salon")
     enseigne = client.enseignes.create!(name: "Enseigne active", address: "1 rue de Paris", postal_code: "00000", city: "Ville", country: "France", active: true)
     create_weekday_opening_hours_for_enseigne(enseigne)
@@ -70,9 +70,16 @@ class PublicClientsControllerTest < ActionDispatch::IntegrationTest
 
     travel_to Time.zone.local(2026, 3, 15, 8, 0, 0) do
       date_beyond = (Date.current + (BookingRules.max_future_days + 1).days).iso8601
-      get public_client_url(client.slug), params: { enseigne_id: enseigne.id, service_id: service.id, date: date_beyond }
+      get public_client_url(client.slug), params: {
+        enseigne_id: enseigne.id,
+        service_id: service.id,
+        assignment_mode: "automatic",
+        search_mode: "precise_date",
+        date: date_beyond
+      }
       assert_response :success
-      assert_select 'input[name="start_time"]', count: 0
+      assert_select ".booking-planning"
+      assert_select 'input[name="date"][value=?]', Date.current.iso8601, count: 0
     end
   end
 
@@ -204,7 +211,7 @@ class PublicClientsControllerTest < ActionDispatch::IntegrationTest
     assert_select 'input[name="staff_id"][value=?]', staff.id.to_s, minimum: 1
   end
 
-  test "show does not render date step before search mode selection" do
+  test "show does not render precise date planning before search mode selection" do
     client = Client.create!(name: "Salon No Date", slug: "salon-no-date")
     enseigne = client.enseignes.create!(name: "Enseigne No Date", address: "1 rue no date", postal_code: "00000", city: "Ville", country: "France", active: true)
     create_weekday_opening_hours_for_enseigne(enseigne)
@@ -221,11 +228,11 @@ class PublicClientsControllerTest < ActionDispatch::IntegrationTest
     }
 
     assert_response :success
-    assert_select "h2", text: "5. Choisir une date", count: 0
-    assert_select 'input[name="date"]', count: 0
+    assert_select "h2", text: "5. Choisir un créneau", count: 0
+    assert_select ".booking-planning", count: 0
   end
 
-  test "show renders date step when search mode is precise_date" do
+  test "show renders precise date planning when search mode is precise_date" do
     client = Client.create!(name: "Salon Precise", slug: "salon-precise")
     enseigne = client.enseignes.create!(name: "Enseigne Precise", address: "1 rue precise", postal_code: "00000", city: "Ville", country: "France", active: true)
     create_weekday_opening_hours_for_enseigne(enseigne)
@@ -244,9 +251,10 @@ class PublicClientsControllerTest < ActionDispatch::IntegrationTest
       }
 
       assert_response :success
-      assert_select "h2", text: "5. Choisir une date"
+      assert_select "h2", text: "5. Choisir un créneau"
+      assert_select ".booking-planning"
+      assert_select ".booking-planning-day", minimum: 1
       assert_select 'input[name="search_mode"][value="precise_date"]', minimum: 1
-      assert_select 'input[name="date"][min=?]', Date.current.iso8601
     end
   end
 
