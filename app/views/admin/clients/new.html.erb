@@ -103,8 +103,23 @@
             </div>
 
             <div class="field field--compact">
-              <%= label_tag "enseignes_#{idx}_full_address", "Adresse complète", class: "field-label" %>
-              <%= text_field_tag "enseignes[#{idx}][full_address]", enseigne["full_address"], class: "field-input field-input--short", required: true, id: "enseignes_#{idx}_full_address" %>
+              <%= label_tag "enseignes_#{idx}_address", "Adresse", class: "field-label" %>
+              <%= text_field_tag "enseignes[#{idx}][address]", enseigne["address"], class: "field-input field-input--short", required: true, id: "enseignes_#{idx}_address" %>
+            </div>
+
+            <div class="field field--compact">
+              <%= label_tag "enseignes_#{idx}_postal_code", "Code postal", class: "field-label" %>
+              <%= text_field_tag "enseignes[#{idx}][postal_code]", enseigne["postal_code"], class: "field-input field-input--short", required: true, id: "enseignes_#{idx}_postal_code" %>
+            </div>
+
+            <div class="field field--compact">
+              <%= label_tag "enseignes_#{idx}_city", "Ville", class: "field-label" %>
+              <%= text_field_tag "enseignes[#{idx}][city]", enseigne["city"], class: "field-input field-input--short", required: true, id: "enseignes_#{idx}_city" %>
+            </div>
+
+            <div class="field field--compact">
+              <%= label_tag "enseignes_#{idx}_country", "Pays", class: "field-label" %>
+              <%= text_field_tag "enseignes[#{idx}][country]", enseigne["country"], class: "field-input field-input--short", required: true, id: "enseignes_#{idx}_country" %>
             </div>
 
             <div class="field field--compact">
@@ -148,18 +163,33 @@
 
           <div class="field field--compact">
             <label class="field-label" for="enseignes___INDEX___name">Nom de l'enseigne</label>
-            <input class="field-input field-input--short" id="enseignes___INDEX___name" name="enseignes[__INDEX__][name]" required="required" type="text">
+            <input class="field-input field-input--short" id="enseignes___INDEX___name" name="enseignes[__INDEX__][name]" required type="text">
           </div>
 
           <div class="field field--compact">
-            <label class="field-label" for="enseignes___INDEX___full_address">Adresse complète</label>
-            <input class="field-input field-input--short" id="enseignes___INDEX___full_address" name="enseignes[__INDEX__][full_address]" required="required" type="text">
+            <label class="field-label" for="enseignes___INDEX___address">Adresse</label>
+            <input class="field-input field-input--short" id="enseignes___INDEX___address" name="enseignes[__INDEX__][address]" required type="text">
+          </div>
+
+          <div class="field field--compact">
+            <label class="field-label" for="enseignes___INDEX___postal_code">Code postal</label>
+            <input class="field-input field-input--short" id="enseignes___INDEX___postal_code" name="enseignes[__INDEX__][postal_code]" required type="text">
+          </div>
+
+          <div class="field field--compact">
+            <label class="field-label" for="enseignes___INDEX___city">Ville</label>
+            <input class="field-input field-input--short" id="enseignes___INDEX___city" name="enseignes[__INDEX__][city]" required type="text">
+          </div>
+
+          <div class="field field--compact">
+            <label class="field-label" for="enseignes___INDEX___country">Pays</label>
+            <input class="field-input field-input--short" id="enseignes___INDEX___country" name="enseignes[__INDEX__][country]" required type="text">
           </div>
 
           <div class="field field--compact">
             <label class="field-label" for="enseignes___INDEX___active">Enseigne active</label>
-            <select class="field-input field-input--short field-input--short-select" id="enseignes___INDEX___active" name="enseignes[__INDEX__][active]" required="required">
-              <option selected="selected" value="true">Oui</option>
+            <select class="field-input field-input--short field-input--short-select" id="enseignes___INDEX___active" name="enseignes[__INDEX__][active]" required>
+              <option selected value="true">Oui</option>
               <option value="false">Non</option>
             </select>
           </div>
@@ -248,7 +278,13 @@
       <% Array(@draft["enseignes"]).each_with_index do |enseigne, index| %>
         <div class="booking-summary-row">
           <span class="booking-summary-label">Enseigne <%= index + 1 %></span>
-          <span class="booking-summary-value"><%= enseigne["name"] %> — <%= enseigne["full_address"] %></span>
+          <span class="booking-summary-value">
+            <%= enseigne["name"] %> —
+            <%= enseigne["address"] %>,
+            <%= enseigne["postal_code"] %>
+            <%= enseigne["city"] %>,
+            <%= enseigne["country"] %>
+          </span>
         </div>
       <% end %>
       <div class="booking-summary-row">
@@ -332,22 +368,22 @@
 
           <div class="field field--compact">
             <label class="field-label" for="staffs___INDEX___name">Nom du staff</label>
-            <input class="field-input field-input--short" id="staffs___INDEX___name" name="staffs[__INDEX__][name]" required="required" type="text">
+            <input class="field-input field-input--short" id="staffs___INDEX___name" name="staffs[__INDEX__][name]" required type="text">
           </div>
 
           <div class="field field--compact">
             <label class="field-label" for="staffs___INDEX___active">Staff actif</label>
-            <select class="field-input field-input--short field-input--short-select" id="staffs___INDEX___active" name="staffs[__INDEX__][active]" required="required">
-              <option selected="selected" value="true">Oui</option>
+            <select class="field-input field-input--short field-input--short-select" id="staffs___INDEX___active" name="staffs[__INDEX__][active]" required>
+              <option selected value="true">Oui</option>
               <option value="false">Non</option>
             </select>
           </div>
 
           <div class="field field--compact">
             <label class="field-label" for="staffs___INDEX___enseigne_index">Enseigne de rattachement</label>
-            <select class="field-input field-input--short field-input--short-select" id="staffs___INDEX___enseigne_index" name="staffs[__INDEX__][enseigne_index]" required="required">
+            <select class="field-input field-input--short field-input--short-select" id="staffs___INDEX___enseigne_index" name="staffs[__INDEX__][enseigne_index]" required>
               <% Array(@draft["enseignes"]).each_with_index do |enseigne, i| %>
-                <option value="<%= i %>"><%= "#{i + 1}. #{enseigne["name"]}" %></option>
+                <option value="<%= i %>"><%= %></o %>. <%= > %></option>
               <% end %>
             </select>
           </div>
