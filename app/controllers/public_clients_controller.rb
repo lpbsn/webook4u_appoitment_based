@@ -1,5 +1,5 @@
 class PublicClientsController < ApplicationController
-  layout "booking"
+  layout :booking_layout
   before_action :redirect_authenticated_user_to_role_home, only: :show
   # =========================================================
   # PAGE PRINCIPALE DE RÉSERVATION
@@ -46,6 +46,10 @@ class PublicClientsController < ApplicationController
   end
 
   private
+
+  def booking_layout
+    turbo_frame_request? ? false : "booking"
+  end
 
   def redirect_authenticated_user_to_role_home
     return unless user_signed_in?

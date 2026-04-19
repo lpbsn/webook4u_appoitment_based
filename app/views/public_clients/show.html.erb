@@ -1,21 +1,31 @@
 <% content_for :hide_booking_back_link, true %>
+<% content_for :booking_page_modifier, "booking-page--public-client" %>
+<% content_for :booking_card_modifier, "booking-card--public-client" %>
 
-<%= render "selection_summary" %>
+<%= turbo_frame_tag "public_booking_flow", data: { turbo_action: "advance" }, class: "booking-flow-frame" do %>
+  <div class="booking-layout">
+    <aside class="booking-layout-summary" aria-label="Votre sélection">
+      <%= render "selection_summary" %>
+    </aside>
 
-<%= render "enseigne_step" %>
+    <main class="booking-layout-steps">
+      <%= render "enseigne_step" %>
 
-<%= render "service_step" %>
+      <%= render "service_step" %>
 
-<%= render "assignment_step" %>
+      <%= render "assignment_step" %>
 
-<%= render "search_mode_step" %>
+      <%= render "search_mode_step" %>
 
-<%= render "first_available_step" %>
+      <%= render "first_available_step" %>
 
-<%= render "first_available_result_step" %>
+      <%= render "first_available_result_step" %>
 
-<%= render "date_step" %>
+      <%= render "date_step" %>
 
-<%= render "slots_step" %>
+      <%= render "slots_step" %>
 
-<%= render "selected_slot_confirmation_step" %>
+      <%= render "selected_slot_confirmation_step" %>
+    </main>
+  </div>
+<% end %>

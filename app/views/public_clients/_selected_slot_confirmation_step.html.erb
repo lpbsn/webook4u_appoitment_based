@@ -14,7 +14,7 @@
         <strong><%= format_time_label(Time.zone.parse(@selected_start_time.to_s)) %></strong>
     </p>
 
-    <%= form_tag service_bookings_path(@client.slug, @selected_service), method: :post do %>
+    <%= form_tag service_bookings_path(@client.slug, @selected_service), method: :post, data: { turbo_frame: "_top" } do %>
       <%= hidden_field_tag :enseigne_id, @selected_enseigne.id %>
       <%= hidden_field_tag :start_time, @selected_start_time %>
       <%= hidden_field_tag :assignment_mode, @assignment_mode %>

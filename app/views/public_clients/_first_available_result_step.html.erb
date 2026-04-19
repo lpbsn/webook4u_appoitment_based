@@ -22,7 +22,7 @@
           <strong><%= format_time_label(@first_available_slot) %></strong>
         </p>
 
-        <%= form_tag service_bookings_path(@client.slug, @selected_service), method: :post do %>
+        <%= form_tag service_bookings_path(@client.slug, @selected_service), method: :post, data: { turbo_frame: "_top" } do %>
           <%= hidden_field_tag :enseigne_id, @selected_enseigne.id %>
           <%= hidden_field_tag :start_time, @first_available_slot %>
           <%= hidden_field_tag :assignment_mode, @assignment_mode %>
