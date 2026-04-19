@@ -8,7 +8,7 @@ module BookingsHelper
   end
 
   def booking_enseigne_address(booking)
-    booking.enseigne.full_address.presence || "—"
+    booking.enseigne.formatted_address.presence || "—"
   end
 
   def booking_formatted_slot(booking)

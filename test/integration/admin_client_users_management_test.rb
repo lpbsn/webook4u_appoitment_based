@@ -222,5 +222,23 @@ class AdminClientUsersManagementTest < ActionDispatch::IntegrationTest
         }
       }
     }
+
+    assert_redirected_to new_admin_client_path(step: 3)
+
+    post admin_clients_path, params: {
+      creation_step: 3,
+      service: {
+        name: "Coupe Trois",
+        duration_minutes: "45",
+        price_cents: "3500"
+      }
+    }
+
+    assert_redirected_to new_admin_client_path(step: 4)
+
+    get new_admin_client_path(step: 4)
+    assert_response :success
+    assert_includes response.body, "3 rue des tests, 75001 Paris"
+    assert_not_includes response.body, "France"
   end
 end

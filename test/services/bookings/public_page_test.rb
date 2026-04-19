@@ -7,7 +7,7 @@ class Bookings::PublicPageTest < ActiveSupport::TestCase
 
   setup do
     @client = Client.create!(name: "Salon Page", slug: "salon-page")
-    @enseigne = @client.enseignes.create!(name: "Enseigne A", full_address: "1 rue de Paris", active: true)
+    @enseigne = @client.enseignes.create!(name: "Enseigne A", address: "1 rue de Paris", postal_code: "00000", city: "Ville", country: "France", active: true)
     @service = @enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2500)
     staff = @enseigne.staffs.create!(name: "Staff page", active: true)
     staff.staff_availabilities.create!(day_of_week: 1, opens_at: "09:00", closes_at: "18:00")
@@ -140,7 +140,7 @@ class Bookings::PublicPageTest < ActiveSupport::TestCase
   end
 
   test "returns no selected enseigne when several active enseignes exist and none is chosen" do
-    @client.enseignes.create!(name: "Enseigne B", full_address: "2 rue de Paris", active: true)
+    @client.enseignes.create!(name: "Enseigne B", address: "2 rue de Paris", postal_code: "00000", city: "Ville", country: "France", active: true)
 
     result = Bookings::PublicPage.new(
       slug: @client.slug,
@@ -157,7 +157,7 @@ class Bookings::PublicPageTest < ActiveSupport::TestCase
   end
 
   test "does not expose inactive enseignes" do
-    inactive_enseigne = @client.enseignes.create!(name: "Inactive", full_address: "3 rue de Paris", active: false)
+    inactive_enseigne = @client.enseignes.create!(name: "Inactive", address: "3 rue de Paris", postal_code: "00000", city: "Ville", country: "France", active: false)
 
     result = Bookings::PublicPage.new(
       slug: @client.slug,
@@ -190,7 +190,7 @@ class Bookings::PublicPageTest < ActiveSupport::TestCase
   end
 
   test "ignores service_id that does not belong to selected enseigne" do
-    other_enseigne = @client.enseignes.create!(name: "Enseigne B", full_address: "2 rue de Paris", active: true)
+    other_enseigne = @client.enseignes.create!(name: "Enseigne B", address: "2 rue de Paris", postal_code: "00000", city: "Ville", country: "France", active: true)
     other_service = other_enseigne.services.create!(name: "Coloration", duration_minutes: 45, price_cents: 5000)
 
     result = Bookings::PublicPage.new(
@@ -209,7 +209,7 @@ class Bookings::PublicPageTest < ActiveSupport::TestCase
 
   test "call keeps search_mode nil when param is absent" do
     client = Client.create!(name: "Salon Search", slug: "salon-search")
-    enseigne = client.enseignes.create!(name: "Enseigne Search", full_address: "1 rue search", active: true)
+    enseigne = client.enseignes.create!(name: "Enseigne Search", address: "1 rue search", postal_code: "00000", city: "Ville", country: "France", active: true)
     service = enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2500)
 
     staff = enseigne.staffs.create!(name: "Emma", active: true)
@@ -233,7 +233,7 @@ class Bookings::PublicPageTest < ActiveSupport::TestCase
 
   test "call exposes valid search_mode from params" do
     client = Client.create!(name: "Salon Search Mode", slug: "salon-search-mode")
-    enseigne = client.enseignes.create!(name: "Enseigne Search Mode", full_address: "1 rue mode", active: true)
+    enseigne = client.enseignes.create!(name: "Enseigne Search Mode", address: "1 rue mode", postal_code: "00000", city: "Ville", country: "France", active: true)
     service = enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2500)
 
     staff = enseigne.staffs.create!(name: "Emma", active: true)
@@ -256,7 +256,7 @@ class Bookings::PublicPageTest < ActiveSupport::TestCase
 
   test "call exposes selected_start_time as provided" do
     client = Client.create!(name: "Salon Selected Slot", slug: "salon-selected-slot")
-    enseigne = client.enseignes.create!(name: "Enseigne Selected Slot", full_address: "1 rue slot", active: true)
+    enseigne = client.enseignes.create!(name: "Enseigne Selected Slot", address: "1 rue slot", postal_code: "00000", city: "Ville", country: "France", active: true)
     service = enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2500)
 
     staff = enseigne.staffs.create!(name: "Emma", active: true)
@@ -283,7 +283,7 @@ class Bookings::PublicPageTest < ActiveSupport::TestCase
 
   test "call keeps search_mode nil when assignment mode is not resolved" do
     client = Client.create!(name: "Salon Incomplete", slug: "salon-incomplete")
-    enseigne = client.enseignes.create!(name: "Enseigne Incomplete", full_address: "1 rue incomplete", active: true)
+    enseigne = client.enseignes.create!(name: "Enseigne Incomplete", address: "1 rue incomplete", postal_code: "00000", city: "Ville", country: "France", active: true)
     service = enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2500)
 
     result = Bookings::PublicPage.new(

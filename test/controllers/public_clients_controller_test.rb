@@ -15,7 +15,7 @@ class PublicClientsControllerTest < ActionDispatch::IntegrationTest
 
   test "GET show keeps booking flow accessible for authenticated users when booking entry is explicit" do
     client = Client.create!(name: "Salon Dashboard Booking", slug: "salon-dashboard-booking")
-    client.enseignes.create!(name: "Enseigne active", full_address: "1 rue de Paris", active: true)
+    client.enseignes.create!(name: "Enseigne active", address: "1 rue de Paris", postal_code: "00000", city: "Ville", country: "France", active: true)
     user = create_test_user(client: client, role: :client_user)
     sign_in user
 
@@ -26,7 +26,7 @@ class PublicClientsControllerTest < ActionDispatch::IntegrationTest
 
   test "GET show returns success for valid client slug" do
     client = Client.create!(name: "Salon", slug: "salon")
-    client.enseignes.create!(name: "Enseigne active", full_address: "1 rue de Paris", active: true)
+    client.enseignes.create!(name: "Enseigne active", address: "1 rue de Paris", postal_code: "00000", city: "Ville", country: "France", active: true)
     get public_client_url(client.slug)
     assert_response :success
   end
@@ -38,7 +38,7 @@ class PublicClientsControllerTest < ActionDispatch::IntegrationTest
 
   test "date input has min set to today to prevent past date selection" do
     client = Client.create!(name: "Salon Min", slug: "salon-min")
-    enseigne = client.enseignes.create!(name: "Enseigne Min", full_address: "1 rue min", active: true)
+    enseigne = client.enseignes.create!(name: "Enseigne Min", address: "1 rue min", postal_code: "00000", city: "Ville", country: "France", active: true)
     create_weekday_opening_hours_for_enseigne(enseigne)
     service = enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2500)
 
@@ -64,7 +64,7 @@ class PublicClientsControllerTest < ActionDispatch::IntegrationTest
   # When date is beyond max_future_days, safe_date is nil so the slots step is not rendered.
   test "rejects date beyond max_future_days and does not show slots" do
     client = Client.create!(name: "Salon", slug: "salon")
-    enseigne = client.enseignes.create!(name: "Enseigne active", full_address: "1 rue de Paris", active: true)
+    enseigne = client.enseignes.create!(name: "Enseigne active", address: "1 rue de Paris", postal_code: "00000", city: "Ville", country: "France", active: true)
     create_weekday_opening_hours_for_enseigne(enseigne)
     service = enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2500)
 
@@ -78,21 +78,21 @@ class PublicClientsControllerTest < ActionDispatch::IntegrationTest
 
   test "show lists only active enseignes" do
     client = Client.create!(name: "Salon Enseignes", slug: "salon-enseignes")
-    active_enseigne = client.enseignes.create!(name: "Enseigne active", full_address: "1 rue active", active: true)
-    client.enseignes.create!(name: "Enseigne inactive", full_address: "2 rue inactive", active: false)
+    active_enseigne = client.enseignes.create!(name: "Enseigne active", address: "1 rue active", postal_code: "00000", city: "Ville", country: "France", active: true)
+    client.enseignes.create!(name: "Enseigne inactive", address: "2 rue inactive", postal_code: "00000", city: "Ville", country: "France", active: false)
 
     get public_client_url(client.slug)
 
     assert_response :success
     assert_includes response.body, active_enseigne.name
-    assert_includes response.body, active_enseigne.full_address
+    assert_includes response.body, active_enseigne.formatted_address
     assert_not_includes response.body, "Enseigne inactive"
   end
 
   test "show does not render service step when several active enseignes exist without selection" do
     client = Client.create!(name: "Salon Multi", slug: "salon-multi")
-    enseigne_a = client.enseignes.create!(name: "Enseigne A", full_address: "1 rue A", active: true)
-    client.enseignes.create!(name: "Enseigne B", full_address: "2 rue B", active: true)
+    enseigne_a = client.enseignes.create!(name: "Enseigne A", address: "1 rue A", postal_code: "00000", city: "Ville", country: "France", active: true)
+    client.enseignes.create!(name: "Enseigne B", address: "2 rue B", postal_code: "00000", city: "Ville", country: "France", active: true)
     enseigne_a.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2500)
 
     get public_client_url(client.slug)
@@ -104,7 +104,7 @@ class PublicClientsControllerTest < ActionDispatch::IntegrationTest
 
   test "show displays unavailable tunnel message when no active enseigne exists" do
     client = Client.create!(name: "Salon Vide", slug: "salon-vide")
-    client.enseignes.create!(name: "Inactive", full_address: "3 rue vide", active: false)
+    client.enseignes.create!(name: "Inactive", address: "3 rue vide", postal_code: "00000", city: "Ville", country: "France", active: false)
 
     get public_client_url(client.slug)
 
@@ -114,7 +114,7 @@ class PublicClientsControllerTest < ActionDispatch::IntegrationTest
 
   test "show auto-selects the single active enseigne and keeps the flow usable" do
     client = Client.create!(name: "Salon Single", slug: "salon-single")
-    enseigne = client.enseignes.create!(name: "Enseigne unique", full_address: "1 rue unique", active: true)
+    enseigne = client.enseignes.create!(name: "Enseigne unique", address: "1 rue unique", postal_code: "00000", city: "Ville", country: "France", active: true)
     create_weekday_opening_hours_for_enseigne(enseigne)
     service = enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2500)
 
@@ -135,7 +135,7 @@ class PublicClientsControllerTest < ActionDispatch::IntegrationTest
 
   test "show renders automatic staff option as Tous while keeping automatic assignment_mode" do
     client = Client.create!(name: "Salon Tous", slug: "salon-tous")
-    enseigne = client.enseignes.create!(name: "Enseigne Tous", full_address: "1 rue tous", active: true)
+    enseigne = client.enseignes.create!(name: "Enseigne Tous", address: "1 rue tous", postal_code: "00000", city: "Ville", country: "France", active: true)
     create_weekday_opening_hours_for_enseigne(enseigne)
     service = enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2500)
 
@@ -158,7 +158,7 @@ class PublicClientsControllerTest < ActionDispatch::IntegrationTest
 
   test "show renders search mode step after assignment selection" do
     client = Client.create!(name: "Salon Search", slug: "salon-search")
-    enseigne = client.enseignes.create!(name: "Enseigne Search", full_address: "1 rue search", active: true)
+    enseigne = client.enseignes.create!(name: "Enseigne Search", address: "1 rue search", postal_code: "00000", city: "Ville", country: "France", active: true)
     create_weekday_opening_hours_for_enseigne(enseigne)
     service = enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2500)
 
@@ -182,7 +182,7 @@ class PublicClientsControllerTest < ActionDispatch::IntegrationTest
 
   test "search mode step keeps enseigne service and assignment context" do
     client = Client.create!(name: "Salon Context", slug: "salon-context")
-    enseigne = client.enseignes.create!(name: "Enseigne Context", full_address: "1 rue context", active: true)
+    enseigne = client.enseignes.create!(name: "Enseigne Context", address: "1 rue context", postal_code: "00000", city: "Ville", country: "France", active: true)
     create_weekday_opening_hours_for_enseigne(enseigne)
     service = enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2500)
 
@@ -206,7 +206,7 @@ class PublicClientsControllerTest < ActionDispatch::IntegrationTest
 
   test "show does not render date step before search mode selection" do
     client = Client.create!(name: "Salon No Date", slug: "salon-no-date")
-    enseigne = client.enseignes.create!(name: "Enseigne No Date", full_address: "1 rue no date", active: true)
+    enseigne = client.enseignes.create!(name: "Enseigne No Date", address: "1 rue no date", postal_code: "00000", city: "Ville", country: "France", active: true)
     create_weekday_opening_hours_for_enseigne(enseigne)
     service = enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2500)
 
@@ -227,7 +227,7 @@ class PublicClientsControllerTest < ActionDispatch::IntegrationTest
 
   test "show renders date step when search mode is precise_date" do
     client = Client.create!(name: "Salon Precise", slug: "salon-precise")
-    enseigne = client.enseignes.create!(name: "Enseigne Precise", full_address: "1 rue precise", active: true)
+    enseigne = client.enseignes.create!(name: "Enseigne Precise", address: "1 rue precise", postal_code: "00000", city: "Ville", country: "France", active: true)
     create_weekday_opening_hours_for_enseigne(enseigne)
     service = enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2500)
 
@@ -252,7 +252,7 @@ class PublicClientsControllerTest < ActionDispatch::IntegrationTest
 
   test "show does not render slots step when search mode is first_available" do
     client = Client.create!(name: "Salon First", slug: "salon-first")
-    enseigne = client.enseignes.create!(name: "Enseigne First", full_address: "1 rue first", active: true)
+    enseigne = client.enseignes.create!(name: "Enseigne First", address: "1 rue first", postal_code: "00000", city: "Ville", country: "France", active: true)
     create_weekday_opening_hours_for_enseigne(enseigne)
     service = enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2500)
 
@@ -275,7 +275,7 @@ class PublicClientsControllerTest < ActionDispatch::IntegrationTest
 
   test "show renders first available criteria step when search mode is first_available" do
     client = Client.create!(name: "Salon First Available", slug: "salon-first-available")
-    enseigne = client.enseignes.create!(name: "Enseigne First Available", full_address: "1 rue fa", active: true)
+    enseigne = client.enseignes.create!(name: "Enseigne First Available", address: "1 rue fa", postal_code: "00000", city: "Ville", country: "France", active: true)
     create_weekday_opening_hours_for_enseigne(enseigne)
     service = enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2500)
 
@@ -299,7 +299,7 @@ class PublicClientsControllerTest < ActionDispatch::IntegrationTest
 
   test "show first available criteria step keeps enseigne service assignment and search mode context" do
     client = Client.create!(name: "Salon Criteria Context", slug: "salon-criteria-context")
-    enseigne = client.enseignes.create!(name: "Enseigne Criteria Context", full_address: "1 rue context", active: true)
+    enseigne = client.enseignes.create!(name: "Enseigne Criteria Context", address: "1 rue context", postal_code: "00000", city: "Ville", country: "France", active: true)
     create_weekday_opening_hours_for_enseigne(enseigne)
     service = enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2500)
 
@@ -325,7 +325,7 @@ class PublicClientsControllerTest < ActionDispatch::IntegrationTest
 
   test "show first available criteria step displays only days open for enseigne and selected staff scope" do
     client = Client.create!(name: "Salon Open Days", slug: "salon-open-days")
-    enseigne = client.enseignes.create!(name: "Enseigne Open Days", full_address: "1 rue open", active: true)
+    enseigne = client.enseignes.create!(name: "Enseigne Open Days", address: "1 rue open", postal_code: "00000", city: "Ville", country: "France", active: true)
     enseigne.enseigne_opening_hours.create!(day_of_week: 1, opens_at: "09:00", closes_at: "18:00")
     enseigne.enseigne_opening_hours.create!(day_of_week: 2, opens_at: "09:00", closes_at: "18:00")
 
@@ -350,7 +350,7 @@ class PublicClientsControllerTest < ActionDispatch::IntegrationTest
 
   test "show first available criteria step shows validation error when no day is selected" do
     client = Client.create!(name: "Salon No Day", slug: "salon-no-day")
-    enseigne = client.enseignes.create!(name: "Enseigne No Day", full_address: "1 rue no day", active: true)
+    enseigne = client.enseignes.create!(name: "Enseigne No Day", address: "1 rue no day", postal_code: "00000", city: "Ville", country: "France", active: true)
     create_weekday_opening_hours_for_enseigne(enseigne)
     service = enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2500)
 
@@ -373,7 +373,7 @@ class PublicClientsControllerTest < ActionDispatch::IntegrationTest
 
   test "show first available criteria step shows validation error when start_time_min is missing" do
     client = Client.create!(name: "Salon Missing Min", slug: "salon-missing-min")
-    enseigne = client.enseignes.create!(name: "Enseigne Missing Min", full_address: "1 rue min", active: true)
+    enseigne = client.enseignes.create!(name: "Enseigne Missing Min", address: "1 rue min", postal_code: "00000", city: "Ville", country: "France", active: true)
     create_weekday_opening_hours_for_enseigne(enseigne)
     service = enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2500)
 
@@ -396,7 +396,7 @@ class PublicClientsControllerTest < ActionDispatch::IntegrationTest
 
   test "show first available criteria step shows validation error when start_time_max is missing" do
     client = Client.create!(name: "Salon Missing Max", slug: "salon-missing-max")
-    enseigne = client.enseignes.create!(name: "Enseigne Missing Max", full_address: "1 rue max", active: true)
+    enseigne = client.enseignes.create!(name: "Enseigne Missing Max", address: "1 rue max", postal_code: "00000", city: "Ville", country: "France", active: true)
     create_weekday_opening_hours_for_enseigne(enseigne)
     service = enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2500)
 
@@ -419,7 +419,7 @@ class PublicClientsControllerTest < ActionDispatch::IntegrationTest
 
   test "show first available criteria step shows validation error when start_time_min is after start_time_max" do
     client = Client.create!(name: "Salon Invalid Range", slug: "salon-invalid-range")
-    enseigne = client.enseignes.create!(name: "Enseigne Invalid Range", full_address: "1 rue range", active: true)
+    enseigne = client.enseignes.create!(name: "Enseigne Invalid Range", address: "1 rue range", postal_code: "00000", city: "Ville", country: "France", active: true)
     create_weekday_opening_hours_for_enseigne(enseigne)
     service = enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2500)
 
@@ -444,7 +444,7 @@ class PublicClientsControllerTest < ActionDispatch::IntegrationTest
 
   test "show displays first available suggestion when a slot is found" do
     client = Client.create!(name: "Salon Suggestion", slug: "salon-suggestion")
-    enseigne = client.enseignes.create!(name: "Enseigne Suggestion", full_address: "1 rue suggestion", active: true)
+    enseigne = client.enseignes.create!(name: "Enseigne Suggestion", address: "1 rue suggestion", postal_code: "00000", city: "Ville", country: "France", active: true)
     create_weekday_opening_hours_for_enseigne(enseigne)
     service = enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2500)
 
@@ -477,7 +477,7 @@ class PublicClientsControllerTest < ActionDispatch::IntegrationTest
 
   test "show displays no result message when no first available slot matches criteria" do
     client = Client.create!(name: "Salon No Result", slug: "salon-no-result")
-    enseigne = client.enseignes.create!(name: "Enseigne No Result", full_address: "1 rue no result", active: true)
+    enseigne = client.enseignes.create!(name: "Enseigne No Result", address: "1 rue no result", postal_code: "00000", city: "Ville", country: "France", active: true)
     create_weekday_opening_hours_for_enseigne(enseigne)
     service = enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2500)
 
@@ -506,7 +506,7 @@ class PublicClientsControllerTest < ActionDispatch::IntegrationTest
 
   test "show does not display first available result block before a valid search is performed" do
     client = Client.create!(name: "Salon No Search Yet", slug: "salon-no-search-yet")
-    enseigne = client.enseignes.create!(name: "Enseigne No Search Yet", full_address: "1 rue no search", active: true)
+    enseigne = client.enseignes.create!(name: "Enseigne No Search Yet", address: "1 rue no search", postal_code: "00000", city: "Ville", country: "France", active: true)
     create_weekday_opening_hours_for_enseigne(enseigne)
     service = enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2500)
 
@@ -527,7 +527,7 @@ class PublicClientsControllerTest < ActionDispatch::IntegrationTest
 
   test "clicking a precise_date slot is now a GET selection and does not create a pending booking" do
     client = Client.create!(name: "Salon Select Slot", slug: "salon-select-slot")
-    enseigne = client.enseignes.create!(name: "Enseigne Select Slot", full_address: "1 rue slot", active: true)
+    enseigne = client.enseignes.create!(name: "Enseigne Select Slot", address: "1 rue slot", postal_code: "00000", city: "Ville", country: "France", active: true)
     create_weekday_opening_hours_for_enseigne(enseigne)
     service = enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2500)
 
@@ -558,7 +558,7 @@ class PublicClientsControllerTest < ActionDispatch::IntegrationTest
 
   test "first available suggestion renders a direct pending creation action without confirmation step" do
     client = Client.create!(name: "Salon Suggestion Select", slug: "salon-suggestion-select")
-    enseigne = client.enseignes.create!(name: "Enseigne Suggestion Select", full_address: "1 rue suggestion", active: true)
+    enseigne = client.enseignes.create!(name: "Enseigne Suggestion Select", address: "1 rue suggestion", postal_code: "00000", city: "Ville", country: "France", active: true)
     create_weekday_opening_hours_for_enseigne(enseigne)
     service = enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2500)
 
@@ -590,7 +590,7 @@ class PublicClientsControllerTest < ActionDispatch::IntegrationTest
 
   test "summary shows automatic assignment as Tous" do
     client = Client.create!(name: "Salon Summary Tous", slug: "salon-summary-tous")
-    enseigne = client.enseignes.create!(name: "Enseigne Summary Tous", full_address: "1 rue tous", active: true)
+    enseigne = client.enseignes.create!(name: "Enseigne Summary Tous", address: "1 rue tous", postal_code: "00000", city: "Ville", country: "France", active: true)
     create_weekday_opening_hours_for_enseigne(enseigne)
     service = enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2500)
 
@@ -611,7 +611,7 @@ class PublicClientsControllerTest < ActionDispatch::IntegrationTest
 
   test "summary shows precise_date search mode label" do
     client = Client.create!(name: "Salon Summary Precise", slug: "salon-summary-precise")
-    enseigne = client.enseignes.create!(name: "Enseigne Summary Precise", full_address: "1 rue precise", active: true)
+    enseigne = client.enseignes.create!(name: "Enseigne Summary Precise", address: "1 rue precise", postal_code: "00000", city: "Ville", country: "France", active: true)
     create_weekday_opening_hours_for_enseigne(enseigne)
     service = enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2500)
 
@@ -633,7 +633,7 @@ class PublicClientsControllerTest < ActionDispatch::IntegrationTest
 
   test "summary shows first_available search mode label" do
     client = Client.create!(name: "Salon Summary First", slug: "salon-summary-first")
-    enseigne = client.enseignes.create!(name: "Enseigne Summary First", full_address: "1 rue first", active: true)
+    enseigne = client.enseignes.create!(name: "Enseigne Summary First", address: "1 rue first", postal_code: "00000", city: "Ville", country: "France", active: true)
     create_weekday_opening_hours_for_enseigne(enseigne)
     service = enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2500)
 
@@ -655,7 +655,7 @@ class PublicClientsControllerTest < ActionDispatch::IntegrationTest
 
   test "summary shows selected precise_date slot in date and slot rows" do
     client = Client.create!(name: "Salon Summary Slot", slug: "salon-summary-slot")
-    enseigne = client.enseignes.create!(name: "Enseigne Summary Slot", full_address: "1 rue slot", active: true)
+    enseigne = client.enseignes.create!(name: "Enseigne Summary Slot", address: "1 rue slot", postal_code: "00000", city: "Ville", country: "France", active: true)
     create_weekday_opening_hours_for_enseigne(enseigne)
     service = enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2500)
 
@@ -685,7 +685,7 @@ class PublicClientsControllerTest < ActionDispatch::IntegrationTest
 
   test "summary shows first available suggestion when no selected slot exists" do
     client = Client.create!(name: "Salon Summary Suggestion", slug: "salon-summary-suggestion")
-    enseigne = client.enseignes.create!(name: "Enseigne Summary Suggestion", full_address: "1 rue suggestion", active: true)
+    enseigne = client.enseignes.create!(name: "Enseigne Summary Suggestion", address: "1 rue suggestion", postal_code: "00000", city: "Ville", country: "France", active: true)
     create_weekday_opening_hours_for_enseigne(enseigne)
     service = enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2500)
 
@@ -714,7 +714,7 @@ class PublicClientsControllerTest < ActionDispatch::IntegrationTest
 
   test "summary prioritizes selected_start_time over first available suggestion" do
     client = Client.create!(name: "Salon Summary Priority", slug: "salon-summary-priority")
-    enseigne = client.enseignes.create!(name: "Enseigne Summary Priority", full_address: "1 rue priority", active: true)
+    enseigne = client.enseignes.create!(name: "Enseigne Summary Priority", address: "1 rue priority", postal_code: "00000", city: "Ville", country: "France", active: true)
     create_weekday_opening_hours_for_enseigne(enseigne)
     service = enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2500)
 

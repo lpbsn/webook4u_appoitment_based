@@ -10,7 +10,14 @@ class BookingRateLimitTest < ActionDispatch::IntegrationTest
     @previous_window = ENV["BOOKINGS_RATE_LIMIT_WINDOW_SECONDS"]
 
     @client = Client.create!(name: "Rate Limit Salon", slug: "rate-limit-salon")
-    @enseigne = @client.enseignes.create!(name: "Enseigne RL", full_address: "1 rue RL", active: true)
+    @enseigne = @client.enseignes.create!(
+      name: "Enseigne RL",
+      address: "1 rue RL",
+      postal_code: "00000",
+      city: "Ville",
+      country: "France",
+      active: true
+    )
     create_weekday_opening_hours_for_enseigne(@enseigne)
 
     @service = @enseigne.services.create!(name: "Coupe RL", duration_minutes: 30, price_cents: 2500)

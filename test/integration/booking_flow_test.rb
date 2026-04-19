@@ -13,7 +13,13 @@ class BookingFlowTest < ActionDispatch::IntegrationTest
     @user = create_test_user(client: @client)
     sign_in @user
 
-    @enseigne = @client.enseignes.create!(name: "Enseigne principale", full_address: "1 rue de Paris")
+    @enseigne = @client.enseignes.create!(
+      name: "Enseigne principale",
+      address: "1 rue de Paris",
+      postal_code: "00000",
+      city: "Ville",
+      country: "France"
+    )
 
     @service = @enseigne.services.create!(
       name: "Coupe homme",
@@ -98,7 +104,13 @@ class BookingFlowTest < ActionDispatch::IntegrationTest
   end
 
   test "complete booking flow keeps the selected enseigne when several active enseignes exist" do
-    other_enseigne = @client.enseignes.create!(name: "Enseigne secondaire", full_address: "2 rue de Paris")
+    other_enseigne = @client.enseignes.create!(
+      name: "Enseigne secondaire",
+      address: "2 rue de Paris",
+      postal_code: "00000",
+      city: "Ville",
+      country: "France"
+    )
     other_service = other_enseigne.services.create!(name: "Coupe femme", duration_minutes: 30, price_cents: 3500)
     other_staff = other_enseigne.staffs.create!(name: "Other staff flow", active: true)
     create_weekday_opening_hours_for_enseigne(other_enseigne)
@@ -151,7 +163,7 @@ class BookingFlowTest < ActionDispatch::IntegrationTest
       follow_redirect!
       assert_response :success
       assert_includes response.body, other_enseigne.name
-      assert_includes response.body, other_enseigne.full_address
+      assert_includes response.body, other_enseigne.formatted_address
     end
   end
 
