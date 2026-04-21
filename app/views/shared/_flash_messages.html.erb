@@ -1,21 +1,16 @@
 <% variant = local_assigns.fetch(:variant, :default) %>
+<% flash_entries = [
+  { message: notice, kind: :notice, role: "status", live: "polite", booking_modifier: "notice" },
+  { message: alert, kind: :alert, role: "alert", live: "assertive", booking_modifier: "error" }
+] %>
 
-<% if notice.present? %>
+<% flash_entries.each do |entry| %>
+  <% next if entry[:message].blank? %>
   <% if variant == :booking %>
-    <div class="booking-alert booking-alert--notice" role="status" aria-live="polite" aria-atomic="true">
-      <p><%= notice %></p>
+    <div class="booking-alert booking-alert--<%= entry[:booking_modifier] %>" role="<%= entry[:role] %>" aria-live="<%= entry[:live] %>" aria-atomic="true">
+      <p><%= entry[:message] %></p>
     </div>
   <% else %>
-    <p role="status" aria-live="polite" aria-atomic="true"><%= notice %></p>
-  <% end %>
-<% end %>
-
-<% if alert.present? %>
-  <% if variant == :booking %>
-    <div class="booking-alert booking-alert--error" role="alert" aria-live="assertive" aria-atomic="true">
-      <p><%= alert %></p>
-    </div>
-  <% else %>
-    <p role="alert" aria-live="assertive" aria-atomic="true"><%= alert %></p>
+    <p role="<%= entry[:role] %>" aria-live="<%= entry[:live] %>" aria-atomic="true"><%= entry[:message] %></p>
   <% end %>
 <% end %>
