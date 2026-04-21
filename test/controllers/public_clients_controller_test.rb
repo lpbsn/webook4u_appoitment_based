@@ -108,8 +108,8 @@ class PublicClientsControllerTest < ActionDispatch::IntegrationTest
     get public_client_url(client.slug)
 
     assert_response :success
-    assert_select "h2", text: "1. Choisir une enseigne"
-    assert_select "h2", text: "2. Choisir un service", count: 0
+    assert_select "h2", text: "Choisir une enseigne"
+    assert_select "h2", text: "Choisir un service", count: 0
   end
 
   test "show displays unavailable tunnel message when no active enseigne exists" do
@@ -139,7 +139,7 @@ class PublicClientsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_includes response.body, enseigne.name
-    assert_includes response.body, "2. Choisir un service"
+    assert_includes response.body, "Choisir un service"
     assert_select 'input[name="enseigne_id"][value=?]', enseigne.id.to_s
   end
 
@@ -183,7 +183,7 @@ class PublicClientsControllerTest < ActionDispatch::IntegrationTest
     }
 
     assert_response :success
-    assert_select "h2", text: "4. Choisir le mode de recherche"
+    assert_select "h2", text: "Choisir le mode de recherche"
     assert_select 'input[name="search_mode"][value="first_available"]', count: 1
     assert_select 'input[name="search_mode"][value="precise_date"]', count: 1
     assert_select 'input[type="submit"][value="Premier créneau disponible"]', count: 1
@@ -231,7 +231,7 @@ class PublicClientsControllerTest < ActionDispatch::IntegrationTest
     }
 
     assert_response :success
-    assert_select "h2", text: "5. Choisir un créneau", count: 0
+    assert_select "h2", text: "Choisir un créneau", count: 0
     assert_select ".booking-planning", count: 0
   end
 
@@ -254,7 +254,7 @@ class PublicClientsControllerTest < ActionDispatch::IntegrationTest
       }
 
       assert_response :success
-      assert_select "h2", text: "5. Choisir un créneau"
+      assert_select "h2", text: "Choisir un créneau"
       assert_select ".booking-planning"
       assert_select ".booking-planning-day", minimum: 1
       assert_select 'input[name="search_mode"][value="precise_date"]', minimum: 1
@@ -280,7 +280,7 @@ class PublicClientsControllerTest < ActionDispatch::IntegrationTest
     }
 
     assert_response :success
-    assert_select "h2", text: "6. Choisir un créneau", count: 0
+    assert_select "h2", text: "Choisir un créneau", count: 0
     assert_select 'input[name="start_time"]', count: 0
   end
 
@@ -302,7 +302,7 @@ class PublicClientsControllerTest < ActionDispatch::IntegrationTest
     }
 
     assert_response :success
-    assert_select "h2", text: "5. Définir vos critères"
+    assert_select "h2", text: "Définir vos critères"
     assert_select 'input[name="selected_days_of_week[]"]', minimum: 1
     assert_select 'input[name="start_time_min"]', count: 1
     assert_select 'input[name="start_time_max"]', count: 1
@@ -477,7 +477,7 @@ class PublicClientsControllerTest < ActionDispatch::IntegrationTest
       end
 
       assert_response :success
-      assert_select "h2", text: "6. Premier créneau disponible"
+      assert_select "h2", text: "Premier créneau disponible"
       assert_includes response.body, "Créneau suggéré :"
       assert_includes response.body, "09:00"
       assert_select "form[action=?]", service_bookings_path(client.slug, service), count: 1
@@ -510,7 +510,7 @@ class PublicClientsControllerTest < ActionDispatch::IntegrationTest
       end
 
       assert_response :success
-      assert_select "h2", text: "6. Premier créneau disponible"
+      assert_select "h2", text: "Premier créneau disponible"
       assert_includes response.body, "Aucun créneau disponible ne correspond à vos critères."
     end
   end
@@ -533,7 +533,7 @@ class PublicClientsControllerTest < ActionDispatch::IntegrationTest
     }
 
     assert_response :success
-    assert_select "h2", text: "6. Premier créneau disponible", count: 0
+    assert_select "h2", text: "Premier créneau disponible", count: 0
   end
 
   test "clicking a precise_date slot is now a GET selection and does not create a pending booking" do
@@ -844,12 +844,12 @@ class PublicClientsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     body = response.body
-    step1_index = body.index("1. Choisir une enseigne")
-    step2_index = body.index("2. Choisir un service")
-    step3_index = body.index("3. Choisir le staff")
-    step4_index = body.index("4. Choisir le mode de recherche")
-    step5_index = body.index("5. Définir vos critères")
-    step6_index = body.index("6. Premier créneau disponible")
+    step1_index = body.index('<h2 class="booking-section-title">Choisir une enseigne</h2>')
+    step2_index = body.index('<h2 class="booking-section-title">Choisir un service</h2>')
+    step3_index = body.index('<h2 class="booking-section-title">Choisir le staff</h2>')
+    step4_index = body.index('<h2 class="booking-section-title">Choisir le mode de recherche</h2>')
+    step5_index = body.index('<h2 class="booking-section-title">Définir vos critères</h2>')
+    step6_index = body.index('<h2 class="booking-section-title">Premier créneau disponible</h2>')
 
     assert step1_index.present?
     assert step2_index.present?
