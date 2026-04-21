@@ -5,21 +5,12 @@
   </head>
 
   <body class="booking-body">
-    <div class="booking-page <%= content_for?(:booking_page_modifier) ? yield(:booking_page_modifier) : '' %>">
+    <div class="<%= booking_page_classes %>">
       <% unless content_for?(:hide_booking_auth_bar) %>
         <div class="booking-topbar">
           <% if user_signed_in? %>
-            <% personal_space_path =
-              case current_user.role
-              when "admin"
-                admin_root_path
-              when "client_user"
-                client_root_path
-              else
-                user_root_path
-              end %>
             <span><%= current_user.email %></span>
-            <%= link_to "🏠 Home", personal_space_path, class: "booking-topbar-link" %>
+            <%= link_to "🏠 Home", booking_personal_space_path, class: "booking-topbar-link" %>
             <%= button_to "Se déconnecter",
                           destroy_user_session_path(redirect_to: request.fullpath),
                           method: :delete,
@@ -35,13 +26,11 @@
         </div>
       <% end %>
 
-      <div class="booking-card <%= content_for?(:booking_card_modifier) ? yield(:booking_card_modifier) : '' %>">
+      <div class="<%= booking_card_classes %>">
         <% unless content_for?(:hide_booking_back_link) %>
-          <% explicit_back_href = content_for?(:booking_back_href) ? content_for(:booking_back_href).to_s.strip : "" %>
-          <% back_href = explicit_back_href.presence || request.referer.presence || "#" %>
           <div class="booking-card-back">
             <%= link_to "←",
-                        back_href,
+                        booking_back_href,
                         class: "booking-back-link",
                         title: "Retour",
                         aria: { label: "Retour" },
