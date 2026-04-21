@@ -18,94 +18,87 @@
   ) %>
 </div>
 
-<% if @active_tab == "clients" %>
-  <div class="booking-summary">
-    <div class="booking-summary-row">
-      <span class="booking-summary-label">Clients affichés</span>
-      <span class="booking-summary-value"><%= @clients.size %></span>
-    </div>
+<div class="booking-summary">
+  <div class="booking-summary-row">
+    <span class="booking-summary-label"><%= @active_tab == "clients" ? "Clients affichés" : "Users client affichés" %></span>
+    <span class="booking-summary-value"><%= @active_tab == "clients" ? @clients.size : @client_users.size %></span>
   </div>
+</div>
 
-  <div class="booking-actions">
-    <%= link_to "Nouveau Client", new_admin_client_path, class: "btn-primary btn-primary--compact" %>
+<div class="booking-actions">
+  <div class="booking-actions-primary">
+    <% if @active_tab == "clients" %>
+      <%= link_to "Nouveau Client", new_admin_client_path, class: "btn-primary btn-primary--compact" %>
+    <% else %>
+      <%= link_to "Nouveau User Client", new_admin_user_path, class: "btn-primary btn-primary--compact" %>
+    <% end %>
   </div>
+</div>
 
-  <div class="booking-section">
-    <h2 class="booking-section-title">Liste des Clients</h2>
+<div class="booking-section">
+  <div class="booking-section-header">
+    <h2 class="booking-section-title"><%= @active_tab == "clients" ? "Liste des Clients" : "Liste des User Client" %></h2>
+  </div>
+  <div class="booking-section-content">
     <div class="booking-table-wrapper">
       <table class="booking-table">
         <thead>
-          <tr>
-            <th>Nom</th>
-            <th>Slug</th>
-            <th>Actions</th>
-          </tr>
+          <% if @active_tab == "clients" %>
+            <tr>
+              <th>Nom</th>
+              <th>Slug</th>
+              <th>Actions</th>
+            </tr>
+          <% else %>
+            <tr>
+              <th>Email</th>
+              <th>Nom</th>
+              <th>Client</th>
+              <th>Statut</th>
+              <th>Actions</th>
+            </tr>
+          <% end %>
         </thead>
         <tbody>
-          <% @clients.each do |client| %>
-            <tr>
-              <td><%= client.name %></td>
-              <td><%= client.slug %></td>
-              <td>
-                <%= link_to "Modifier", edit_admin_client_path(client), class: "booking-topbar-link" %>
-              </td>
-            </tr>
+          <% if @active_tab == "clients" %>
+            <% @clients.each do |client| %>
+              <tr>
+                <td><%= client.name %></td>
+                <td><%= client.slug %></td>
+                <td>
+                  <div class="booking-actions booking-actions--row">
+                    <%= link_to "Modifier", edit_admin_client_path(client), class: "booking-topbar-link" %>
+                  </div>
+                </td>
+              </tr>
+            <% end %>
+          <% else %>
+            <% @client_users.each do |client_user| %>
+              <tr>
+                <td><%= client_user.email %></td>
+                <td><%= client_user.first_name %> <%= client_user.last_name %></td>
+                <td><%= client_user.client&.name || "-" %></td>
+                <td>
+                  <span class="booking-status-pill">
+                    <%= client_user.active? ? "actif" : "inactif" %>
+                  </span>
+                </td>
+                <td>
+                  <div class="booking-actions booking-actions--row">
+                    <%= link_to "Modifier", edit_admin_user_path(client_user), class: "booking-topbar-link" %>
+                    <%= button_to(
+                      client_user.active? ? "Désactiver" : "Activer",
+                      toggle_active_admin_user_path(client_user),
+                      method: :patch,
+                      class: "booking-topbar-button"
+                    ) %>
+                  </div>
+                </td>
+              </tr>
+            <% end %>
           <% end %>
         </tbody>
       </table>
     </div>
   </div>
-<% else %>
-  <div class="booking-summary">
-    <div class="booking-summary-row">
-      <span class="booking-summary-label">Users client affichés</span>
-      <span class="booking-summary-value"><%= @client_users.size %></span>
-    </div>
-  </div>
-
-  <div class="booking-actions">
-    <%= link_to "Nouveau User Client", new_admin_user_path, class: "btn-primary btn-primary--compact" %>
-  </div>
-
-  <div class="booking-section">
-    <h2 class="booking-section-title">Liste des User Client</h2>
-    <div class="booking-table-wrapper">
-      <table class="booking-table">
-        <thead>
-          <tr>
-            <th>Email</th>
-            <th>Nom</th>
-            <th>Client</th>
-            <th>Statut</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <% @client_users.each do |client_user| %>
-            <tr>
-              <td><%= client_user.email %></td>
-              <td><%= client_user.first_name %> <%= client_user.last_name %></td>
-              <td><%= client_user.client&.name || "-" %></td>
-              <td>
-                <span class="booking-status-pill">
-                  <%= client_user.active? ? "actif" : "inactif" %>
-                </span>
-              </td>
-              <td>
-                <div class="booking-actions">
-                  <%= link_to "Modifier", edit_admin_user_path(client_user), class: "booking-topbar-link" %>
-                  <%= button_to(
-                    client_user.active? ? "Désactiver" : "Activer",
-                    toggle_active_admin_user_path(client_user),
-                    method: :patch,
-                    class: "booking-topbar-button"
-                  ) %>
-                </div>
-              </td>
-            </tr>
-          <% end %>
-        </tbody>
-      </table>
-    </div>
-  </div>
-<% end %>
+</div>
