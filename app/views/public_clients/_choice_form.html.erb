@@ -1,11 +1,8 @@
-<% form_url = local_assigns.fetch(:url) %>
-<% label = local_assigns.fetch(:label) %>
 <% selected = local_assigns.fetch(:selected, false) %>
 <% button_classes = Array(local_assigns.fetch(:button_classes, "slot-button")).flatten.compact %>
 <% hidden_fields = local_assigns.fetch(:hidden_fields, {}) %>
 
-<%= form_with url: form_url, method: :get, local: true do %>
+<%= form_with url: url, method: :get, local: true do |form| %>
   <%= public_flow_hidden_fields_tags({}, hidden_fields) %>
-
-  <%= submit_tag label, class: [*button_classes, ("slot-button--selected" if selected)].compact.join(" ") %>
+  <%= form.submit label, class: [*button_classes, ("slot-button--selected" if selected)].compact.join(" ") %>
 <% end %>
