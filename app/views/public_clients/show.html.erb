@@ -163,11 +163,12 @@
           <% end %>
 
           <%= form_with url: public_client_path(@client.slug), method: :get, local: true do %>
-            <%= render "flow_hidden_fields",
-                  source: {},
-                  overrides: base_flow_state.merge(
+            <%= public_flow_hidden_fields_tags(
+                  {},
+                  base_flow_state.merge(
                     search_mode: @search_mode
-                  ) %>
+                  )
+                ) %>
 
             <div class="field">
               <span class="field-label">Jours souhaités</span>
@@ -227,15 +228,16 @@
 
               <%= form_tag service_bookings_path(@client.slug, @selected_service), method: :post, data: { turbo_frame: "_top" } do %>
                 <%= hidden_field_tag :start_time, @first_available_slot %>
-                <%= render "flow_hidden_fields",
-                      source: {},
-                      overrides: base_flow_state.merge(
+                <%= public_flow_hidden_fields_tags(
+                      {},
+                      base_flow_state.merge(
                         service_id: nil,
                         search_mode: @search_mode,
                         selected_days_of_week: @first_available_selected_days_of_week,
                         start_time_min: @first_available_start_time_min,
                         start_time_max: @first_available_start_time_max
-                      ) %>
+                      )
+                    ) %>
                 <div class="booking-actions booking-actions--center">
                   <%= submit_tag "Continuer avec ce créneau", class: "btn-primary btn-primary--compact" %>
                 </div>
@@ -266,12 +268,13 @@
           <div class="booking-planning-toolbar">
             <% if can_go_previous %>
               <%= form_with url: public_client_path(@client.slug), method: :get, local: true do %>
-                <%= render "flow_hidden_fields",
-                      source: {},
-                      overrides: base_flow_state.merge(
+                <%= public_flow_hidden_fields_tags(
+                      {},
+                      base_flow_state.merge(
                         search_mode: @search_mode,
                         date: previous_start_date.iso8601
-                      ) %>
+                      )
+                    ) %>
                 <%= submit_tag "Semaine précédente", class: "booking-planning-nav-button" %>
               <% end %>
             <% else %>
@@ -285,12 +288,13 @@
 
             <% if can_go_next %>
               <%= form_with url: public_client_path(@client.slug), method: :get, local: true do %>
-                <%= render "flow_hidden_fields",
-                      source: {},
-                      overrides: base_flow_state.merge(
+                <%= public_flow_hidden_fields_tags(
+                      {},
+                      base_flow_state.merge(
                         search_mode: @search_mode,
                         date: next_start_date.iso8601
-                      ) %>
+                      )
+                    ) %>
                 <%= submit_tag "Semaine suivante", class: "booking-planning-nav-button" %>
               <% end %>
             <% else %>
@@ -310,13 +314,14 @@
                   <div class="booking-planning-slots">
                     <% day.slots.each do |slot| %>
                       <%= form_tag public_client_path(@client.slug), method: :get do %>
-                        <%= render "flow_hidden_fields",
-                              source: {},
-                              overrides: base_flow_state.merge(
+                        <%= public_flow_hidden_fields_tags(
+                              {},
+                              base_flow_state.merge(
                                 search_mode: @search_mode,
                                 date: day.date.iso8601,
                                 selected_start_time: slot
-                              ) %>
+                              )
+                            ) %>
                         <%= submit_tag public_client_slot_label(slot),
                               class: ["booking-planning-slot", ("booking-planning-slot--selected" if @selected_start_time.to_s == slot.to_s)].compact.join(" ") %>
                       <% end %>
@@ -343,13 +348,14 @@
 
           <%= form_tag service_bookings_path(@client.slug, @selected_service), method: :post, data: { turbo_frame: "_top" } do %>
             <%= hidden_field_tag :start_time, @selected_start_time %>
-            <%= render "flow_hidden_fields",
-                  source: {},
-                  overrides: base_flow_state.merge(
+            <%= public_flow_hidden_fields_tags(
+                  {},
+                  base_flow_state.merge(
                     service_id: nil,
                     search_mode: @search_mode,
                     date: (@date.present? ? @date : nil)
-                  ) %>
+                  )
+                ) %>
 
             <div class="booking-actions booking-actions--center">
               <%= submit_tag "Confirmer ce créneau", class: "btn-primary btn-primary--large" %>
