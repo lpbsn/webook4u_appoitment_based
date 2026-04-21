@@ -1,9 +1,10 @@
 <% content_for :title, "Inscription | Webook4u" %>
 <% content_for :hide_booking_auth_bar, true %>
 
-<%= render "shared/page_header",
-           title: "Créer un compte",
-           subtitle: "Créez votre accès pour poursuivre votre réservation dans la même interface que le parcours booking." %>
+<div class="booking-header">
+  <h1 class="booking-header-title">Créer un compte</h1>
+  <p class="booking-header-subtitle">Créez votre accès pour poursuivre votre réservation dans la même interface que le parcours booking.</p>
+</div>
 
 <div class="booking-section">
   <%= form_for(resource, as: resource_name, url: registration_path(resource_name), html: { class: "booking-auth-form" }) do |f| %>
@@ -47,6 +48,16 @@
   <% end %>
 
   <div class="booking-auth-links">
-    <%= render "devise/shared/auth_links" %>
+  <% if controller_name != "sessions" %>
+    <%= link_to "Se connecter",
+                new_session_path(resource_name, redirect_to: params[:redirect_to].presence || session[:after_auth_redirect_to]),
+                class: "booking-inline-link" %>
+  <% end %>
+
+  <% if devise_mapping.registerable? && controller_name != "registrations" %>
+    <%= link_to "Créer un compte",
+                new_registration_path(resource_name, redirect_to: params[:redirect_to].presence || session[:after_auth_redirect_to]),
+                class: "booking-inline-link" %>
+  <% end %>
   </div>
 </div>

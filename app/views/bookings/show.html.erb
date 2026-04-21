@@ -1,12 +1,22 @@
 <% content_for :hide_booking_back_link, true %>
 
-<%= render "shared/page_header", title: @client.name, subtitle: "#{@enseigne.name} — #{@service.name}" %>
+<div class="booking-header">
+  <h1 class="booking-header-title"><%= @client.name %></h1>
+  <p class="booking-header-subtitle"><%= @enseigne.name %> — <%= @service.name %></p></div>
 
 <p class="booking-section-meta">
   Montant à payer : <%= format_price_cents(@service.price_cents) %>
 </p>
 
-<%= render "booking_summary" %>
+<section class="booking-summary" aria-label="Récapitulatif de réservation">
+  <div class="booking-fields">
+    <p><strong>Client :</strong> <%= @client.name %></p>
+    <p><strong>Enseigne :</strong> <%= booking_enseigne_name(@booking) %></p>
+    <p><strong>Adresse :</strong> <%= booking_enseigne_address(@booking) %></p>
+    <p><strong>Prestation :</strong> <%= @service.name %></p>
+    <p><strong>Créneau choisi :</strong> <%= format_datetime_label(@booking_start_time) %></p>
+  </div>
+</section>
 
 <% if @booking.errors.any? %>
   <%= render "shared/error_list",
