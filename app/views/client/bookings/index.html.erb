@@ -13,37 +13,43 @@
 </div>
 
 <div class="booking-actions">
-  <% if @reserve_path.present? %>
-    <%= link_to "Reserver", @reserve_path, class: "btn-primary btn-primary--compact" %>
-  <% else %>
-    <p class="booking-section-meta">Aucun client disponible pour demarrer une reservation.</p>
-  <% end %>
+  <div class="booking-actions-primary">
+    <% if @reserve_path.present? %>
+      <%= link_to "Reserver", @reserve_path, class: "btn-primary btn-primary--compact" %>
+    <% else %>
+      <p class="booking-section-meta">Aucun client disponible pour demarrer une reservation.</p>
+    <% end %>
+  </div>
 </div>
 
 <div class="booking-section">
-  <h2 class="booking-section-title">Dernieres reservations</h2>
-  <div class="booking-table-wrapper">
-    <table class="booking-table">
-      <thead>
-        <tr>
-          <th>Enseigne</th>
-          <th>Service</th>
-          <th>Statut</th>
-          <th>Debut</th>
-          <th>User ID</th>
-        </tr>
-      </thead>
-      <tbody>
-        <% @bookings.each do |booking| %>
+  <div class="booking-section-header">
+    <h2 class="booking-section-title">Dernieres reservations</h2>
+  </div>
+  <div class="booking-section-content">
+    <div class="booking-table-wrapper">
+      <table class="booking-table">
+        <thead>
           <tr>
-            <td><%= booking.enseigne.name %></td>
-            <td><%= booking.service.name %></td>
-            <td><span class="booking-status-pill"><%= booking.booking_status %></span></td>
-            <td><%= format_datetime_label(booking.booking_start_time) %></td>
-            <td><%= booking.user_id || "-" %></td>
+            <th>Enseigne</th>
+            <th>Service</th>
+            <th>Statut</th>
+            <th>Debut</th>
+            <th>User ID</th>
           </tr>
-        <% end %>
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          <% @bookings.each do |booking| %>
+            <tr>
+              <td><%= booking.enseigne.name %></td>
+              <td><%= booking.service.name %></td>
+              <td><span class="booking-status-pill"><%= booking.booking_status %></span></td>
+              <td><%= format_datetime_label(booking.booking_start_time) %></td>
+              <td><%= booking.user_id || "-" %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
   </div>
 </div>
