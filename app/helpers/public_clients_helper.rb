@@ -27,6 +27,14 @@ module PublicClientsHelper
     end
   end
 
+  def public_flow_hidden_fields_tags(source = {}, overrides = {}, compact: true)
+    safe_join(
+      public_flow_hidden_fields(source, overrides, compact: compact).map do |field|
+        hidden_field_tag(field[:name], field[:value])
+      end
+    )
+  end
+
   def public_client_flow_meta(selected_enseigne, selected_service)
     return if selected_enseigne.blank? || selected_service.blank?
 

@@ -1,7 +1,0 @@
-<% flow_source = local_assigns.fetch(:source, params) %>
-<% flow_overrides = local_assigns.fetch(:overrides, {}) %>
-<% compact_fields = local_assigns.fetch(:compact, true) %>
-
-<% public_flow_hidden_fields(flow_source, flow_overrides, compact: compact_fields).each do |field| %>
-  <%= hidden_field_tag field[:name], field[:value] %>
-<% end %>
