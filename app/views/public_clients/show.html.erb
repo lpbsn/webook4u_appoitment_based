@@ -9,7 +9,8 @@
 <% assignment_complete = @assignment_mode == "automatic" || (@assignment_mode == "specific_staff" && staff_selected) %>
 <% common_flow_ready = enseigne_selected && service_selected %>
 <% flow_meta_label = public_client_flow_meta(@selected_enseigne, @selected_service) %>
-<% base_flow_state = {
+<% choice_form_url = public_client_path(@client.slug) %>
+<% flow_base_fields = {
      enseigne_id: @selected_enseigne&.id,
      service_id: @selected_service&.id,
      assignment_mode: @assignment_mode,
@@ -35,16 +36,15 @@
             <% @enseignes.each do |enseigne| %>
               <% selected = @selected_enseigne&.id == enseigne.id %>
               <%= render "choice_form",
-                    url: public_client_path(@client.slug),
-                    hidden_fields: base_flow_state.merge(
+                    url: choice_form_url,
+                    hidden_fields: flow_base_fields.merge(
                       enseigne_id: enseigne.id,
                       service_id: nil,
                       assignment_mode: nil,
                       staff_id: nil
                     ),
                     label: enseigne.name,
-                    selected: selected,
-                    button_classes: "slot-button" %>
+                    selected: selected %>
             <% end %>
           </div>
         <% else %>
@@ -61,16 +61,15 @@
             <% @services.each do |service| %>
               <% selected = @selected_service&.id == service.id %>
               <%= render "choice_form",
-                    url: public_client_path(@client.slug),
-                    hidden_fields: base_flow_state.merge(
+                    url: choice_form_url,
+                    hidden_fields: flow_base_fields.merge(
                       enseigne_id: @selected_enseigne.id,
                       service_id: service.id,
                       assignment_mode: nil,
                       staff_id: nil
                     ),
                     label: service.name,
-                    selected: selected,
-                    button_classes: "slot-button" %>
+                    selected: selected %>
             <% end %>
           </div>
         </div>
@@ -84,21 +83,20 @@
           <% if @eligible_staffs.any? %>
             <div class="slot-grid slot-grid--staff-list">
               <%= render "choice_form",
-                    url: public_client_path(@client.slug),
-                    hidden_fields: base_flow_state.merge(
+                    url: choice_form_url,
+                    hidden_fields: flow_base_fields.merge(
                       enseigne_id: @selected_enseigne.id,
                       service_id: @selected_service.id,
                       assignment_mode: "automatic",
                       staff_id: nil
                     ),
                     label: "Tous",
-                    selected: @assignment_mode == "automatic",
-                    button_classes: "slot-button" %>
+                    selected: @assignment_mode == "automatic" %>
 
               <% @eligible_staffs.each do |staff| %>
                 <%= render "choice_form",
-                      url: public_client_path(@client.slug),
-                      hidden_fields: base_flow_state.merge(
+                      url: choice_form_url,
+                      hidden_fields: flow_base_fields.merge(
                         enseigne_id: @selected_enseigne.id,
                         service_id: @selected_service.id,
                         assignment_mode: "specific_staff",
@@ -123,22 +121,20 @@
 
           <div class="slot-grid slot-grid--staff-list">
             <%= render "choice_form",
-                  url: public_client_path(@client.slug),
-                  hidden_fields: base_flow_state.merge(
+                  url: choice_form_url,
+                  hidden_fields: flow_base_fields.merge(
                     search_mode: "first_available"
                   ),
                   label: "Premier créneau disponible",
-                  selected: @search_mode == "first_available",
-                  button_classes: "slot-button" %>
+                  selected: @search_mode == "first_available" %>
 
             <%= render "choice_form",
-                  url: public_client_path(@client.slug),
-                  hidden_fields: base_flow_state.merge(
+                  url: choice_form_url,
+                  hidden_fields: flow_base_fields.merge(
                     search_mode: "precise_date"
                   ),
                   label: "Date précise",
-                  selected: @search_mode == "precise_date",
-                  button_classes: "slot-button" %>
+                  selected: @search_mode == "precise_date" %>
           </div>
         </div>
       <% end %>
@@ -165,7 +161,7 @@
           <%= form_with url: public_client_path(@client.slug), method: :get, local: true do %>
             <%= public_flow_hidden_fields_tags(
                   {},
-                  base_flow_state.merge(
+                  flow_base_fields.merge(
                     search_mode: @search_mode
                   )
                 ) %>
@@ -230,7 +226,7 @@
                 <%= hidden_field_tag :start_time, @first_available_slot %>
                 <%= public_flow_hidden_fields_tags(
                       {},
-                      base_flow_state.merge(
+                      flow_base_fields.merge(
                         service_id: nil,
                         search_mode: @search_mode,
                         selected_days_of_week: @first_available_selected_days_of_week,
@@ -270,7 +266,7 @@
               <%= form_with url: public_client_path(@client.slug), method: :get, local: true do %>
                 <%= public_flow_hidden_fields_tags(
                       {},
-                      base_flow_state.merge(
+                      flow_base_fields.merge(
                         search_mode: @search_mode,
                         date: previous_start_date.iso8601
                       )
@@ -290,7 +286,7 @@
               <%= form_with url: public_client_path(@client.slug), method: :get, local: true do %>
                 <%= public_flow_hidden_fields_tags(
                       {},
-                      base_flow_state.merge(
+                      flow_base_fields.merge(
                         search_mode: @search_mode,
                         date: next_start_date.iso8601
                       )
@@ -316,7 +312,7 @@
                       <%= form_tag public_client_path(@client.slug), method: :get do %>
                         <%= public_flow_hidden_fields_tags(
                               {},
-                              base_flow_state.merge(
+                              flow_base_fields.merge(
                                 search_mode: @search_mode,
                                 date: day.date.iso8601,
                                 selected_start_time: slot
@@ -350,7 +346,7 @@
             <%= hidden_field_tag :start_time, @selected_start_time %>
             <%= public_flow_hidden_fields_tags(
                   {},
-                  base_flow_state.merge(
+                  flow_base_fields.merge(
                     service_id: nil,
                     search_mode: @search_mode,
                     date: (@date.present? ? @date : nil)
