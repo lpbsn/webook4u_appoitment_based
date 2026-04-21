@@ -754,4 +754,113 @@ class PublicClientsControllerTest < ActionDispatch::IntegrationTest
       assert_includes response.body, "11:00"
     end
   end
+
+  test "show renders public flow turbo frame with expected id and turbo action" do
+    client = Client.create!(name: "Salon Frame", slug: "salon-frame")
+    client.enseignes.create!(name: "Enseigne Frame", address: "1 rue frame", postal_code: "00000", city: "Ville", country: "France", active: true)
+
+    get public_client_url(client.slug)
+
+    assert_response :success
+    assert_select 'turbo-frame#public_booking_flow.booking-flow-frame[data-turbo-action="advance"]', count: 1
+    assert_select "main.booking-layout-steps", count: 1
+  end
+
+  test "first available result keeps top-level turbo submission and flow hidden fields" do
+    client = Client.create!(name: "Salon Top First", slug: "salon-top-first")
+    enseigne = client.enseignes.create!(name: "Enseigne Top First", address: "1 rue top first", postal_code: "00000", city: "Ville", country: "France", active: true)
+    create_weekday_opening_hours_for_enseigne(enseigne)
+    service = enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2500)
+    staff = enseigne.staffs.create!(name: "Emma", active: true)
+    staff.staff_availabilities.create!(day_of_week: 1, opens_at: "09:00", closes_at: "12:00")
+    StaffServiceCapability.create!(staff: staff, service: service)
+
+    travel_to Time.zone.local(2026, 3, 15, 8, 0, 0) do
+      get public_client_url(client.slug), params: {
+        enseigne_id: enseigne.id,
+        service_id: service.id,
+        assignment_mode: "automatic",
+        search_mode: "first_available",
+        selected_days_of_week: [ "1" ],
+        start_time_min: "09:00",
+        start_time_max: "18:00"
+      }
+
+      assert_response :success
+      assert_select 'form[data-turbo-frame="_top"][action=?]', service_bookings_path(client.slug, service), count: 1
+      assert_select 'form[data-turbo-frame="_top"][action=?] input[name="start_time"]', service_bookings_path(client.slug, service), count: 1
+      assert_select 'form[data-turbo-frame="_top"][action=?] input[name="selected_days_of_week[]"][value="1"]', service_bookings_path(client.slug, service), minimum: 1
+      assert_select 'form[data-turbo-frame="_top"][action=?] input[name="start_time_min"][value="09:00"]', service_bookings_path(client.slug, service), count: 1
+      assert_select 'form[data-turbo-frame="_top"][action=?] input[name="start_time_max"][value="18:00"]', service_bookings_path(client.slug, service), count: 1
+    end
+  end
+
+  test "precise_date confirmation keeps top-level turbo submission and date context" do
+    client = Client.create!(name: "Salon Top Precise", slug: "salon-top-precise")
+    enseigne = client.enseignes.create!(name: "Enseigne Top Precise", address: "1 rue top precise", postal_code: "00000", city: "Ville", country: "France", active: true)
+    create_weekday_opening_hours_for_enseigne(enseigne)
+    service = enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2500)
+    staff = enseigne.staffs.create!(name: "Emma", active: true)
+    staff.staff_availabilities.create!(day_of_week: 1, opens_at: "09:00", closes_at: "12:00")
+    StaffServiceCapability.create!(staff: staff, service: service)
+    selected_slot = Time.zone.local(2026, 3, 16, 9, 0, 0)
+
+    travel_to Time.zone.local(2026, 3, 15, 8, 0, 0) do
+      get public_client_url(client.slug), params: {
+        enseigne_id: enseigne.id,
+        service_id: service.id,
+        assignment_mode: "automatic",
+        search_mode: "precise_date",
+        date: "2026-03-16",
+        selected_start_time: selected_slot
+      }
+
+      assert_response :success
+      assert_select 'form[data-turbo-frame="_top"][action=?]', service_bookings_path(client.slug, service), count: 1
+      assert_select 'form[data-turbo-frame="_top"][action=?] input[name="start_time"]', service_bookings_path(client.slug, service), count: 1
+      assert_select 'form[data-turbo-frame="_top"][action=?] input[name="date"][value="2026-03-16"]', service_bookings_path(client.slug, service), count: 1
+      assert_select 'form[data-turbo-frame="_top"][action=?] input[name="search_mode"][value="precise_date"]', service_bookings_path(client.slug, service), count: 1
+    end
+  end
+
+  test "sections stay in flow order for first available branch" do
+    client = Client.create!(name: "Salon Order First", slug: "salon-order-first")
+    enseigne = client.enseignes.create!(name: "Enseigne Order First", address: "1 rue order first", postal_code: "00000", city: "Ville", country: "France", active: true)
+    create_weekday_opening_hours_for_enseigne(enseigne)
+    service = enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2500)
+    staff = enseigne.staffs.create!(name: "Emma", active: true)
+    staff.staff_availabilities.create!(day_of_week: 1, opens_at: "09:00", closes_at: "12:00")
+    StaffServiceCapability.create!(staff: staff, service: service)
+
+    get public_client_url(client.slug), params: {
+      enseigne_id: enseigne.id,
+      service_id: service.id,
+      assignment_mode: "automatic",
+      search_mode: "first_available",
+      selected_days_of_week: [ "1" ],
+      start_time_min: "09:00",
+      start_time_max: "18:00"
+    }
+
+    assert_response :success
+    body = response.body
+    step1_index = body.index("1. Choisir une enseigne")
+    step2_index = body.index("2. Choisir un service")
+    step3_index = body.index("3. Choisir le staff")
+    step4_index = body.index("4. Choisir le mode de recherche")
+    step5_index = body.index("5. Définir vos critères")
+    step6_index = body.index("6. Premier créneau disponible")
+
+    assert step1_index.present?
+    assert step2_index.present?
+    assert step3_index.present?
+    assert step4_index.present?
+    assert step5_index.present?
+    assert step6_index.present?
+    assert_operator step1_index, :<, step2_index
+    assert_operator step2_index, :<, step3_index
+    assert_operator step3_index, :<, step4_index
+    assert_operator step4_index, :<, step5_index
+    assert_operator step5_index, :<, step6_index
+  end
 end
