@@ -121,7 +121,7 @@ class BookingFlowTest < ActionDispatch::IntegrationTest
     travel_to Time.zone.local(2026, 3, 15, 8, 0, 0) do
       get public_client_path(@client.slug, booking_entry: "1")
       assert_response :success
-      assert_select "h2", text: "1. Choisir une enseigne"
+      assert_select "h2", text: "Choisir une enseigne"
 
       get public_client_path(@client.slug, booking_entry: "1", enseigne_id: other_enseigne.id)
       assert_response :success

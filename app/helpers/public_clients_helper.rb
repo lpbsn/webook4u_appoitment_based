@@ -14,9 +14,7 @@ module PublicClientsHelper
 
   def public_flow_params(source = {}, overrides = {}, compact: true)
     flow_params = extract_public_flow_params(source).merge(extract_public_flow_params(overrides))
-    return flow_params unless compact
-
-    flow_params.reject { |key, value| public_flow_blank_value?(key, value) }
+    compact ? compact_public_flow_params(flow_params) : flow_params
   end
 
   def public_flow_hidden_fields(source = {}, overrides = {}, compact: true)
@@ -27,6 +25,12 @@ module PublicClientsHelper
         [ { name: key, value: value } ]
       end
     end
+  end
+
+  def public_client_flow_meta(selected_enseigne, selected_service)
+    return if selected_enseigne.blank? || selected_service.blank?
+
+    "#{selected_enseigne.name} — #{selected_service.name} - #{selected_service.duration_minutes}'"
   end
 
   def public_client_selected_enseigne_name(selected_enseigne)
@@ -121,9 +125,14 @@ module PublicClientsHelper
     end
   end
 
-  def public_flow_blank_value?(key, value)
-    return Array(value).reject(&:blank?).empty? if key == :selected_days_of_week
-
-    value.blank?
+  def compact_public_flow_params(flow_params)
+    flow_params.each_with_object({}) do |(key, value), result|
+      if key == :selected_days_of_week
+        days = Array(value).reject(&:blank?)
+        result[key] = days if days.any?
+      elsif value.present?
+        result[key] = value
+      end
+    end
   end
 end

@@ -1,7 +1,22 @@
+<%# ----------------------------- %>
+<%# shell                         %>
+<%# ----------------------------- %>
 <% content_for :hide_booking_back_link, true %>
 <% content_for :booking_page_modifier, "booking-page--public-client" %>
 <% content_for :booking_card_modifier, "booking-card--public-client" %>
-<% assignment_complete = @assignment_mode == "automatic" || (@assignment_mode == "specific_staff" && @selected_staff.present?) %>
+
+<% enseigne_selected = @selected_enseigne.present? %>
+<% service_selected = @selected_service.present? %>
+<% staff_selected = @selected_staff.present? %>
+<% assignment_complete = @assignment_mode == "automatic" || (@assignment_mode == "specific_staff" && staff_selected) %>
+<% common_flow_ready = enseigne_selected && service_selected %>
+<% flow_meta_label = public_client_flow_meta(@selected_enseigne, @selected_service) %>
+<% base_flow_state = {
+     enseigne_id: @selected_enseigne&.id,
+     service_id: @selected_service&.id,
+     assignment_mode: @assignment_mode,
+     staff_id: (@assignment_mode == "specific_staff" && staff_selected ? @selected_staff.id : nil)
+   } %>
 
 <%= turbo_frame_tag "public_booking_flow", data: { turbo_action: "advance" }, class: "booking-flow-frame" do %>
   <div class="booking-layout">
@@ -10,8 +25,11 @@
     </aside>
 
     <main class="booking-layout-steps">
+      <%# ----------------------------- %>
+      <%# flow commun                   %>
+      <%# ----------------------------- %>
       <div class="booking-section">
-        <h2 class="booking-section-title">1. Choisir une enseigne</h2>
+        <h2 class="booking-section-title">Choisir une enseigne</h2>
         <p class="booking-section-meta">Sélectionner le lieu de votre rendez-vous.</p>
 
         <% if @enseignes.any? %>
@@ -20,7 +38,12 @@
               <% selected = @selected_enseigne&.id == enseigne.id %>
               <%= render "choice_form",
                     url: public_client_path(@client.slug),
-                    hidden_fields: { enseigne_id: enseigne.id },
+                    hidden_fields: base_flow_state.merge(
+                      enseigne_id: enseigne.id,
+                      service_id: nil,
+                      assignment_mode: nil,
+                      staff_id: nil
+                    ),
                     label: enseigne.name,
                     selected: selected,
                     button_classes: "slot-button" %>
@@ -31,9 +54,9 @@
         <% end %>
       </div>
 
-      <% if @selected_enseigne.present? %>
+      <% if enseigne_selected %>
         <div class="booking-section">
-          <h2 class="booking-section-title">2. Choisir un service</h2>
+          <h2 class="booking-section-title">Choisir un service</h2>
           <p class="booking-section-meta">Sélectionnez le service qui vous convient.</p>
 
           <div class="slot-grid">
@@ -41,7 +64,12 @@
               <% selected = @selected_service&.id == service.id %>
               <%= render "choice_form",
                     url: public_client_path(@client.slug),
-                    hidden_fields: { enseigne_id: @selected_enseigne.id, service_id: service.id },
+                    hidden_fields: base_flow_state.merge(
+                      enseigne_id: @selected_enseigne.id,
+                      service_id: service.id,
+                      assignment_mode: nil,
+                      staff_id: nil
+                    ),
                     label: service.name,
                     selected: selected,
                     button_classes: "slot-button" %>
@@ -50,20 +78,21 @@
         </div>
       <% end %>
 
-      <% if @selected_enseigne.present? && @selected_service.present? %>
+      <% if common_flow_ready %>
         <div class="booking-section">
-          <h2 class="booking-section-title">3. Choisir le staff</h2>
+          <h2 class="booking-section-title">Choisir le staff</h2>
           <p class="booking-section-meta">Sélectionner un staff</p>
 
           <% if @eligible_staffs.any? %>
             <div class="slot-grid slot-grid--staff-list">
               <%= render "choice_form",
                     url: public_client_path(@client.slug),
-                    hidden_fields: {
+                    hidden_fields: base_flow_state.merge(
                       enseigne_id: @selected_enseigne.id,
                       service_id: @selected_service.id,
-                      assignment_mode: "automatic"
-                    },
+                      assignment_mode: "automatic",
+                      staff_id: nil
+                    ),
                     label: "Tous",
                     selected: @assignment_mode == "automatic",
                     button_classes: "slot-button" %>
@@ -71,12 +100,12 @@
               <% @eligible_staffs.each do |staff| %>
                 <%= render "choice_form",
                       url: public_client_path(@client.slug),
-                      hidden_fields: {
+                      hidden_fields: base_flow_state.merge(
                         enseigne_id: @selected_enseigne.id,
                         service_id: @selected_service.id,
                         assignment_mode: "specific_staff",
                         staff_id: staff.id
-                      },
+                      ),
                       label: staff.name,
                       selected: @selected_staff&.id == staff.id,
                       button_classes: ["slot-button", "slot-button--staff"] %>
@@ -88,32 +117,27 @@
         </div>
       <% end %>
 
-      <% if @selected_enseigne.present? && @selected_service.present? && assignment_complete %>
+      <% if common_flow_ready && assignment_complete %>
         <div class="booking-section">
-          <h2 class="booking-section-title">4. Choisir le mode de recherche</h2>
-          <div class="booking-section-meta">
-            <strong><%= @selected_enseigne.name %></strong> —
-            <strong><%= @selected_service.name %></strong> -
-            <strong><%= @selected_service.duration_minutes %>'</strong>
-          </div>
+          <h2 class="booking-section-title">Choisir le mode de recherche</h2>
+          <div class="booking-section-meta"><%= flow_meta_label %></div>
           <p class="booking-section-meta">Choisissez comment rechercher votre rendez-vous.</p>
-
-          <% assignment_hidden_fields = { enseigne_id: @selected_enseigne.id, service_id: @selected_service.id, assignment_mode: @assignment_mode } %>
-          <% if @assignment_mode == "specific_staff" && @selected_staff.present? %>
-            <% assignment_hidden_fields[:staff_id] = @selected_staff.id %>
-          <% end %>
 
           <div class="slot-grid slot-grid--staff-list">
             <%= render "choice_form",
                   url: public_client_path(@client.slug),
-                  hidden_fields: assignment_hidden_fields.merge(search_mode: "first_available"),
+                  hidden_fields: base_flow_state.merge(
+                    search_mode: "first_available"
+                  ),
                   label: "Premier créneau disponible",
                   selected: @search_mode == "first_available",
                   button_classes: "slot-button" %>
 
             <%= render "choice_form",
                   url: public_client_path(@client.slug),
-                  hidden_fields: assignment_hidden_fields.merge(search_mode: "precise_date"),
+                  hidden_fields: base_flow_state.merge(
+                    search_mode: "precise_date"
+                  ),
                   label: "Date précise",
                   selected: @search_mode == "precise_date",
                   button_classes: "slot-button" %>
@@ -121,17 +145,13 @@
         </div>
       <% end %>
 
-      <% if @selected_enseigne.present? &&
-            @selected_service.present? &&
-            assignment_complete &&
-            @search_mode == "first_available" %>
+      <%# ----------------------------- %>
+      <%# branche first_available       %>
+      <%# ----------------------------- %>
+      <% if common_flow_ready && assignment_complete && @search_mode == "first_available" %>
         <div class="booking-section">
-          <h2 class="booking-section-title">5. Définir vos critères</h2>
-          <div class="booking-section-meta">
-            <strong><%= @selected_enseigne.name %></strong> —
-            <strong><%= @selected_service.name %></strong> -
-            <strong><%= @selected_service.duration_minutes %>'</strong>
-          </div>
+          <h2 class="booking-section-title">Définir vos critères</h2>
+          <div class="booking-section-meta"><%= flow_meta_label %></div>
           <p class="booking-section-meta">Choisissez les jours et la plage horaire souhaités.</p>
 
           <% if @first_available_errors.present? %>
@@ -145,13 +165,11 @@
           <% end %>
 
           <%= form_with url: public_client_path(@client.slug), method: :get, local: true do %>
-            <%= hidden_field_tag :enseigne_id, @selected_enseigne.id %>
-            <%= hidden_field_tag :service_id, @selected_service.id %>
-            <%= hidden_field_tag :assignment_mode, @assignment_mode %>
-            <% if @assignment_mode == "specific_staff" && @selected_staff.present? %>
-              <%= hidden_field_tag :staff_id, @selected_staff.id %>
-            <% end %>
-            <%= hidden_field_tag :search_mode, @search_mode %>
+            <%= render "flow_hidden_fields",
+                  source: {},
+                  overrides: base_flow_state.merge(
+                    search_mode: @search_mode
+                  ) %>
 
             <div class="field">
               <span class="field-label">Jours souhaités</span>
@@ -195,30 +213,10 @@
         </div>
       <% end %>
 
-      <% if @selected_enseigne.present? &&
-            @selected_service.present? &&
-            assignment_complete &&
-            @search_mode == "first_available" &&
-            @first_available_search_performed %>
-        <% result_hidden_fields = {
-             enseigne_id: @selected_enseigne.id,
-             assignment_mode: @assignment_mode,
-             search_mode: @search_mode,
-             selected_days_of_week: @first_available_selected_days_of_week,
-             start_time_min: @first_available_start_time_min,
-             start_time_max: @first_available_start_time_max
-           } %>
-        <% if @assignment_mode == "specific_staff" && @selected_staff.present? %>
-          <% result_hidden_fields[:staff_id] = @selected_staff.id %>
-        <% end %>
-
+      <% if common_flow_ready && assignment_complete && @search_mode == "first_available" && @first_available_search_performed %>
         <div class="booking-section">
-          <h2 class="booking-section-title">6. Premier créneau disponible</h2>
-          <div class="booking-section-meta">
-            <strong><%= @selected_enseigne.name %></strong> —
-            <strong><%= @selected_service.name %></strong> -
-            <strong><%= @selected_service.duration_minutes %>'</strong>
-          </div>
+          <h2 class="booking-section-title">Premier créneau disponible</h2>
+          <div class="booking-section-meta"><%= flow_meta_label %></div>
 
           <div class="booking-alert">
             <% if @first_available_slot.present? %>
@@ -231,7 +229,15 @@
 
               <%= form_tag service_bookings_path(@client.slug, @selected_service), method: :post, data: { turbo_frame: "_top" } do %>
                 <%= hidden_field_tag :start_time, @first_available_slot %>
-                <%= render "flow_hidden_fields", source: {}, overrides: result_hidden_fields %>
+                <%= render "flow_hidden_fields",
+                      source: {},
+                      overrides: base_flow_state.merge(
+                        service_id: nil,
+                        search_mode: @search_mode,
+                        selected_days_of_week: @first_available_selected_days_of_week,
+                        start_time_min: @first_available_start_time_min,
+                        start_time_max: @first_available_start_time_max
+                      ) %>
                 <div class="booking-actions booking-actions--center">
                   <%= submit_tag "Continuer avec ce créneau", class: "btn-primary btn-primary--compact" %>
                 </div>
@@ -243,14 +249,13 @@
         </div>
       <% end %>
 
-      <% if @selected_enseigne.present? && @selected_service.present? && assignment_complete && @search_mode == "precise_date" %>
+      <%# ----------------------------- %>
+      <%# branche precise_date          %>
+      <%# ----------------------------- %>
+      <% if common_flow_ready && assignment_complete && @search_mode == "precise_date" %>
         <div class="booking-section">
-          <h2 class="booking-section-title">5. Choisir un créneau</h2>
-          <div class="booking-section-meta">
-            <strong><%= @selected_enseigne.name %></strong> —
-            <strong><%= @selected_service.name %></strong> -
-            <strong><%= @selected_service.duration_minutes %>'</strong>
-          </div>
+          <h2 class="booking-section-title">Choisir un créneau</h2>
+          <div class="booking-section-meta"><%= flow_meta_label %></div>
           <p class="booking-section-meta">Parcourez les prochains jours et sélectionnez directement l’horaire qui vous convient.</p>
 
           <% planning_start_date = @date || BookingRules.business_today %>
@@ -259,20 +264,16 @@
           <% max_planning_date = BookingRules.business_today + BookingRules.max_future_days.days %>
           <% can_go_previous = previous_start_date >= BookingRules.business_today %>
           <% can_go_next = next_start_date <= max_planning_date %>
-          <% flow_hidden_fields = {
-               enseigne_id: @selected_enseigne.id,
-               service_id: @selected_service.id,
-               assignment_mode: @assignment_mode,
-               search_mode: @search_mode
-             } %>
-          <% if @assignment_mode == "specific_staff" && @selected_staff.present? %>
-            <% flow_hidden_fields[:staff_id] = @selected_staff.id %>
-          <% end %>
 
           <div class="booking-planning-toolbar">
             <% if can_go_previous %>
               <%= form_with url: public_client_path(@client.slug), method: :get, local: true do %>
-                <%= render "flow_hidden_fields", source: {}, overrides: flow_hidden_fields.merge(date: previous_start_date.iso8601) %>
+                <%= render "flow_hidden_fields",
+                      source: {},
+                      overrides: base_flow_state.merge(
+                        search_mode: @search_mode,
+                        date: previous_start_date.iso8601
+                      ) %>
                 <%= submit_tag "Semaine précédente", class: "booking-planning-nav-button" %>
               <% end %>
             <% else %>
@@ -286,7 +287,12 @@
 
             <% if can_go_next %>
               <%= form_with url: public_client_path(@client.slug), method: :get, local: true do %>
-                <%= render "flow_hidden_fields", source: {}, overrides: flow_hidden_fields.merge(date: next_start_date.iso8601) %>
+                <%= render "flow_hidden_fields",
+                      source: {},
+                      overrides: base_flow_state.merge(
+                        search_mode: @search_mode,
+                        date: next_start_date.iso8601
+                      ) %>
                 <%= submit_tag "Semaine suivante", class: "booking-planning-nav-button" %>
               <% end %>
             <% else %>
@@ -308,7 +314,8 @@
                       <%= form_tag public_client_path(@client.slug), method: :get do %>
                         <%= render "flow_hidden_fields",
                               source: {},
-                              overrides: flow_hidden_fields.merge(
+                              overrides: base_flow_state.merge(
+                                search_mode: @search_mode,
                                 date: day.date.iso8601,
                                 selected_start_time: slot
                               ) %>
@@ -326,25 +333,9 @@
         </div>
       <% end %>
 
-      <% if @selected_enseigne.present? &&
-            @selected_service.present? &&
-            @selected_start_time.present? &&
-            assignment_complete &&
-            @search_mode == "precise_date" %>
-        <% confirmation_hidden_fields = {
-             enseigne_id: @selected_enseigne.id,
-             assignment_mode: @assignment_mode,
-             search_mode: @search_mode
-           } %>
-        <% if @assignment_mode == "specific_staff" && @selected_staff.present? %>
-          <% confirmation_hidden_fields[:staff_id] = @selected_staff.id %>
-        <% end %>
-        <% if @search_mode == "precise_date" && @date.present? %>
-          <% confirmation_hidden_fields[:date] = @date %>
-        <% end %>
-
+      <% if common_flow_ready && @selected_start_time.present? && assignment_complete && @search_mode == "precise_date" %>
         <div class="booking-section">
-          <h2 class="booking-section-title">7. Confirmer le créneau</h2>
+          <h2 class="booking-section-title">Confirmer le créneau</h2>
           <p class="booking-section-meta">
             Vous avez sélectionné :
               <strong><%= format_date_label(Time.zone.parse(@selected_start_time.to_s)) %></strong>
@@ -354,7 +345,13 @@
 
           <%= form_tag service_bookings_path(@client.slug, @selected_service), method: :post, data: { turbo_frame: "_top" } do %>
             <%= hidden_field_tag :start_time, @selected_start_time %>
-            <%= render "flow_hidden_fields", source: {}, overrides: confirmation_hidden_fields %>
+            <%= render "flow_hidden_fields",
+                  source: {},
+                  overrides: base_flow_state.merge(
+                    service_id: nil,
+                    search_mode: @search_mode,
+                    date: (@date.present? ? @date : nil)
+                  ) %>
 
             <div class="booking-actions booking-actions--center">
               <%= submit_tag "Confirmer ce créneau", class: "btn-primary btn-primary--large" %>
