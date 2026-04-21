@@ -23,7 +23,7 @@
   <div class="field field--compact">
     <%= label_tag "staffs_#{idx}_active", "Staff actif", class: "field-label" %>
     <%= select_tag "staffs[#{idx}][active]",
-      options_for_select([["Oui", "true"], ["Non", "false"]], (staff["active"].nil? ? "true" : staff["active"].to_s)),
+      options_for_select([ ["Oui", "true"], ["Non", "false"] ], (staff["active"].nil? ? "true" : staff["active"].to_s)),
       class: "field-input field-input--short field-input--short-select",
       required: true,
       id: "staffs_#{idx}_active" %>
