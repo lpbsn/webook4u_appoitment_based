@@ -1,6 +1,16 @@
 <% content_for :hide_booking_back_link, true %>
 <% content_for :booking_page_modifier, "booking-page--public-client" %>
 <% content_for :booking_card_modifier, "booking-card--public-client" %>
+<% flow_steps = %w[
+  enseigne_step
+  service_step
+  assignment_step
+  search_mode_step
+  first_available_step
+  first_available_result_step
+  date_step
+  selected_slot_confirmation_step
+] %>
 
 <%= turbo_frame_tag "public_booking_flow", data: { turbo_action: "advance" }, class: "booking-flow-frame" do %>
   <div class="booking-layout">
@@ -9,21 +19,9 @@
     </aside>
 
     <main class="booking-layout-steps">
-      <%= render "enseigne_step" %>
-
-      <%= render "service_step" %>
-
-      <%= render "assignment_step" %>
-
-      <%= render "search_mode_step" %>
-
-      <%= render "first_available_step" %>
-
-      <%= render "first_available_result_step" %>
-
-      <%= render "date_step" %>
-
-      <%= render "selected_slot_confirmation_step" %>
+      <% flow_steps.each do |step_partial| %>
+        <%= render step_partial %>
+      <% end %>
     </main>
   </div>
 <% end %>

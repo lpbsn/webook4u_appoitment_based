@@ -22,21 +22,21 @@ class EnseigneOpeningHourTest < ActiveSupport::TestCase
     opening_hour = EnseigneOpeningHour.new(enseigne: @enseigne, opens_at: "10:00", closes_at: "16:00")
 
     assert_not opening_hour.valid?
-    assert_includes opening_hour.errors[:day_of_week], "can't be blank"
+    assert_includes opening_hour.errors[:day_of_week], "doit être renseigné"
   end
 
   test "opens_at is required" do
     opening_hour = EnseigneOpeningHour.new(enseigne: @enseigne, day_of_week: 1, closes_at: "16:00")
 
     assert_not opening_hour.valid?
-    assert_includes opening_hour.errors[:opens_at], "can't be blank"
+    assert_includes opening_hour.errors[:opens_at], "doit être renseigné"
   end
 
   test "closes_at is required" do
     opening_hour = EnseigneOpeningHour.new(enseigne: @enseigne, day_of_week: 1, opens_at: "10:00")
 
     assert_not opening_hour.valid?
-    assert_includes opening_hour.errors[:closes_at], "can't be blank"
+    assert_includes opening_hour.errors[:closes_at], "doit être renseigné"
   end
 
   test "opens_at must be before closes_at" do

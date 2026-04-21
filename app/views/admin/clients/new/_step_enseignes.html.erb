@@ -1,0 +1,30 @@
+<%= form_with url: admin_clients_path, method: :post, local: true do %>
+  <%= hidden_field_tag :creation_step, 2 %>
+
+  <div id="enseigne-fields-container">
+    <% @enseignes_draft_entries.each do |enseigne| %>
+      <% idx = enseigne["ui_index"] %>
+      <%= render "admin/clients/new/enseigne_fields",
+                 idx: idx,
+                 index_label: idx + 1,
+                 enseigne: enseigne,
+                 hide_trash: @enseignes_draft_entries.size <= 1 %>
+    <% end %>
+  </div>
+
+  <template id="enseigne-block-template">
+    <%= render "admin/clients/new/enseigne_fields",
+               idx: "__INDEX__",
+               index_label: "__INDEX_LABEL__",
+               template_mode: true %>
+  </template>
+
+  <div class="booking-actions">
+    <button type="button" class="booking-topbar-button" id="add-enseigne-button">+ Enseigne</button>
+  </div>
+
+  <div class="booking-actions">
+    <%= link_to "Précédent", new_admin_client_path(step: 1), class: "booking-topbar-link" %>
+    <%= submit_tag "Suivant", class: "btn-primary btn-primary--compact" %>
+  </div>
+<% end %>

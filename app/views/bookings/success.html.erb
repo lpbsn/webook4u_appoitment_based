@@ -1,7 +1,7 @@
 <% content_for :booking_card_modifier, "booking-success" %>
 <% content_for :hide_booking_back_link, true %>
 
-<div class="booking-success-body">
+<section class="booking-success-body" aria-label="Détails de la réservation confirmée">
   <h1 class="booking-success-title">Votre réservation est confirmée</h1>
   <p><strong>Client :</strong> <%= @client.name %></p>
   <p><strong>Enseigne :</strong> <%= booking_enseigne_name(@booking) %></p>
@@ -11,4 +11,4 @@
   <p><strong>Prestation :</strong> <%= @service.name %></p>
   <p><strong>Montant à payer :</strong> <%= format_price_cents(@service.price_cents) %></p>
   <p><strong>Créneau :</strong> <%= booking_formatted_slot(@booking) %></p>
-</div>
+</section>

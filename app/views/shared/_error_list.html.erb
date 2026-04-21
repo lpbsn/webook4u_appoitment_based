@@ -1,0 +1,11 @@
+<% wrapper_class = local_assigns.fetch(:wrapper_class, "booking-errors") %>
+<% title_tag = local_assigns.fetch(:title_tag, "strong") %>
+
+<div class="<%= wrapper_class %>" role="alert" aria-live="assertive" aria-atomic="true">
+  <%= content_tag(title_tag, title) %>
+  <ul>
+    <% messages.each do |message| %>
+      <li><%= message %></li>
+    <% end %>
+  </ul>
+</div>

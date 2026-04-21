@@ -5,6 +5,18 @@
       @selected_start_time.present? &&
       assignment_complete &&
       @search_mode == "precise_date" %>
+  <% confirmation_hidden_fields = {
+       enseigne_id: @selected_enseigne.id,
+       assignment_mode: @assignment_mode,
+       search_mode: @search_mode
+     } %>
+  <% if @assignment_mode == "specific_staff" && @selected_staff.present? %>
+    <% confirmation_hidden_fields[:staff_id] = @selected_staff.id %>
+  <% end %>
+  <% if @search_mode == "precise_date" && @date.present? %>
+    <% confirmation_hidden_fields[:date] = @date %>
+  <% end %>
+
   <div class="booking-section">
     <h2 class="booking-section-title">7. Confirmer le créneau</h2>
     <p class="booking-section-meta">
@@ -15,17 +27,8 @@
     </p>
 
     <%= form_tag service_bookings_path(@client.slug, @selected_service), method: :post, data: { turbo_frame: "_top" } do %>
-      <%= hidden_field_tag :enseigne_id, @selected_enseigne.id %>
       <%= hidden_field_tag :start_time, @selected_start_time %>
-      <%= hidden_field_tag :assignment_mode, @assignment_mode %>
-      <% if @assignment_mode == "specific_staff" && @selected_staff.present? %>
-        <%= hidden_field_tag :staff_id, @selected_staff.id %>
-      <% end %>
-      <% if @search_mode == "precise_date" && @date.present? %>
-        <%= hidden_field_tag :date, @date %>
-      <% end %>
-
-      <%= hidden_field_tag :search_mode, @search_mode %>
+      <%= render "flow_hidden_fields", source: {}, overrides: confirmation_hidden_fields %>
 
       <div class="booking-actions booking-actions--center">
         <%= submit_tag "Confirmer ce créneau", class: "btn-primary btn-primary--large" %>

@@ -18,18 +18,20 @@
     <% max_planning_date = BookingRules.business_today + BookingRules.max_future_days.days %>
     <% can_go_previous = previous_start_date >= BookingRules.business_today %>
     <% can_go_next = next_start_date <= max_planning_date %>
+    <% flow_hidden_fields = {
+         enseigne_id: @selected_enseigne.id,
+         service_id: @selected_service.id,
+         assignment_mode: @assignment_mode,
+         search_mode: @search_mode
+       } %>
+    <% if @assignment_mode == "specific_staff" && @selected_staff.present? %>
+      <% flow_hidden_fields[:staff_id] = @selected_staff.id %>
+    <% end %>
 
     <div class="booking-planning-toolbar">
       <% if can_go_previous %>
         <%= form_with url: public_client_path(@client.slug), method: :get, local: true do %>
-          <%= hidden_field_tag :enseigne_id, @selected_enseigne.id %>
-          <%= hidden_field_tag :service_id, @selected_service.id %>
-          <%= hidden_field_tag :assignment_mode, @assignment_mode %>
-          <% if @assignment_mode == "specific_staff" && @selected_staff.present? %>
-            <%= hidden_field_tag :staff_id, @selected_staff.id %>
-          <% end %>
-          <%= hidden_field_tag :search_mode, @search_mode %>
-          <%= hidden_field_tag :date, previous_start_date.iso8601 %>
+          <%= render "flow_hidden_fields", source: {}, overrides: flow_hidden_fields.merge(date: previous_start_date.iso8601) %>
           <%= submit_tag "Semaine précédente", class: "booking-planning-nav-button" %>
         <% end %>
       <% else %>
@@ -43,14 +45,7 @@
 
       <% if can_go_next %>
         <%= form_with url: public_client_path(@client.slug), method: :get, local: true do %>
-          <%= hidden_field_tag :enseigne_id, @selected_enseigne.id %>
-          <%= hidden_field_tag :service_id, @selected_service.id %>
-          <%= hidden_field_tag :assignment_mode, @assignment_mode %>
-          <% if @assignment_mode == "specific_staff" && @selected_staff.present? %>
-            <%= hidden_field_tag :staff_id, @selected_staff.id %>
-          <% end %>
-          <%= hidden_field_tag :search_mode, @search_mode %>
-          <%= hidden_field_tag :date, next_start_date.iso8601 %>
+          <%= render "flow_hidden_fields", source: {}, overrides: flow_hidden_fields.merge(date: next_start_date.iso8601) %>
           <%= submit_tag "Semaine suivante", class: "booking-planning-nav-button" %>
         <% end %>
       <% else %>
@@ -70,15 +65,12 @@
             <div class="booking-planning-slots">
               <% day.slots.each do |slot| %>
                 <%= form_tag public_client_path(@client.slug), method: :get do %>
-                  <%= hidden_field_tag :enseigne_id, @selected_enseigne.id %>
-                  <%= hidden_field_tag :service_id, @selected_service.id %>
-                  <%= hidden_field_tag :assignment_mode, @assignment_mode %>
-                  <% if @assignment_mode == "specific_staff" && @selected_staff.present? %>
-                    <%= hidden_field_tag :staff_id, @selected_staff.id %>
-                  <% end %>
-                  <%= hidden_field_tag :search_mode, @search_mode %>
-                  <%= hidden_field_tag :date, day.date.iso8601 %>
-                  <%= hidden_field_tag :selected_start_time, slot %>
+                  <%= render "flow_hidden_fields",
+                        source: {},
+                        overrides: flow_hidden_fields.merge(
+                          date: day.date.iso8601,
+                          selected_start_time: slot
+                        ) %>
                   <%= submit_tag public_client_slot_label(slot),
                         class: ["booking-planning-slot", ("booking-planning-slot--selected" if @selected_start_time.to_s == slot.to_s)].compact.join(" ") %>
                 <% end %>

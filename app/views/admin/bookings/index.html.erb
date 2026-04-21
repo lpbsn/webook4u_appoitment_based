@@ -1,9 +1,8 @@
 <% content_for :hide_booking_back_link, true %>
 
-<div class="booking-header">
-  <h1 class="booking-header-title">Espace admin</h1>
-  <p class="booking-header-subtitle">Vue globale des reservations de la plateforme</p>
-</div>
+<%= render "shared/page_header",
+           title: "Espace admin",
+           subtitle: "Vue globale des reservations de la plateforme" %>
 
 <div class="booking-summary">
   <div class="booking-summary-row">

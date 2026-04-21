@@ -11,21 +11,21 @@ class ClientTest < ActiveSupport::TestCase
   test "name is required" do
     client = Client.new(name: nil, slug: "salon-b")
     assert_not client.valid?
-    assert_includes client.errors[:name], "can't be blank"
+    assert_includes client.errors[:name], "doit être renseigné"
   end
 
   test "name with only spaces is invalid" do
     client = Client.new(name: "   ", slug: "salon-whitespace")
 
     assert_not client.valid?
-    assert_includes client.errors[:name], "can't be blank"
+    assert_includes client.errors[:name], "doit être renseigné"
   end
 
   test "create with whitespace-only name fails at model level with save and save!" do
     client = Client.new(name: "   ", slug: "salon-whitespace-create")
 
     assert_equal false, client.save
-    assert_includes client.errors[:name], "can't be blank"
+    assert_includes client.errors[:name], "doit être renseigné"
     assert_raises(ActiveRecord::RecordInvalid) { client.save! }
   end
 
@@ -34,14 +34,14 @@ class ClientTest < ActiveSupport::TestCase
 
     client.name = "   "
     assert_equal false, client.save
-    assert_includes client.errors[:name], "can't be blank"
+    assert_includes client.errors[:name], "doit être renseigné"
     assert_raises(ActiveRecord::RecordInvalid) { client.save! }
   end
 
   test "slug is required" do
     client = Client.new(name: "Salon C", slug: nil)
     assert_not client.valid?
-    assert_includes client.errors[:slug], "can't be blank"
+    assert_includes client.errors[:slug], "doit être renseigné"
   end
 
   test "slug must be unique" do
@@ -49,7 +49,7 @@ class ClientTest < ActiveSupport::TestCase
 
     duplicate = Client.new(name: "Autre", slug: "slug-dupe")
     assert_not duplicate.valid?
-    assert_includes duplicate.errors[:slug], "has already been taken"
+    assert_includes duplicate.errors[:slug], "est déjà utilisé"
   end
 
   test "database enforces unique slug" do

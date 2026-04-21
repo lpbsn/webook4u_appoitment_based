@@ -1,4 +1,4 @@
-<div class="booking-summary">
+<section class="booking-summary" aria-label="Récapitulatif de réservation">
   <div class="booking-fields">
     <p><strong>Client :</strong> <%= @client.name %></p>
     <p><strong>Enseigne :</strong> <%= booking_enseigne_name(@booking) %></p>
@@ -6,4 +6,4 @@
     <p><strong>Prestation :</strong> <%= @service.name %></p>
     <p><strong>Créneau choisi :</strong> <%= format_datetime_label(@booking_start_time) %></p>
   </div>
-</div>
+</section>

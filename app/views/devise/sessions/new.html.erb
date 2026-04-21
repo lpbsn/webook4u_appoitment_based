@@ -1,12 +1,9 @@
 <% content_for :title, "Connexion | Webook4u" %>
 <% content_for :hide_booking_auth_bar, true %>
 
-<div class="booking-header">
-  <h1 class="booking-header-title">Se connecter</h1>
-  <p class="booking-header-subtitle">
-    Accédez à votre espace pour reprendre votre réservation et gérer vos rendez-vous.
-  </p>
-</div>
+<%= render "shared/page_header",
+           title: "Se connecter",
+           subtitle: "Accédez à votre espace pour reprendre votre réservation et gérer vos rendez-vous." %>
 
 <div class="booking-section">
   <%= form_for(resource, as: resource_name, url: session_path(resource_name), html: { class: "booking-auth-form" }) do |f| %>

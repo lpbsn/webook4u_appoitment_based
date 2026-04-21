@@ -1,9 +1,6 @@
 <% content_for :hide_booking_back_link, true %>
 
-<div class="booking-header">
-  <h1 class="booking-header-title"><%= @client.name %></h1>
-  <p class="booking-header-subtitle"><%= @enseigne.name %> — <%= @service.name %></p>
-</div>
+<%= render "shared/page_header", title: @client.name, subtitle: "#{@enseigne.name} — #{@service.name}" %>
 
 <p class="booking-section-meta">
   Montant à payer : <%= format_price_cents(@service.price_cents) %>
@@ -12,14 +9,9 @@
 <%= render "booking_summary" %>
 
 <% if @booking.errors.any? %>
-  <div class="booking-errors">
-    <strong>Le formulaire contient des erreurs :</strong>
-    <ul>
-      <% @booking.errors.full_messages.each do |message| %>
-        <li><%= message %></li>
-      <% end %>
-    </ul>
-  </div>
+  <%= render "shared/error_list",
+             messages: @booking.errors.full_messages,
+             title: "Le formulaire contient des erreurs :" %>
 <% end %>
 
 <%= render "confirmation_form" %>

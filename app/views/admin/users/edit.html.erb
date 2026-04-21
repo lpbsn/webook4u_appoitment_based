@@ -1,9 +1,8 @@
 <% content_for :booking_back_href, admin_clients_path(tab: :client_users) %>
 
-<div class="booking-header">
-  <h1 class="booking-header-title">Modifier ClientUser</h1>
-  <p class="booking-header-subtitle">Mettre à jour les informations d'un compte client</p>
-</div>
+<%= render "shared/page_header",
+           title: "Modifier ClientUser",
+           subtitle: "Mettre à jour les informations d'un compte client" %>
 
 <div class="booking-section">
   <%= render "form", client_user: @client_user, clients: @clients, submit_label: "Enregistrer les modifications", show_return_button: false %>

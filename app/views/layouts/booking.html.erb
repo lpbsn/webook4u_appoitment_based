@@ -44,22 +44,13 @@
                         back_href,
                         class: "booking-back-link",
                         title: "Retour",
+                        aria: { label: "Retour" },
                         data: { turbo: false },
                         onclick: "if(this.getAttribute('href')==='#'){history.back(); return false;}" %>
           </div>
         <% end %>
 
-        <% if notice.present? %>
-          <div class="booking-alert booking-alert--notice">
-            <p><%= notice %></p>
-          </div>
-        <% end %>
-
-        <% if alert.present? %>
-          <div class="booking-alert booking-alert--error">
-            <p><%= alert %></p>
-          </div>
-        <% end %>
+        <%= render "shared/flash_messages", variant: :booking %>
 
         <%= yield %>
       </div>
