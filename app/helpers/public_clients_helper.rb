@@ -24,7 +24,7 @@ module PublicClientsHelper
       if key == :selected_days_of_week
         Array(value).reject(&:blank?).map { |day| { name: "selected_days_of_week[]", value: day } }
       else
-        [{ name: key, value: value }]
+        [ { name: key, value: value } ]
       end
     end
   end
