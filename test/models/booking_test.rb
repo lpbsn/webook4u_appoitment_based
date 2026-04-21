@@ -167,7 +167,7 @@ class BookingTest < ActiveSupport::TestCase
     )
 
     assert_not booking.valid?
-    assert_includes booking.errors[:assignment_mode], "is not included in the list"
+    assert_includes booking.errors[:assignment_mode], "n'est pas inclus dans la liste"
   end
 
   # =========================================================
@@ -283,7 +283,7 @@ class BookingTest < ActiveSupport::TestCase
     )
 
     assert_not booking.valid?
-    assert_includes booking.errors[:pending_access_token], "has already been taken"
+    assert_includes booking.errors[:pending_access_token], "est déjà utilisé"
   end
 
   # =========================================================
@@ -483,7 +483,7 @@ class BookingTest < ActiveSupport::TestCase
     )
 
     assert_not booking.valid?
-    assert_includes booking.errors[:enseigne], "must exist"
+    assert_includes booking.errors[:enseigne], "doit exister"
   end
 
   test "booking accepts enseigne from the same client" do

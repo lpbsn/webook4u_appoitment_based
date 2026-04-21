@@ -78,7 +78,7 @@ class UserSessionContextTest < ActionDispatch::IntegrationTest
     }
 
     assert_response :unprocessable_content
-    assert_includes response.body, "Invalid email or password."
+    assert_includes response.body, "Email ou mot de passe incorrect."
   end
 
   test "sign in page renders without client context instead of redirecting in a loop" do
@@ -176,7 +176,7 @@ class UserSessionContextTest < ActionDispatch::IntegrationTest
 
     follow_redirect!
     assert_response :success
-    assert_includes response.body, "Your account is inactive."
+    assert_includes response.body, "Votre compte est inactif."
   end
 
   test "inactive admin cannot sign in" do
@@ -201,7 +201,7 @@ class UserSessionContextTest < ActionDispatch::IntegrationTest
 
     follow_redirect!
     assert_response :success
-    assert_includes response.body, "Your account is inactive."
+    assert_includes response.body, "Votre compte est inactif."
   end
 
   test "inactive global user cannot sign in" do
@@ -226,7 +226,7 @@ class UserSessionContextTest < ActionDispatch::IntegrationTest
 
     follow_redirect!
     assert_response :success
-    assert_includes response.body, "Your account is inactive."
+    assert_includes response.body, "Votre compte est inactif."
   end
 
   test "auth links preserve booking redirect_to across sign in and sign up pages" do

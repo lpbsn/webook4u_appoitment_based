@@ -2,3 +2,4 @@
 
 pin "application"
 pin "@hotwired/turbo-rails", to: "turbo.min.js"
+pin "admin_clients_wizard"

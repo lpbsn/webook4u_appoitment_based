@@ -88,6 +88,7 @@ class Bookings::PublicPageTest < ActiveSupport::TestCase
         service_id: @service.id.to_s,
         assignment_mode_param: nil,
         staff_id_param: nil,
+        search_mode_param: "precise_date",
         date_param: "2026-03-16"
       ).call
 

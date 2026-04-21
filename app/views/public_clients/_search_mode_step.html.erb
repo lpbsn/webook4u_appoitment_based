@@ -12,32 +12,25 @@
     </div>
     <p class="booking-section-meta">Choisissez comment rechercher votre rendez-vous.</p>
 
+    <% assignment_hidden_fields = { enseigne_id: @selected_enseigne.id, service_id: @selected_service.id, assignment_mode: @assignment_mode } %>
+    <% if @assignment_mode == "specific_staff" && @selected_staff.present? %>
+      <% assignment_hidden_fields[:staff_id] = @selected_staff.id %>
+    <% end %>
+
     <div class="slot-grid slot-grid--staff-list">
-      <%= form_with url: public_client_path(@client.slug), method: :get, local: true do %>
-        <%= hidden_field_tag :enseigne_id, @selected_enseigne.id %>
-        <%= hidden_field_tag :service_id, @selected_service.id %>
-        <%= hidden_field_tag :assignment_mode, @assignment_mode %>
-        <% if @assignment_mode == "specific_staff" && @selected_staff.present? %>
-          <%= hidden_field_tag :staff_id, @selected_staff.id %>
-        <% end %>
+      <%= render "choice_form",
+            url: public_client_path(@client.slug),
+            hidden_fields: assignment_hidden_fields.merge(search_mode: "first_available"),
+            label: "Premier créneau disponible",
+            selected: @search_mode == "first_available",
+            button_classes: "slot-button" %>
 
-        <%= hidden_field_tag :search_mode, "first_available" %>
-        <%= submit_tag "Premier créneau disponible",
-              class: ["slot-button", ("slot-button--selected" if @search_mode == "first_available")].compact.join(" ") %>
-      <% end %>
-
-      <%= form_with url: public_client_path(@client.slug), method: :get, local: true do %>
-        <%= hidden_field_tag :enseigne_id, @selected_enseigne.id %>
-        <%= hidden_field_tag :service_id, @selected_service.id %>
-        <%= hidden_field_tag :assignment_mode, @assignment_mode %>
-        <% if @assignment_mode == "specific_staff" && @selected_staff.present? %>
-          <%= hidden_field_tag :staff_id, @selected_staff.id %>
-        <% end %>
-
-        <%= hidden_field_tag :search_mode, "precise_date" %>
-        <%= submit_tag "Date précise",
-              class: ["slot-button", ("slot-button--selected" if @search_mode == "precise_date")].compact.join(" ") %>
-      <% end %>
+      <%= render "choice_form",
+            url: public_client_path(@client.slug),
+            hidden_fields: assignment_hidden_fields.merge(search_mode: "precise_date"),
+            label: "Date précise",
+            selected: @search_mode == "precise_date",
+            button_classes: "slot-button" %>
     </div>
   </div>
 <% end %>

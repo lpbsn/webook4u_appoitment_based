@@ -22,7 +22,7 @@ class EnseigneTest < ActiveSupport::TestCase
     enseigne = Enseigne.new(client: @client, name: nil)
 
     assert_not enseigne.valid?
-    assert_includes enseigne.errors[:name], "can't be blank"
+    assert_includes enseigne.errors[:name], "doit être renseigné"
   end
 
   test "enseigne must belong to a client" do

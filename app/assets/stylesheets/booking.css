@@ -591,7 +591,7 @@ select.field-input--short-select {
 }
 
 .booking-actions--center {
-  justify-content: left;
+  justify-content: center;
 }
 
 .booking-back-link {

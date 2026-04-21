@@ -5,6 +5,18 @@
       assignment_complete &&
       @search_mode == "first_available" &&
       @first_available_search_performed %>
+  <% result_hidden_fields = {
+       enseigne_id: @selected_enseigne.id,
+       assignment_mode: @assignment_mode,
+       search_mode: @search_mode,
+       selected_days_of_week: @first_available_selected_days_of_week,
+       start_time_min: @first_available_start_time_min,
+       start_time_max: @first_available_start_time_max
+     } %>
+  <% if @assignment_mode == "specific_staff" && @selected_staff.present? %>
+    <% result_hidden_fields[:staff_id] = @selected_staff.id %>
+  <% end %>
+
   <div class="booking-section">
     <h2 class="booking-section-title">6. Premier créneau disponible</h2>
     <div class="booking-section-meta">
@@ -23,18 +35,8 @@
         </p>
 
         <%= form_tag service_bookings_path(@client.slug, @selected_service), method: :post, data: { turbo_frame: "_top" } do %>
-          <%= hidden_field_tag :enseigne_id, @selected_enseigne.id %>
           <%= hidden_field_tag :start_time, @first_available_slot %>
-          <%= hidden_field_tag :assignment_mode, @assignment_mode %>
-          <% if @assignment_mode == "specific_staff" && @selected_staff.present? %>
-            <%= hidden_field_tag :staff_id, @selected_staff.id %>
-          <% end %>
-          <%= hidden_field_tag :search_mode, @search_mode %>
-          <% Array(@first_available_selected_days_of_week).each do |day| %>
-            <%= hidden_field_tag "selected_days_of_week[]", day %>
-          <% end %>
-          <%= hidden_field_tag :start_time_min, @first_available_start_time_min %>
-          <%= hidden_field_tag :start_time_max, @first_available_start_time_max %>
+          <%= render "flow_hidden_fields", source: {}, overrides: result_hidden_fields %>
           <div class="booking-actions booking-actions--center">
             <%= submit_tag "Continuer avec ce créneau", class: "btn-primary btn-primary--compact" %>
           </div>

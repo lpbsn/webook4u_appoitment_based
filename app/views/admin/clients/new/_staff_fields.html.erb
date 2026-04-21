@@ -1,0 +1,66 @@
+<% staff = local_assigns.fetch(:staff, {}) %>
+<% idx = local_assigns.fetch(:idx) %>
+<% index_label = local_assigns.fetch(:index_label) %>
+<% hide_trash = local_assigns.fetch(:hide_trash, false) %>
+<% template_mode = local_assigns.fetch(:template_mode, false) %>
+<% enseignes_options = local_assigns.fetch(:enseignes_options, []) %>
+
+<div class="booking-dynamic-block">
+  <div class="booking-dynamic-block-header">
+    <h3 class="booking-section-title">Staff <%= index_label %></h3>
+    <button type="button"
+            class="booking-trash-button <%= "booking-trash-button--hidden" if hide_trash %>"
+            data-remove-block
+            aria-label="Supprimer ce staff"
+            title="Supprimer ce staff">🗑</button>
+  </div>
+
+  <div class="field field--compact">
+    <%= label_tag "staffs_#{idx}_name", "Nom du staff", class: "field-label" %>
+    <%= text_field_tag "staffs[#{idx}][name]", staff["name"], class: "field-input field-input--short", required: true, id: "staffs_#{idx}_name" %>
+  </div>
+
+  <div class="field field--compact">
+    <%= label_tag "staffs_#{idx}_active", "Staff actif", class: "field-label" %>
+    <%= select_tag "staffs[#{idx}][active]",
+      options_for_select([["Oui", "true"], ["Non", "false"]], (staff["active"].nil? ? "true" : staff["active"].to_s)),
+      class: "field-input field-input--short field-input--short-select",
+      required: true,
+      id: "staffs_#{idx}_active" %>
+  </div>
+
+  <div class="field field--compact">
+    <%= label_tag "staffs_#{idx}_enseigne_index", "Enseigne de rattachement", class: "field-label" %>
+    <%= select_tag "staffs[#{idx}][enseigne_index]",
+      options_for_select(enseignes_options, staff["enseigne_index"]),
+      class: "field-input field-input--short field-input--short-select",
+      required: true,
+      id: "staffs_#{idx}_enseigne_index" %>
+  </div>
+
+  <h4 class="booking-section-title">Disponibilités du staff (sélectionner les jours)</h4>
+  <div class="booking-multi-day-grid">
+    <% [1, 2, 3, 4, 5, 6, 0].each do |day| %>
+      <% selected_availability = (staff["availabilities"] || []).find { |a| a["day_of_week"].to_i == day } %>
+      <div class="booking-multi-day-row <%= "booking-multi-day-row--disabled" unless selected_availability.present? %>">
+        <label class="booking-checkbox">
+          <% if template_mode %>
+            <input name="staffs[<%= idx %>][availabilities][<%= day %>][selected]" type="checkbox" value="1">
+          <% else %>
+            <%= check_box_tag "staffs[#{idx}][availabilities][#{day}][selected]", "1", selected_availability.present? %>
+          <% end %>
+          <%= day_of_week_label(day) %>
+        </label>
+        <% if template_mode %>
+          <input name="staffs[<%= idx %>][availabilities][<%= day %>][day_of_week]" type="hidden" value="<%= day %>">
+          <input class="field-input field-input--time booking-time-inline" name="staffs[<%= idx %>][availabilities][<%= day %>][opens_at]" type="time" value="09:00" disabled>
+          <input class="field-input field-input--time booking-time-inline" name="staffs[<%= idx %>][availabilities][<%= day %>][closes_at]" type="time" value="18:00" disabled>
+        <% else %>
+          <%= hidden_field_tag "staffs[#{idx}][availabilities][#{day}][day_of_week]", day %>
+          <%= time_field_tag "staffs[#{idx}][availabilities][#{day}][opens_at]", selected_availability&.dig("opens_at") || "09:00", class: "field-input field-input--time booking-time-inline", disabled: selected_availability.blank? %>
+          <%= time_field_tag "staffs[#{idx}][availabilities][#{day}][closes_at]", selected_availability&.dig("closes_at") || "18:00", class: "field-input field-input--time booking-time-inline", disabled: selected_availability.blank? %>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+</div>

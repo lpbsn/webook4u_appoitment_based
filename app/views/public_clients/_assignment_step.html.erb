@@ -5,21 +5,29 @@
 
     <% if @eligible_staffs.any? %>
       <div class="slot-grid slot-grid--staff-list">
-        <%= form_with url: public_client_path(@client.slug), method: :get, local: true do %>
-          <%= hidden_field_tag :enseigne_id, @selected_enseigne.id %>
-          <%= hidden_field_tag :service_id, @selected_service.id %>
-          <%= hidden_field_tag :assignment_mode, "automatic" %>
-          <%= submit_tag "Tous", class: ["slot-button", ("slot-button--selected" if @assignment_mode == "automatic")].compact.join(" ") %>
-        <% end %>
+        <%= render "choice_form",
+              url: public_client_path(@client.slug),
+              hidden_fields: {
+                enseigne_id: @selected_enseigne.id,
+                service_id: @selected_service.id,
+                assignment_mode: "automatic"
+              },
+              label: "Tous",
+              selected: @assignment_mode == "automatic",
+              button_classes: "slot-button" %>
 
         <% @eligible_staffs.each do |staff| %>
-          <%= form_with url: public_client_path(@client.slug), method: :get, local: true do %>
-            <%= hidden_field_tag :enseigne_id, @selected_enseigne.id %>
-            <%= hidden_field_tag :service_id, @selected_service.id %>
-            <%= hidden_field_tag :assignment_mode, "specific_staff" %>
-            <%= hidden_field_tag :staff_id, staff.id %>
-            <%= submit_tag staff.name, class: ["slot-button", "slot-button--staff", ("slot-button--selected" if @selected_staff&.id == staff.id)].compact.join(" ") %>
-          <% end %>
+          <%= render "choice_form",
+                url: public_client_path(@client.slug),
+                hidden_fields: {
+                  enseigne_id: @selected_enseigne.id,
+                  service_id: @selected_service.id,
+                  assignment_mode: "specific_staff",
+                  staff_id: staff.id
+                },
+                label: staff.name,
+                selected: @selected_staff&.id == staff.id,
+                button_classes: ["slot-button", "slot-button--staff"] %>
         <% end %>
       </div>
     <% else %>

@@ -6,11 +6,12 @@
     <div class="slot-grid">
       <% @enseignes.each do |enseigne| %>
         <% selected = @selected_enseigne&.id == enseigne.id %>
-
-        <%= form_with url: public_client_path(@client.slug), method: :get, local: true do %>
-          <%= hidden_field_tag :enseigne_id, enseigne.id %>
-          <%= submit_tag enseigne.name, class: ["slot-button", ("slot-button--selected" if selected)].compact.join(" ") %>
-        <% end %>
+        <%= render "choice_form",
+              url: public_client_path(@client.slug),
+              hidden_fields: { enseigne_id: enseigne.id },
+              label: enseigne.name,
+              selected: selected,
+              button_classes: "slot-button" %>
       <% end %>
     </div>
   <% else %>

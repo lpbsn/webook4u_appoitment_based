@@ -25,6 +25,6 @@ class StaffServiceCapabilityTest < ActiveSupport::TestCase
     duplicate = StaffServiceCapability.new(staff: @staff, service: @service)
 
     assert_not duplicate.valid?
-    assert_includes duplicate.errors[:service_id], "has already been taken"
+    assert_includes duplicate.errors[:service_id], "est déjà utilisé"
   end
 end

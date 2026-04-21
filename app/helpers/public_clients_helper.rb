@@ -1,4 +1,34 @@
 module PublicClientsHelper
+  PUBLIC_FLOW_PARAM_KEYS = %i[
+    enseigne_id
+    service_id
+    assignment_mode
+    staff_id
+    search_mode
+    date
+    selected_start_time
+    selected_days_of_week
+    start_time_min
+    start_time_max
+  ].freeze
+
+  def public_flow_params(source = {}, overrides = {}, compact: true)
+    flow_params = extract_public_flow_params(source).merge(extract_public_flow_params(overrides))
+    return flow_params unless compact
+
+    flow_params.reject { |key, value| public_flow_blank_value?(key, value) }
+  end
+
+  def public_flow_hidden_fields(source = {}, overrides = {}, compact: true)
+    public_flow_params(source, overrides, compact: compact).flat_map do |key, value|
+      if key == :selected_days_of_week
+        Array(value).reject(&:blank?).map { |day| { name: "selected_days_of_week[]", value: day } }
+      else
+        [{ name: key, value: value }]
+      end
+    end
+  end
+
   def public_client_selected_enseigne_name(selected_enseigne)
     selected_enseigne&.name || "—"
   end
@@ -65,5 +95,35 @@ module PublicClientsHelper
       end
 
     slot_time.present? ? slot_time.strftime("%H:%M") : "—"
+  end
+
+  private
+
+  def extract_public_flow_params(source)
+    source_hash =
+      case source
+      when ActionController::Parameters
+        source.to_unsafe_h
+      when Hash
+        source
+      when nil
+        {}
+      else
+        source.respond_to?(:to_h) ? source.to_h : {}
+      end
+
+    PUBLIC_FLOW_PARAM_KEYS.each_with_object({}) do |key, result|
+      if source_hash.key?(key)
+        result[key] = source_hash[key]
+      elsif source_hash.key?(key.to_s)
+        result[key] = source_hash[key.to_s]
+      end
+    end
+  end
+
+  def public_flow_blank_value?(key, value)
+    return Array(value).reject(&:blank?).empty? if key == :selected_days_of_week
+
+    value.blank?
   end
 end

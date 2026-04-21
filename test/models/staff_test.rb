@@ -16,7 +16,7 @@ class StaffTest < ActiveSupport::TestCase
     staff = Staff.new(enseigne: @enseigne, name: nil)
 
     assert_not staff.valid?
-    assert_includes staff.errors[:name], "can't be blank"
+    assert_includes staff.errors[:name], "doit être renseigné"
   end
 
   test "enseigne is required" do

@@ -12,7 +12,7 @@ class UserTest < ActiveSupport::TestCase
     )
 
     assert_not duplicate.valid?
-    assert_includes duplicate.errors[:email], "has already been taken"
+    assert_includes duplicate.errors[:email], "est déjà utilisé"
   end
 
   test "client user requires a client" do
@@ -26,7 +26,7 @@ class UserTest < ActiveSupport::TestCase
     )
 
     assert_not user.valid?
-    assert_includes user.errors[:client], "can't be blank"
+    assert_includes user.errors[:client], "doit être renseigné"
   end
 
   test "admin cannot be attached to a client" do
@@ -41,7 +41,7 @@ class UserTest < ActiveSupport::TestCase
     )
 
     assert_not user.valid?
-    assert_includes user.errors[:client], "must be blank"
+    assert_includes user.errors[:client], "doit être vide"
   end
 
   test "find_for_authentication returns global user without client context" do

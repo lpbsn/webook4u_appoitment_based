@@ -6,12 +6,6 @@
 
   <body class="<%= content_for?(:body_class) ? yield(:body_class) : '' %>">
     <%= yield %>
-    <% if notice.present? %>
-      <p><%= notice %></p>
-    <% end %>
-
-    <% if alert.present? %>
-      <p><%= alert %></p>
-    <% end %>
+    <%= render "shared/flash_messages" %>
   </body>
 </html>

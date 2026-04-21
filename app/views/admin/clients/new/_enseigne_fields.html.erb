@@ -1,0 +1,76 @@
+<% enseigne = local_assigns.fetch(:enseigne, {}) %>
+<% idx = local_assigns.fetch(:idx) %>
+<% index_label = local_assigns.fetch(:index_label) %>
+<% hide_trash = local_assigns.fetch(:hide_trash, false) %>
+<% template_mode = local_assigns.fetch(:template_mode, false) %>
+
+<div class="booking-dynamic-block">
+  <div class="booking-dynamic-block-header">
+    <h3 class="booking-section-title">Enseigne <%= index_label %></h3>
+    <button type="button"
+            class="booking-trash-button <%= "booking-trash-button--hidden" if hide_trash %>"
+            data-remove-block
+            aria-label="Supprimer cette enseigne"
+            title="Supprimer cette enseigne">🗑</button>
+  </div>
+
+  <div class="field field--compact">
+    <%= label_tag "enseignes_#{idx}_name", "Nom de l'enseigne", class: "field-label" %>
+    <%= text_field_tag "enseignes[#{idx}][name]", enseigne["name"], class: "field-input field-input--short", required: true, id: "enseignes_#{idx}_name" %>
+  </div>
+
+  <div class="field field--compact">
+    <%= label_tag "enseignes_#{idx}_address", "Adresse", class: "field-label" %>
+    <%= text_field_tag "enseignes[#{idx}][address]", enseigne["address"], class: "field-input field-input--short", required: true, id: "enseignes_#{idx}_address" %>
+  </div>
+
+  <div class="field field--compact">
+    <%= label_tag "enseignes_#{idx}_postal_code", "Code postal", class: "field-label" %>
+    <%= text_field_tag "enseignes[#{idx}][postal_code]", enseigne["postal_code"], class: "field-input field-input--short", required: true, id: "enseignes_#{idx}_postal_code" %>
+  </div>
+
+  <div class="field field--compact">
+    <%= label_tag "enseignes_#{idx}_city", "Ville", class: "field-label" %>
+    <%= text_field_tag "enseignes[#{idx}][city]", enseigne["city"], class: "field-input field-input--short", required: true, id: "enseignes_#{idx}_city" %>
+  </div>
+
+  <div class="field field--compact">
+    <%= label_tag "enseignes_#{idx}_country", "Pays", class: "field-label" %>
+    <%= text_field_tag "enseignes[#{idx}][country]", enseigne["country"], class: "field-input field-input--short", required: true, id: "enseignes_#{idx}_country" %>
+  </div>
+
+  <div class="field field--compact">
+    <%= label_tag "enseignes_#{idx}_active", "Enseigne active", class: "field-label" %>
+    <%= select_tag "enseignes[#{idx}][active]",
+      options_for_select([["Oui", "true"], ["Non", "false"]], (enseigne["active"].nil? ? "true" : enseigne["active"].to_s)),
+      class: "field-input field-input--short field-input--short-select",
+      required: true,
+      id: "enseignes_#{idx}_active" %>
+  </div>
+
+  <h4 class="booking-section-title">Horaires d'ouverture (sélectionner les jours)</h4>
+  <div class="booking-multi-day-grid">
+    <% [1, 2, 3, 4, 5, 6, 0].each do |day| %>
+      <% selected_hour = (enseigne["opening_hours"] || []).find { |h| h["day_of_week"].to_i == day } %>
+      <div class="booking-multi-day-row <%= "booking-multi-day-row--disabled" unless selected_hour.present? %>">
+        <label class="booking-checkbox">
+          <% if template_mode %>
+            <input name="enseignes[<%= idx %>][opening_hours][<%= day %>][selected]" type="checkbox" value="1">
+          <% else %>
+            <%= check_box_tag "enseignes[#{idx}][opening_hours][#{day}][selected]", "1", selected_hour.present? %>
+          <% end %>
+          <%= day_of_week_label(day) %>
+        </label>
+        <% if template_mode %>
+          <input name="enseignes[<%= idx %>][opening_hours][<%= day %>][day_of_week]" type="hidden" value="<%= day %>">
+          <input class="field-input field-input--time booking-time-inline" name="enseignes[<%= idx %>][opening_hours][<%= day %>][opens_at]" type="time" value="09:00" disabled>
+          <input class="field-input field-input--time booking-time-inline" name="enseignes[<%= idx %>][opening_hours][<%= day %>][closes_at]" type="time" value="18:00" disabled>
+        <% else %>
+          <%= hidden_field_tag "enseignes[#{idx}][opening_hours][#{day}][day_of_week]", day %>
+          <%= time_field_tag "enseignes[#{idx}][opening_hours][#{day}][opens_at]", selected_hour&.dig("opens_at") || "09:00", class: "field-input field-input--time booking-time-inline", disabled: selected_hour.blank? %>
+          <%= time_field_tag "enseignes[#{idx}][opening_hours][#{day}][closes_at]", selected_hour&.dig("closes_at") || "18:00", class: "field-input field-input--time booking-time-inline", disabled: selected_hour.blank? %>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+</div>

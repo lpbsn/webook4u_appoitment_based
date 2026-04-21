@@ -1,0 +1,21 @@
+<% variant = local_assigns.fetch(:variant, :default) %>
+
+<% if notice.present? %>
+  <% if variant == :booking %>
+    <div class="booking-alert booking-alert--notice" role="status" aria-live="polite" aria-atomic="true">
+      <p><%= notice %></p>
+    </div>
+  <% else %>
+    <p role="status" aria-live="polite" aria-atomic="true"><%= notice %></p>
+  <% end %>
+<% end %>
+
+<% if alert.present? %>
+  <% if variant == :booking %>
+    <div class="booking-alert booking-alert--error" role="alert" aria-live="assertive" aria-atomic="true">
+      <p><%= alert %></p>
+    </div>
+  <% else %>
+    <p role="alert" aria-live="assertive" aria-atomic="true"><%= alert %></p>
+  <% end %>
+<% end %>

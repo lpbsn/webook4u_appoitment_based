@@ -16,13 +16,13 @@ class ServiceTest < ActiveSupport::TestCase
   test "name is required" do
     service = Service.new(enseigne: @enseigne, name: nil, duration_minutes: 30, price_cents: 2500)
     assert_not service.valid?
-    assert_includes service.errors[:name], "can't be blank"
+    assert_includes service.errors[:name], "doit être renseigné"
   end
 
   test "duration_minutes is required" do
     service = Service.new(enseigne: @enseigne, name: "Coupe", duration_minutes: nil, price_cents: 2500)
     assert_not service.valid?
-    assert_includes service.errors[:duration_minutes], "can't be blank"
+    assert_includes service.errors[:duration_minutes], "doit être renseigné"
   end
 
   test "duration_minutes must be strictly positive" do
@@ -30,23 +30,23 @@ class ServiceTest < ActiveSupport::TestCase
     negative_duration = Service.new(enseigne: @enseigne, name: "Coupe", duration_minutes: -30, price_cents: 2500)
 
     assert_not zero_duration.valid?
-    assert_includes zero_duration.errors[:duration_minutes], "must be greater than 0"
+    assert_includes zero_duration.errors[:duration_minutes], "doit être supérieur à 0"
 
     assert_not negative_duration.valid?
-    assert_includes negative_duration.errors[:duration_minutes], "must be greater than 0"
+    assert_includes negative_duration.errors[:duration_minutes], "doit être supérieur à 0"
   end
 
   test "price_cents is required" do
     service = Service.new(enseigne: @enseigne, name: "Coupe", duration_minutes: 30, price_cents: nil)
     assert_not service.valid?
-    assert_includes service.errors[:price_cents], "can't be blank"
+    assert_includes service.errors[:price_cents], "doit être renseigné"
   end
 
   test "price_cents must be positive or zero" do
     service = Service.new(enseigne: @enseigne, name: "Coupe", duration_minutes: 30, price_cents: -1)
 
     assert_not service.valid?
-    assert_includes service.errors[:price_cents], "must be greater than or equal to 0"
+    assert_includes service.errors[:price_cents], "doit être supérieur ou égal à 0"
   end
 
   test "service must belong to an enseigne" do

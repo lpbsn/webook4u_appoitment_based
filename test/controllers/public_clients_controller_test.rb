@@ -67,6 +67,9 @@ class PublicClientsControllerTest < ActionDispatch::IntegrationTest
     enseigne = client.enseignes.create!(name: "Enseigne active", address: "1 rue de Paris", postal_code: "00000", city: "Ville", country: "France", active: true)
     create_weekday_opening_hours_for_enseigne(enseigne)
     service = enseigne.services.create!(name: "Coupe", duration_minutes: 30, price_cents: 2500)
+    staff = enseigne.staffs.create!(name: "Emma", active: true)
+    staff.staff_availabilities.create!(day_of_week: 1, opens_at: "10:00", closes_at: "18:00")
+    StaffServiceCapability.create!(staff: staff, service: service)
 
     travel_to Time.zone.local(2026, 3, 15, 8, 0, 0) do
       date_beyond = (Date.current + (BookingRules.max_future_days + 1).days).iso8601

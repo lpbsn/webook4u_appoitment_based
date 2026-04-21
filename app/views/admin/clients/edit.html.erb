@@ -1,9 +1,8 @@
 <% content_for :booking_back_href, admin_clients_path(tab: :clients) %>
 
-<div class="booking-header">
-  <h1 class="booking-header-title">Modifier Client</h1>
-  <p class="booking-header-subtitle">Mettre à jour les informations du client</p>
-</div>
+<%= render "shared/page_header",
+           title: "Modifier Client",
+           subtitle: "Mettre à jour les informations du client" %>
 
 <div class="booking-section">
   <%= render "form", client: @client, submit_label: "Enregistrer les modifications" %>
