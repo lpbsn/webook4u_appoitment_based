@@ -49,7 +49,7 @@ class RoleNamespacesAccessTest < ActionDispatch::IntegrationTest
     create_anonymous_booking_with_same_email
 
     sign_in @end_user
-    get user_bookings_path
+    get booker_bookings_path
 
     assert_response :success
     assert_includes response.body, linked_confirmed.enseigne.name
@@ -63,23 +63,23 @@ class RoleNamespacesAccessTest < ActionDispatch::IntegrationTest
     get admin_bookings_path
     assert_redirected_to client_root_path
 
-    get user_bookings_path
+    get booker_bookings_path
     assert_redirected_to client_root_path
 
     sign_out @client_user
     sign_in @end_user
     get client_bookings_path
-    assert_redirected_to user_root_path
+    assert_redirected_to booker_root_path
 
     get admin_bookings_path
-    assert_redirected_to user_root_path
+    assert_redirected_to booker_root_path
 
     sign_out @end_user
     sign_in @admin
     get client_bookings_path
     assert_redirected_to admin_root_path
 
-    get user_bookings_path
+    get booker_bookings_path
     assert_redirected_to admin_root_path
   end
 
@@ -99,10 +99,10 @@ class RoleNamespacesAccessTest < ActionDispatch::IntegrationTest
 
     sign_out @client_user
     sign_in @end_user
-    get user_bookings_path
+    get booker_bookings_path
     assert_response :success
     assert_includes response.body, "🏠 Home"
-    assert_includes response.body, "href=\"#{user_root_path}\""
+    assert_includes response.body, "href=\"#{booker_root_path}\""
   end
 
   test "public pending token flow stays outside role namespaces" do

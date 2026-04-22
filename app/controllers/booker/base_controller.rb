@@ -1,4 +1,4 @@
-class User::BaseController < ApplicationController
+class Booker::BaseController < ApplicationController
   include RoleAccess
   layout "booking"
 

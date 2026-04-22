@@ -1,4 +1,4 @@
-class User::BookingsController < User::BaseController
+class Booker::BookingsController < Booker::BaseController
   def index
     @reserve_path = reservation_entry_path_for(current_user)
     @bookings = Booking.includes(:client, :enseigne, :service)

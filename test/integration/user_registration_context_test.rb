@@ -20,7 +20,7 @@ class UserRegistrationContextTest < ActionDispatch::IntegrationTest
     user = User.order(:created_at).last
     assert_equal client.id, user.client_id
     assert_equal "booker", user.role
-    assert_redirected_to user_root_path
+    assert_redirected_to booker_root_path
   end
 
   test "sign up without client context creates a global booker account" do
@@ -39,6 +39,6 @@ class UserRegistrationContextTest < ActionDispatch::IntegrationTest
     user = User.order(:created_at).last
     assert_nil user.client_id
     assert_equal "booker", user.role
-    assert_redirected_to user_root_path
+    assert_redirected_to booker_root_path
   end
 end

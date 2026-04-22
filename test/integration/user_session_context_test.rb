@@ -127,7 +127,7 @@ class UserSessionContextTest < ActionDispatch::IntegrationTest
       }
     }
 
-    assert_redirected_to user_root_path
+    assert_redirected_to booker_root_path
   end
 
   test "booker role with client can sign in without client context" do
@@ -149,7 +149,7 @@ class UserSessionContextTest < ActionDispatch::IntegrationTest
       }
     }
 
-    assert_redirected_to user_root_path
+    assert_redirected_to booker_root_path
   end
 
   test "inactive account cannot sign in" do
