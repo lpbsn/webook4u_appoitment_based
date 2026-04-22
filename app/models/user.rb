@@ -9,8 +9,8 @@ class User < ApplicationRecord
   enum :role, {
     admin: "admin",
     client_user: "client_user",
-    user: "user"
-  }, default: :user, validate: true
+    booker: "booker"
+  }, default: :booker, validate: true
 
   validates :last_name, presence: true
   validates :first_name, presence: true
@@ -36,9 +36,9 @@ class User < ApplicationRecord
       ).first
     else
       scope.where(
-        "(role = :admin AND client_id IS NULL) OR role IN (:user, :client_user)",
+        "(role = :admin AND client_id IS NULL) OR role IN (:booker, :client_user)",
         admin: roles.fetch(:admin),
-        user: roles.fetch(:user),
+        booker: roles.fetch(:booker),
         client_user: roles.fetch(:client_user)
       ).first
     end

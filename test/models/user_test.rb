@@ -6,7 +6,7 @@ class UserTest < ActiveSupport::TestCase
       email: users(:one).email,
       first_name: "Morora",
       last_name: "Tatante",
-      role: :user,
+      role: :booker,
       active: true,
       password: "password123"
     )
@@ -46,7 +46,7 @@ class UserTest < ActiveSupport::TestCase
 
   test "find_for_authentication returns global user without client context" do
     user = User.create!(
-      role: :user,
+      role: :booker,
       active: true,
       client: nil,
       first_name: "Global",

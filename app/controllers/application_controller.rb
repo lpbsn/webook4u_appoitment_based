@@ -48,6 +48,8 @@ class ApplicationController < ActionController::Base
       admin_root_path
     when "client_user"
       client_root_path
+    when "booker"
+      user_root_path
     else
       user_root_path
     end

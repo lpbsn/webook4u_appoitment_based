@@ -16,7 +16,7 @@ class RoleNamespacesAccessTest < ActionDispatch::IntegrationTest
 
     @admin = create_test_user(role: :admin, client: nil, email: "admin-scopes@example.com")
     @client_user = create_test_user(role: :client_user, client: @client_one, email: "client-user-scopes@example.com")
-    @end_user = create_test_user(role: :user, client: nil, email: "end-user-scopes@example.com")
+    @end_user = create_test_user(role: :booker, client: nil, email: "end-user-scopes@example.com")
   end
 
   test "admin can access the global bookings list" do
@@ -43,7 +43,7 @@ class RoleNamespacesAccessTest < ActionDispatch::IntegrationTest
     assert_not_includes response.body, "booking-back-link"
   end
 
-  test "user list only includes confirmed bookings explicitly linked by user_id" do
+  test "booker list only includes confirmed bookings explicitly linked by user_id" do
     linked_confirmed, _other_client_confirmed = create_confirmed_bookings
     create_pending_booking_for(@end_user)
     create_anonymous_booking_with_same_email
