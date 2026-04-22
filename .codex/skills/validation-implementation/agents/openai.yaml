@@ -1,0 +1,4 @@
+interface:
+  display_name: "Validation Implementation"
+  short_description: "Validate that the implementation matches the request and proof."
+  default_prompt: "Use $validation-implementation to validate this implementation."
