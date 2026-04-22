@@ -1,4 +1,4 @@
 interface:
   display_name: "Securisation Dev"
-  short_description: "Review diffs for scope and repo health"
-  default_prompt: "Use $securisation-dev to review this diff for scope drift, missing proof, and repo health issues."
+  short_description: "Review only the changed code for security risks before validation."
+  default_prompt: "Use $securisation-dev to review this change for security risks."
