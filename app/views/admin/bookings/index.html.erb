@@ -38,7 +38,10 @@
             <th>Enseigne</th>
             <th>Service</th>
             <th>Statut</th>
-            <th>Debut</th>
+            <th>Date</th>
+            <th>Début</th>
+            <th>Fin</th>
+            <th>Créé le</th>
             <th>User ID</th>
           </tr>
         </thead>
@@ -49,7 +52,10 @@
               <td><%= booking.enseigne.name %></td>
               <td><%= booking.service.name %></td>
               <td><span class="booking-status-pill"><%= booking.booking_status %></span></td>
-              <td><%= format_datetime_label(booking.booking_start_time) %></td>
+              <td><%= format_date_label(booking.booking_start_time) %></td>
+              <td><%= format_time_label(booking.booking_start_time) %></td>
+              <td><%= format_time_label(booking.booking_end_time) %></td>
+              <td><%= format_datetime_label(booking.created_at) %></td>
               <td><%= booking.user_id || "-" %></td>
             </tr>
           <% end %>
