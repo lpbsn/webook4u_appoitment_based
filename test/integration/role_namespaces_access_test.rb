@@ -28,7 +28,10 @@ class RoleNamespacesAccessTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_includes response.body, booking_one.client.name
     assert_includes response.body, booking_two.client.name
+    assert_booking_table_datetime_headers(response.body)
+    assert_booking_table_datetime_values(response.body, booking_one)
     assert_includes response.body, "User ID"
+    assert_not_includes response.body, "Debut"
     assert_not_includes response.body, "booking-back-link"
   end
 
@@ -40,7 +43,10 @@ class RoleNamespacesAccessTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_includes response.body, booking_one.enseigne.name
+    assert_booking_table_datetime_headers(response.body)
+    assert_booking_table_datetime_values(response.body, booking_one)
     assert_includes response.body, "User ID"
+    assert_not_includes response.body, "Debut"
     assert_not_includes response.body, booking_two.enseigne.name
     assert_not_includes response.body, "booking-back-link"
   end
@@ -56,6 +62,9 @@ class RoleNamespacesAccessTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_includes response.body, "Espace booker"
     assert_includes response.body, linked_confirmed.enseigne.name
+    assert_booking_table_datetime_headers(response.body)
+    assert_booking_table_datetime_values(response.body, linked_confirmed)
+    assert_not_includes response.body, "Debut"
     assert_not_includes response.body, "Pending anonymous"
     assert_not_includes response.body, "Anonymous by email only"
     assert_not_includes response.body, "booking-back-link"
@@ -203,5 +212,19 @@ class RoleNamespacesAccessTest < ActionDispatch::IntegrationTest
       customer_last_name: "by email only",
       customer_email: @end_user.email
     )
+  end
+
+  def assert_booking_table_datetime_headers(body)
+    assert_includes body, "Date"
+    assert_includes body, "Début"
+    assert_includes body, "Fin"
+    assert_includes body, "Créé le"
+  end
+
+  def assert_booking_table_datetime_values(body, booking)
+    assert_includes body, booking.booking_start_time.in_time_zone.strftime("%d/%m/%Y")
+    assert_includes body, booking.booking_start_time.in_time_zone.strftime("%H:%M")
+    assert_includes body, booking.booking_end_time.in_time_zone.strftime("%H:%M")
+    assert_includes body, booking.created_at.in_time_zone.strftime("%d/%m/%Y à %H:%M")
   end
 end
