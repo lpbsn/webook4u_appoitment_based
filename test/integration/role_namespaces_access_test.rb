@@ -16,7 +16,7 @@ class RoleNamespacesAccessTest < ActionDispatch::IntegrationTest
 
     @admin = create_test_user(role: :admin, client: nil, email: "admin-scopes@example.com")
     @client_user = create_test_user(role: :client_user, client: @client_one, email: "client-user-scopes@example.com")
-    @end_user = create_test_user(role: :user, client: nil, email: "end-user-scopes@example.com")
+    @end_user = create_test_user(role: :booker, client: nil, email: "end-user-scopes@example.com")
   end
 
   test "admin can access the global bookings list" do
@@ -28,6 +28,7 @@ class RoleNamespacesAccessTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_includes response.body, booking_one.client.name
     assert_includes response.body, booking_two.client.name
+    assert_includes response.body, "User ID"
     assert_not_includes response.body, "booking-back-link"
   end
 
@@ -39,19 +40,21 @@ class RoleNamespacesAccessTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_includes response.body, booking_one.enseigne.name
+    assert_includes response.body, "User ID"
     assert_not_includes response.body, booking_two.enseigne.name
     assert_not_includes response.body, "booking-back-link"
   end
 
-  test "user list only includes confirmed bookings explicitly linked by user_id" do
+  test "booker list only includes confirmed bookings explicitly linked by user_id" do
     linked_confirmed, _other_client_confirmed = create_confirmed_bookings
     create_pending_booking_for(@end_user)
     create_anonymous_booking_with_same_email
 
     sign_in @end_user
-    get user_bookings_path
+    get booker_bookings_path
 
     assert_response :success
+    assert_includes response.body, "Espace booker"
     assert_includes response.body, linked_confirmed.enseigne.name
     assert_not_includes response.body, "Pending anonymous"
     assert_not_includes response.body, "Anonymous by email only"
@@ -63,23 +66,23 @@ class RoleNamespacesAccessTest < ActionDispatch::IntegrationTest
     get admin_bookings_path
     assert_redirected_to client_root_path
 
-    get user_bookings_path
+    get booker_bookings_path
     assert_redirected_to client_root_path
 
     sign_out @client_user
     sign_in @end_user
     get client_bookings_path
-    assert_redirected_to user_root_path
+    assert_redirected_to booker_root_path
 
     get admin_bookings_path
-    assert_redirected_to user_root_path
+    assert_redirected_to booker_root_path
 
     sign_out @end_user
     sign_in @admin
     get client_bookings_path
     assert_redirected_to admin_root_path
 
-    get user_bookings_path
+    get booker_bookings_path
     assert_redirected_to admin_root_path
   end
 
@@ -99,10 +102,10 @@ class RoleNamespacesAccessTest < ActionDispatch::IntegrationTest
 
     sign_out @client_user
     sign_in @end_user
-    get user_bookings_path
+    get booker_bookings_path
     assert_response :success
     assert_includes response.body, "🏠 Home"
-    assert_includes response.body, "href=\"#{user_root_path}\""
+    assert_includes response.body, "href=\"#{booker_root_path}\""
   end
 
   test "public pending token flow stays outside role namespaces" do

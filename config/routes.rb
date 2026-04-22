@@ -19,7 +19,7 @@ Rails.application.routes.draw do
     resources :bookings, only: :index
   end
 
-  namespace :user do
+  namespace :booker do
     root to: "bookings#index"
     resources :bookings, only: :index
   end

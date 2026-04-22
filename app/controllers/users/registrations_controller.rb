@@ -6,7 +6,7 @@ class Users::RegistrationsController < Devise::RegistrationsController
 
   def build_resource(hash = {})
     super
-    resource.role = :user
+    resource.role = :booker
     resource.client ||= current_auth_client
   end
 

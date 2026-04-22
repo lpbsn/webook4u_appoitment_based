@@ -1,4 +1,4 @@
 interface:
-  display_name: "DEV"
-  short_description: "Implement tickets with strict scope"
-  default_prompt: "Use $dev to implement this delivery-ready ticket without expanding scope."
+  display_name: "Implementation Dev"
+  short_description: "Implement a scoped change with minimal diff and no scope drift."
+  default_prompt: "Use $implementation-dev to implement this change."

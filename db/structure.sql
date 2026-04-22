@@ -546,11 +546,11 @@ CREATE TABLE public.users (
     last_name character varying NOT NULL,
     first_name character varying NOT NULL,
     client_id bigint,
-    role character varying DEFAULT 'user'::character varying NOT NULL,
+    role character varying DEFAULT 'booker'::character varying NOT NULL,
     active boolean DEFAULT true NOT NULL,
     CONSTRAINT users_admin_without_client CHECK ((((role)::text <> 'admin'::text) OR (client_id IS NULL))),
     CONSTRAINT users_client_user_requires_client CHECK ((((role)::text <> 'client_user'::text) OR (client_id IS NOT NULL))),
-    CONSTRAINT users_role_allowed_values CHECK (((role)::text = ANY ((ARRAY['admin'::character varying, 'client_user'::character varying, 'user'::character varying])::text[])))
+    CONSTRAINT users_role_allowed_values CHECK (((role)::text = ANY ((ARRAY['admin'::character varying, 'client_user'::character varying, 'booker'::character varying])::text[])))
 );
 
 
@@ -1152,6 +1152,7 @@ ALTER TABLE ONLY public.bookings
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260422100000'),
 ('20260419121000'),
 ('20260419120000'),
 ('20260419075356'),

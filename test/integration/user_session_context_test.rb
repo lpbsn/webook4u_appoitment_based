@@ -109,9 +109,9 @@ class UserSessionContextTest < ActionDispatch::IntegrationTest
     assert_redirected_to admin_root_path
   end
 
-  test "global user without client can sign in without client context" do
+  test "global booker without client can sign in without client context" do
     user = User.create!(
-      role: :user,
+      role: :booker,
       active: true,
       client: nil,
       first_name: "Global",
@@ -127,13 +127,13 @@ class UserSessionContextTest < ActionDispatch::IntegrationTest
       }
     }
 
-    assert_redirected_to user_root_path
+    assert_redirected_to booker_root_path
   end
 
-  test "user role with client can sign in without client context" do
+  test "booker role with client can sign in without client context" do
     client = Client.create!(name: "Client A", slug: "client-a-user-role")
     user = User.create!(
-      role: :user,
+      role: :booker,
       active: true,
       client: client,
       first_name: "Scoped",
@@ -149,7 +149,7 @@ class UserSessionContextTest < ActionDispatch::IntegrationTest
       }
     }
 
-    assert_redirected_to user_root_path
+    assert_redirected_to booker_root_path
   end
 
   test "inactive account cannot sign in" do
@@ -204,9 +204,9 @@ class UserSessionContextTest < ActionDispatch::IntegrationTest
     assert_includes response.body, "Votre compte est inactif."
   end
 
-  test "inactive global user cannot sign in" do
+  test "inactive global booker cannot sign in" do
     user = User.create!(
-      role: :user,
+      role: :booker,
       active: false,
       client: nil,
       first_name: "Inactive",
