@@ -10,7 +10,9 @@
 body.booking-body {
   margin: 0;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
-  background-color: var(--booking-bg);
+  background-image: url("Background.jpg");
+  /* background-color: var(--booking-bg); */
+  background-size: cover;
   color: var(--booking-text);
 }
 
@@ -29,10 +31,11 @@ body.booking-body {
 }
 
 .booking-card {
-  background-color: var(--booking-surface);
   border-radius: 12px;
-  border: 1px solid var(--booking-border);
+  border: 1px solid #c9c1b23b;
   padding: 24px 20px;
+  backdrop-filter: blur(10px);
+  background: linear-gradient(303deg, #ffffff45, #b5b5b521);
 }
 
 .booking-card--public-client {
@@ -276,13 +279,11 @@ body.booking-body {
   font-size: 14px;
   text-decoration: none;
 }
-
 .slot-grid {
   display: flex;
     gap: 8px;
     flex-wrap: wrap;
     max-width: 80%;
-}
 }
 
 .slot-grid--staff-list {
@@ -812,7 +813,6 @@ select.field-input--short-select {
         border: solid #00000042 1px;
   }
 }
-
 @media (max-width: 600px) {
   .slot-grid {
     display: flex;
@@ -820,7 +820,6 @@ select.field-input--short-select {
     gap: 5px;
     flex-wrap: wrap;
     max-width: 80%;
-}
   }
 
   .slot-grid--staff-list {
