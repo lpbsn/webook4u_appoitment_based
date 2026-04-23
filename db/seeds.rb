@@ -39,6 +39,12 @@ if Rails.env.development?
     client.name = "Maigris Mon Gros"
   end
 
+  maad = Client.find_or_create_by!(
+    slug: "maad-institute"
+  ) do |client|
+    client.name = "Maad Institute"
+  end
+
   {
     salon => [
       {
@@ -75,6 +81,32 @@ if Rails.env.development?
         country: "France",
         active: false
       }
+    ],
+    maad => [
+      {
+        name: "Maad Paris",
+        address: "22 Rue de Rivoli",
+        postal_code: "75004",
+        city: "Paris",
+        country: "France",
+        active: true
+      },
+      {
+        name: "Maad Londres",
+        address: "18 Harley Street",
+        postal_code: "W1G 9PJ",
+        city: "London",
+        country: "United Kingdom",
+        active: true
+      },
+      {
+        name: "Maad Marseille",
+        address: "41 Rue Paradis",
+        postal_code: "13001",
+        city: "Marseille",
+        country: "France",
+        active: true
+      }
     ]
   }.each do |client, enseignes|
     enseignes.each do |attrs|
@@ -94,11 +126,17 @@ if Rails.env.development?
   lyon_06 = coach.enseignes.find_by!(name: "LYON 06 Coach")
   valence_sud = coach.enseignes.find_by!(name: "VALENCE SUD Coach")
   lyon_08 = coach.enseignes.find_by!(name: "LYON 08 Coach")
+  maad_paris = maad.enseignes.find_by!(name: "Maad Paris")
+  maad_londres = maad.enseignes.find_by!(name: "Maad Londres")
+  maad_marseille = maad.enseignes.find_by!(name: "Maad Marseille")
 
   upsert_weekday_hours.call(paris_16.enseigne_opening_hours, opens_at: "09:00", closes_at: "18:00")
   upsert_weekday_hours.call(lyon_06.enseigne_opening_hours, opens_at: "10:00", closes_at: "16:00")
   upsert_weekday_hours.call(valence_sud.enseigne_opening_hours, opens_at: "10:00", closes_at: "16:00")
   lyon_08.enseigne_opening_hours.delete_all
+  upsert_weekday_hours.call(maad_paris.enseigne_opening_hours, opens_at: "08:00", closes_at: "19:00")
+  upsert_weekday_hours.call(maad_londres.enseigne_opening_hours, opens_at: "08:00", closes_at: "19:00")
+  upsert_weekday_hours.call(maad_marseille.enseigne_opening_hours, opens_at: "08:00", closes_at: "19:00")
 
   [
     { name: "Coupe homme", duration_minutes: 30, price_cents: 3000 },
@@ -128,7 +166,32 @@ if Rails.env.development?
     end
   end
 
-  [ paris_16, lyon_06, valence_sud, lyon_08 ].each do |enseigne|
+  [ maad_paris, maad_londres, maad_marseille ].each do |enseigne|
+    [
+      { name: "Bilan physiothérapie", legacy_name: "Bilan physiotherapie", duration_minutes: 45, price_cents: 7000 },
+      { name: "Séance de physiothérapie", legacy_name: "Seance de physiotherapie", duration_minutes: 30, price_cents: 5500 },
+      { name: "Rééducation fonctionnelle", legacy_name: "Reeducation fonctionnelle", duration_minutes: 45, price_cents: 6500 },
+      { name: "Thérapie manuelle", legacy_name: "Therapie manuelle", duration_minutes: 30, price_cents: 6000 },
+      { name: "Suivi post-opératoire", legacy_name: "Suivi post-operatoire", duration_minutes: 60, price_cents: 8500 }
+    ].each do |attrs|
+      service = enseigne.services.find_by(name: attrs[:name])
+      legacy_service = enseigne.services.find_by(name: attrs[:legacy_name])
+
+      if service.blank? && legacy_service.present?
+        service = legacy_service
+        service.name = attrs[:name]
+      elsif service.present? && legacy_service.present? && legacy_service.id != service.id && legacy_service.bookings.none?
+        legacy_service.destroy!
+      end
+
+      service ||= enseigne.services.new(name: attrs[:name])
+      service.duration_minutes = attrs[:duration_minutes]
+      service.price_cents = attrs[:price_cents]
+      service.save! if service.new_record? || service.changed?
+    end
+  end
+
+  [ paris_16, lyon_06, valence_sud, lyon_08, maad_paris, maad_londres, maad_marseille ].each do |enseigne|
     enseigne.services.find_each do |service|
       ServiceAssignmentCursor.find_or_create_by!(service: service)
     end
@@ -152,6 +215,27 @@ if Rails.env.development?
       staff.staff_availabilities.delete_all
     end
 
+    upsert_staff_capabilities.call(staff, enseigne.services.to_a)
+  end
+
+  [
+    { enseigne: maad_paris, name: "Camille Bernard", active: true, opens_at: "08:00", closes_at: "16:00" },
+    { enseigne: maad_paris, name: "Hugo Martin", active: true, opens_at: "09:00", closes_at: "17:00" },
+    { enseigne: maad_paris, name: "Ines Leroy", active: true, opens_at: "11:00", closes_at: "19:00" },
+    { enseigne: maad_londres, name: "Amelia Clarke", active: true, opens_at: "08:00", closes_at: "16:00" },
+    { enseigne: maad_londres, name: "Noah Bennett", active: true, opens_at: "09:00", closes_at: "17:00" },
+    { enseigne: maad_londres, name: "Sofia Evans", active: true, opens_at: "11:00", closes_at: "19:00" },
+    { enseigne: maad_marseille, name: "Lea Moreau", active: true, opens_at: "08:00", closes_at: "16:00" },
+    { enseigne: maad_marseille, name: "Thomas Ricci", active: true, opens_at: "09:00", closes_at: "17:00" },
+    { enseigne: maad_marseille, name: "Nadia Benali", active: true, opens_at: "10:00", closes_at: "18:00" },
+    { enseigne: maad_marseille, name: "Jules Garnier", active: true, opens_at: "11:00", closes_at: "19:00" }
+  ].each do |attrs|
+    enseigne = attrs[:enseigne]
+    staff = enseigne.staffs.find_or_initialize_by(name: attrs[:name])
+    staff.active = attrs[:active]
+    staff.save! if staff.new_record? || staff.changed?
+
+    upsert_weekday_hours.call(staff.staff_availabilities, opens_at: attrs[:opens_at], closes_at: attrs[:closes_at])
     upsert_staff_capabilities.call(staff, enseigne.services.to_a)
   end
 

@@ -3,14 +3,15 @@ require "test_helper"
 class PublicClientsControllerTest < ActionDispatch::IntegrationTest
   include ActiveSupport::Testing::TimeHelpers
 
-  test "GET show redirects authenticated users to their role dashboard by default" do
+  test "GET show remains accessible for authenticated users" do
     client = Client.create!(name: "Salon Dashboard", slug: "salon-dashboard")
+    client.enseignes.create!(name: "Enseigne active", address: "1 rue de Paris", postal_code: "00000", city: "Ville", country: "France", active: true)
     user = create_test_user(client: client, role: :client_user)
     sign_in user
 
     get public_client_url(client.slug)
 
-    assert_redirected_to client_root_path
+    assert_response :success
   end
 
   test "GET show keeps booking flow accessible for authenticated users when booking entry is explicit" do

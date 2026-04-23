@@ -278,9 +278,11 @@ body.booking-body {
 }
 
 .slot-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 8px;
+  display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    max-width: 80%;
+}
 }
 
 .slot-grid--staff-list {
@@ -813,8 +815,12 @@ select.field-input--short-select {
 
 @media (max-width: 600px) {
   .slot-grid {
-    grid-template-columns: 1fr;
-    gap: 10px;
+    display: flex;
+    /* display: grid; */
+    gap: 5px;
+    flex-wrap: wrap;
+    max-width: 80%;
+}
   }
 
   .slot-grid--staff-list {

@@ -58,7 +58,7 @@ class ApplicationController < ActionController::Base
   def reservation_entry_path_for(user)
     return if user.blank?
 
-    client = user.client || Client.order(:id).first
+    client = user.client
     return if client.blank?
 
     public_client_path(client.slug, booking_entry: "1")

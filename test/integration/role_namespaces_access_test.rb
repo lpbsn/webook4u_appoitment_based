@@ -70,6 +70,16 @@ class RoleNamespacesAccessTest < ActionDispatch::IntegrationTest
     assert_not_includes response.body, "booking-back-link"
   end
 
+  test "global booker dashboard does not default reservation link to first client" do
+    sign_in @end_user
+    get booker_bookings_path
+
+    assert_response :success
+    assert_select "a[href=?]", public_client_path(@client_one.slug, booking_entry: "1"), count: 0
+    assert_select "a[href=?]", public_client_path(@client_two.slug, booking_entry: "1"), count: 0
+    assert_includes response.body, "Aucun client disponible pour demarrer une reservation."
+  end
+
   test "cross-namespace access is rejected server-side" do
     sign_in @client_user
     get admin_bookings_path

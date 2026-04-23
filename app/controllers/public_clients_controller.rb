@@ -1,6 +1,5 @@
 class PublicClientsController < ApplicationController
   layout :booking_layout
-  before_action :redirect_authenticated_user_to_role_home, only: :show
   # =========================================================
   # PAGE PRINCIPALE DE RÉSERVATION
   # 1️) choisir une enseigne
@@ -50,26 +49,5 @@ class PublicClientsController < ApplicationController
 
   def booking_layout
     turbo_frame_request? ? false : "booking"
-  end
-
-  def redirect_authenticated_user_to_role_home
-    return unless user_signed_in?
-    return if booking_flow_requested?
-
-    redirect_to role_home_path_for(current_user)
-  end
-
-  def booking_flow_requested?
-    params[:booking_entry].present? ||
-      params[:enseigne_id].present? ||
-      params[:service_id].present? ||
-      params[:assignment_mode].present? ||
-      params[:staff_id].present? ||
-      params[:search_mode].present? ||
-      params[:selected_start_time].present? ||
-      params[:date].present? ||
-      params[:selected_days_of_week].present? ||
-      params[:start_time_min].present? ||
-      params[:start_time_max].present?
   end
 end
